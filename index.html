@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>品牌文案生成器</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@300;400;600&family=DM+Mono:wght@300;400&family=Playfair+Display:ital,wght@0,400;1,400&display=swap" rel="stylesheet" />
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --ink: #1a1814; --ink-soft: #4a4640; --ink-muted: #9a9590;
+  --cream: #f7f4ef; --cream-dark: #ede9e2;
+  --accent: #b87333; --accent-light: #e8d5b7; --accent-pale: #f5ede0;
+  --border: rgba(26,24,20,0.12); --border-strong: rgba(26,24,20,0.25);
+  --tag-bg: #f0edf8; --tag-color: #6b5b95;
+  --green: #5a9e6f; --green-bg: #f0f8f3;
+  --red: #c0392b; --red-bg: #fdf5f3; --red-border: #e8c4b8;
+  --serif: 'Noto Serif SC', Georgia, serif;
+  --mono: 'DM Mono', monospace;
+  --display: 'Playfair Display', serif;
+}
+body { font-family: var(--serif); background: var(--cream); color: var(--ink); min-height: 100vh; line-height: 1.7; }
+
+/* HEADER */
+header { border-bottom: 1px solid var(--border); padding: 1.5rem 0 1.25rem; text-align: center; background: var(--cream); position: sticky; top: 0; z-index: 100; }
+.logo-line { font-family: var(--mono); font-size: 10px; letter-spacing: 0.25em; color: var(--ink-muted); text-transform: uppercase; margin-bottom: 5px; }
+header h1 { font-family: var(--display); font-size: clamp(18px, 3.5vw, 26px); font-weight: 400; font-style: italic; color: var(--ink); }
+.tagline { font-family: var(--mono); font-size: 10px; color: var(--accent); letter-spacing: 0.2em; margin-top: 4px; }
+
+/* LAYOUT */
+.container { max-width: 720px; margin: 0 auto; padding: 0 24px; }
+main { padding: 2.5rem 0 6rem; }
+
+/* MODE TABS */
+.mode-tabs { display: flex; gap: 0; margin-bottom: 2rem; border: 1px solid var(--border-strong); border-radius: 2px; overflow: hidden; }
+.mode-tab { flex: 1; padding: 11px 0; text-align: center; font-family: var(--mono); font-size: 11px; letter-spacing: 0.15em; text-transform: uppercase; cursor: pointer; background: transparent; border: none; color: var(--ink-muted); transition: all 0.18s; }
+.mode-tab:first-child { border-right: 1px solid var(--border-strong); }
+.mode-tab.active { background: var(--ink); color: var(--cream); }
+.mode-tab:hover:not(.active) { background: var(--cream-dark); color: var(--ink); }
+
+/* PANELS */
+.panel { display: none; }
+.panel.active { display: block; }
+
+/* DIVIDER */
+.divider { display: flex; align-items: center; gap: 14px; margin: 2rem 0 1.5rem; }
+.divider::before, .divider::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+.divider span { font-family: var(--mono); font-size: 10px; letter-spacing: 0.2em; color: var(--ink-muted); text-transform: uppercase; white-space: nowrap; }
+
+/* FORM */
+.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 24px; }
+.form-full { margin-bottom: 24px; }
+.field label { display: block; font-family: var(--mono); font-size: 10px; letter-spacing: 0.18em; color: var(--ink-muted); text-transform: uppercase; margin-bottom: 8px; }
+.field input, .field textarea, .field select { width: 100%; background: transparent; border: none; border-bottom: 1px solid var(--border-strong); font-family: var(--serif); font-size: 15px; color: var(--ink); padding: 6px 0 8px; outline: none; transition: border-color 0.2s; -webkit-appearance: none; appearance: none; }
+.field input::placeholder, .field textarea::placeholder { color: var(--ink-muted); font-style: italic; }
+.field input:focus, .field textarea:focus, .field select:focus { border-bottom-color: var(--accent); }
+.field textarea { resize: vertical; min-height: 80px; line-height: 1.6; }
+.field textarea.tall { min-height: 130px; }
+.field select { cursor: pointer; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%239a9590'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 2px center; padding-right: 18px; }
+
+/* LEVEL BUTTONS */
+.levels-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-bottom: 2.5rem; }
+.level-btn { border: 1px solid var(--border-strong); background: transparent; border-radius: 2px; padding: 12px 6px; cursor: pointer; text-align: center; transition: all 0.18s; font-family: var(--serif); }
+.level-btn:hover { border-color: var(--accent); background: var(--accent-pale); }
+.level-btn .lnum { font-family: var(--mono); font-size: 10px; letter-spacing: 0.12em; color: var(--ink-muted); display: block; }
+.level-btn .lname { font-size: 12px; color: var(--ink-soft); margin-top: 5px; display: block; line-height: 1.3; }
+.level-btn.active { background: var(--accent-pale); border-color: var(--accent); }
+.level-btn.active .lnum { color: var(--accent); }
+.level-btn.active .lname { color: var(--ink); font-weight: 600; }
+
+/* ACTION BUTTON */
+.action-btn { width: 100%; padding: 16px; background: var(--ink); color: var(--cream); border: none; font-family: var(--mono); font-size: 12px; letter-spacing: 0.25em; text-transform: uppercase; cursor: pointer; transition: background 0.2s; border-radius: 2px; margin-bottom: 2.5rem; }
+.action-btn:hover { background: #3a3630; }
+.action-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+/* LOADING */
+.loading { display: none; text-align: center; padding: 3rem 0; }
+.loading.show { display: block; }
+.loading-text { font-family: var(--mono); font-size: 11px; letter-spacing: 0.2em; color: var(--ink-muted); }
+.loading-text::after { content: '.'; animation: ldots 1.4s infinite; }
+@keyframes ldots { 0%{content:'.'} 33%{content:'..'} 66%{content:'...'} }
+
+/* RESULT CARDS - GENERATE */
+.results { display: none; }
+.results.show { display: block; }
+.result-card { border: 1px solid var(--border); border-radius: 2px; padding: 1.5rem; margin-bottom: 1.25rem; background: white; animation: fadeUp 0.35s ease both; }
+@keyframes fadeUp { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
+.card-header { display: flex; align-items: center; gap: 10px; margin-bottom: 1.1rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border); }
+.level-badge { font-family: var(--mono); font-size: 10px; letter-spacing: 0.1em; background: var(--tag-bg); color: var(--tag-color); padding: 3px 12px; border-radius: 20px; white-space: nowrap; }
+.card-title { font-family: var(--mono); font-size: 11px; color: var(--ink-muted); }
+.copy-line { font-size: 16px; color: var(--ink); line-height: 1.75; padding: 10px 80px 10px 16px; border-left: 2px solid var(--accent-light); margin-bottom: 10px; cursor: pointer; transition: border-color 0.18s, background 0.18s; position: relative; border-radius: 0 2px 2px 0; }
+.copy-line:last-child { margin-bottom: 0; }
+.copy-line:hover { border-left-color: var(--accent); background: var(--accent-pale); }
+.copy-line:hover::after { content: '点击复制'; position: absolute; right: 12px; top: 50%; transform: translateY(-50%); font-family: var(--mono); font-size: 9px; color: var(--ink-muted); }
+.copy-line.copied { border-left-color: var(--green); background: var(--green-bg); }
+.copy-line.copied::after { content: '已复制 ✓'; position: absolute; right: 12px; top: 50%; transform: translateY(-50%); font-family: var(--mono); font-size: 9px; color: var(--green); }
+
+/* OPTIMIZE RESULT */
+.optimize-result { animation: fadeUp 0.35s ease both; }
+.diagnose-card { background: white; border: 1px solid var(--border); border-radius: 2px; padding: 1.5rem; margin-bottom: 1.25rem; }
+.diagnose-card .card-header { display: flex; align-items: center; gap: 10px; margin-bottom: 1rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border); }
+.diag-badge { font-family: var(--mono); font-size: 10px; letter-spacing: 0.1em; background: #fff8e6; color: #9a6500; padding: 3px 12px; border-radius: 20px; }
+.diag-label { font-family: var(--mono); font-size: 11px; color: var(--ink-muted); }
+.diag-text { font-size: 14px; color: var(--ink-soft); line-height: 1.8; }
+.diag-issues { margin-top: 12px; }
+.diag-issue { display: flex; gap: 8px; font-size: 13px; color: var(--ink-soft); line-height: 1.6; margin-bottom: 6px; }
+.diag-issue::before { content: '→'; color: var(--red); flex-shrink: 0; font-family: var(--mono); }
+
+.rewrite-card { background: white; border: 1px solid var(--border); border-radius: 2px; padding: 1.5rem; margin-bottom: 1.25rem; }
+.rewrite-card .card-header { display: flex; align-items: center; gap: 10px; margin-bottom: 1rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border); }
+.rewrite-badge { font-family: var(--mono); font-size: 10px; letter-spacing: 0.1em; background: var(--tag-bg); color: var(--tag-color); padding: 3px 12px; border-radius: 20px; white-space: nowrap; }
+.rewrite-label { font-family: var(--mono); font-size: 11px; color: var(--ink-muted); }
+
+/* ERROR */
+.error-card { border: 1px solid var(--red-border); background: var(--red-bg); border-radius: 2px; padding: 1.25rem 1.5rem; margin-bottom: 1rem; }
+.error-title { font-family: var(--mono); font-size: 10px; letter-spacing: 0.15em; color: var(--red); margin-bottom: 6px; text-transform: uppercase; }
+.error-msg { font-size: 14px; color: var(--ink-soft); line-height: 1.6; }
+
+/* FOOTER */
+footer { text-align: center; border-top: 1px solid var(--border); padding: 2rem 0; font-family: var(--mono); font-size: 10px; letter-spacing: 0.12em; color: var(--ink-muted); }
+footer em { color: var(--accent); font-style: normal; }
+
+@media (max-width: 540px) {
+  .form-grid { grid-template-columns: 1fr; }
+  .levels-grid { grid-template-columns: repeat(3, 1fr); }
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="container">
+    <div class="logo-line">Brand Copywriting Studio</div>
+    <h1>品牌文案生成器</h1>
+    <div class="tagline">Don't rush the good stuff · 五段位方法论</div>
+  </div>
+</header>
+
+<main>
+  <div class="container">
+
+    <!-- MODE TABS -->
+    <div class="mode-tabs">
+      <button class="mode-tab active" onclick="switchMode('generate')">全新生成</button>
+      <button class="mode-tab" onclick="switchMode('optimize')">优化改写</button>
+    </div>
+
+    <!-- ===== GENERATE PANEL ===== -->
+    <div class="panel active" id="panel-generate">
+
+      <div class="divider"><span>产品信息</span></div>
+
+      <div class="form-grid">
+        <div class="field">
+          <label>产品名称</label>
+          <input type="text" id="g-product" placeholder="例：澳洲精品咖啡随行杯" />
+        </div>
+        <div class="field">
+          <label>价格区间</label>
+          <input type="text" id="g-price" placeholder="例：250 元人民币" />
+        </div>
+      </div>
+      <div class="form-grid">
+        <div class="field">
+          <label>目标人群</label>
+          <input type="text" id="g-audience" placeholder="例：35岁女性，中高端消费" />
+        </div>
+        <div class="field">
+          <label>核心卖点</label>
+          <input type="text" id="g-feature" placeholder="例：澳洲工艺，精品保温" />
+        </div>
+      </div>
+      <div class="form-full field">
+        <label>品牌理念 / 生活态度</label>
+        <textarea id="g-brand" placeholder="例：Don't rush the good stuff，倡导慢下来享受每一口好咖啡"></textarea>
+      </div>
+      <div class="form-full field">
+        <label>发布平台</label>
+        <select id="g-platform">
+          <option value="小红书">小红书（图文 / 视频封面）</option>
+          <option value="抖音">抖音（短视频文案）</option>
+          <option value="电商详情页">电商详情页</option>
+          <option value="微信朋友圈">微信朋友圈</option>
+          <option value="品牌Slogan">品牌 Slogan</option>
+        </select>
+      </div>
+
+      <div class="divider"><span>选择段位（可多选）</span></div>
+      <div class="levels-grid">
+        <button class="level-btn active" data-level="1" onclick="toggleLevel(this)"><span class="lnum">01</span><span class="lname">顾客任务</span></button>
+        <button class="level-btn active" data-level="2" onclick="toggleLevel(this)"><span class="lnum">02</span><span class="lname">场景思维</span></button>
+        <button class="level-btn active" data-level="3" onclick="toggleLevel(this)"><span class="lnum">03</span><span class="lname">情绪思维</span></button>
+        <button class="level-btn active" data-level="4" onclick="toggleLevel(this)"><span class="lnum">04</span><span class="lname">活人思维</span></button>
+        <button class="level-btn active" data-level="5" onclick="toggleLevel(this)"><span class="lnum">05</span><span class="lname">身份思维</span></button>
+      </div>
+
+      <button class="action-btn" id="genBtn" onclick="generate()">生成文案 →</button>
+
+      <div class="loading" id="g-loading"><div class="loading-text">正在生成文案</div></div>
+      <div class="results" id="g-results"></div>
+    </div>
+
+    <!-- ===== OPTIMIZE PANEL ===== -->
+    <div class="panel" id="panel-optimize">
+
+      <div class="divider"><span>产品背景（选填，帮助理解语境）</span></div>
+      <div class="form-grid">
+        <div class="field">
+          <label>产品名称</label>
+          <input type="text" id="o-product" placeholder="例：澳洲精品咖啡随行杯" />
+        </div>
+        <div class="field">
+          <label>目标人群</label>
+          <input type="text" id="o-audience" placeholder="例：35岁女性，中高端" />
+        </div>
+      </div>
+      <div class="form-full field">
+        <label>品牌理念</label>
+        <input type="text" id="o-brand" placeholder="例：Don't rush the good stuff" />
+      </div>
+
+      <div class="divider"><span>输入你的文案</span></div>
+      <div class="form-full field">
+        <label>待优化文案（粘贴在这里）</label>
+        <textarea class="tall" id="o-copy" placeholder="把你写好的文案粘贴进来，可以是一句话，也可以是一段话..."></textarea>
+      </div>
+      <div class="form-full field">
+        <label>优化目标（选填）</label>
+        <input type="text" id="o-goal" placeholder="例：更有情绪感、更高端、更适合小红书..." />
+      </div>
+
+      <button class="action-btn" id="optBtn" onclick="optimize()">分析并改写 →</button>
+
+      <div class="loading" id="o-loading"><div class="loading-text">正在分析并改写</div></div>
+      <div class="results" id="o-results"></div>
+    </div>
+
+  </div>
+</main>
+
+<footer>
+  <div class="container">基于五段位文案方法论 · Powered by <em>Claude AI</em></div>
+</footer>
+
+<script>
+// ================================================
+// 把下面 YOUR_API_KEY_HERE 替换成你的 API Key
+// ================================================
+const API_KEY = 'YOUR_API_KEY_HERE';
+
+const levelMeta = {
+  '1': { tag: '第一段位', title: '顾客任务思维 · FAB 法则' },
+  '2': { tag: '第二段位', title: '场景思维 · 画面感' },
+  '3': { tag: '第三段位', title: '情绪思维 · 情绪着火点' },
+  '4': { tag: '第四段位', title: '活人思维 · 产品说话' },
+  '5': { tag: '第五段位', title: '身份思维 · 最高段位' },
+};
+
+const levelDescriptions = {
+  '1': '顾客任务思维（FAB法则）：把产品特性→作用→用户好处转化，让用户觉得"这对我有用"',
+  '2': '场景思维：让用户在脑海中产生自己正在使用产品的画面感，激发占有欲',
+  '3': '情绪思维：找到目标人群的情绪着火点，有情绪张力，让产品有性格',
+  '4': '活人思维：产品用第一人称直接跟消费者对话',
+  '5': '身份思维：让产品代表用户的审美、身份、生活态度，不卖产品卖身份认同',
+};
+
+function switchMode(mode) {
+  document.querySelectorAll('.mode-tab').forEach((t, i) => {
+    t.classList.toggle('active', (mode === 'generate' && i === 0) || (mode === 'optimize' && i === 1));
+  });
+  document.getElementById('panel-generate').classList.toggle('active', mode === 'generate');
+  document.getElementById('panel-optimize').classList.toggle('active', mode === 'optimize');
+}
+
+function toggleLevel(el) { el.classList.toggle('active'); }
+
+function copyLine(el, text) {
+  navigator.clipboard.writeText(text).then(() => {
+    el.classList.add('copied');
+    setTimeout(() => el.classList.remove('copied'), 1800);
+  });
+}
+
+function checkKey() {
+  if (API_KEY === 'YOUR_API_KEY_HERE') {
+    alert('请先替换 API Key！\n用记事本打开此文件，找到 YOUR_API_KEY_HERE 替换成你的 sk-ant-... Key');
+    return false;
+  }
+  return true;
+}
+
+async function callClaude(prompt) {
+  const res = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': API_KEY,
+      'anthropic-version': '2023-06-01',
+      'anthropic-dangerous-direct-browser-access': 'true',
+    },
+    body: JSON.stringify({
+      model: 'claude-haiku-4-5-20251001',
+      max_tokens: 1500,
+      messages: [{ role: 'user', content: prompt }],
+    }),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(`API 错误 ${res.status}：${err.error?.message || res.statusText}`);
+  }
+  const data = await res.json();
+  return data.content.map(i => i.text || '').join('');
+}
+
+// ===== GENERATE =====
+async function generate() {
+  if (!checkKey()) return;
+  const product  = document.getElementById('g-product').value.trim();
+  const price    = document.getElementById('g-price').value.trim();
+  const audience = document.getElementById('g-audience').value.trim();
+  const feature  = document.getElementById('g-feature').value.trim();
+  const brand    = document.getElementById('g-brand').value.trim();
+  const platform = document.getElementById('g-platform').value;
+  const levels   = [...document.querySelectorAll('#panel-generate .level-btn.active')].map(el => el.dataset.level);
+
+  if (!product) { alert('请输入产品名称'); return; }
+  if (levels.length === 0) { alert('请至少选择一个段位'); return; }
+
+  const btn = document.getElementById('genBtn');
+  btn.disabled = true;
+  document.getElementById('g-loading').classList.add('show');
+  document.getElementById('g-results').classList.remove('show');
+  document.getElementById('g-results').innerHTML = '';
+
+  const selectedLevelText = levels.map(l => `【${levelMeta[l].tag}】${levelDescriptions[l]}`).join('\n\n');
+
+  const prompt = `你是一位顶级品牌文案专家，擅长用五段位文案方法论写出有调性、有张力的产品文案。
+
+产品信息：
+- 产品名称：${product}
+- 价格区间：${price || '未提供'}
+- 目标人群：${audience || '未提供'}
+- 核心卖点：${feature || '未提供'}
+- 品牌理念：${brand || '未提供'}
+- 发布平台：${platform}
+
+请根据以下选定的段位，分别写出对应文案：
+${selectedLevelText}
+
+严格只输出JSON，不含任何其他文字和代码块标记：
+{"results":[{"level":"1","lines":["文案1","文案2","文案3"]},...]}
+每个段位输出2-3条，语言简洁有力，符合${platform}风格，体现品牌调性。`;
+
+  try {
+    const text   = await callClaude(prompt);
+    const clean  = text.replace(/```json|```/g, '').trim();
+    const parsed = JSON.parse(clean);
+
+    document.getElementById('g-loading').classList.remove('show');
+    const container = document.getElementById('g-results');
+    container.classList.add('show');
+
+    parsed.results.forEach((item, i) => {
+      const meta = levelMeta[item.level];
+      if (!meta) return;
+      const card = document.createElement('div');
+      card.className = 'result-card';
+      card.style.animationDelay = (i * 0.08) + 's';
+      const linesHtml = item.lines.map(l => {
+        const safe = l.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+        return `<div class="copy-line" onclick="copyLine(this,'${safe}')">${l}</div>`;
+      }).join('');
+      card.innerHTML = `<div class="card-header"><span class="level-badge">${meta.tag}</span><span class="card-title">${meta.title}</span></div>${linesHtml}`;
+      container.appendChild(card);
+    });
+  } catch (err) {
+    document.getElementById('g-loading').classList.remove('show');
+    const container = document.getElementById('g-results');
+    container.classList.add('show');
+    container.innerHTML = `<div class="error-card"><div class="error-title">生成失败</div><div class="error-msg">${err.message}</div></div>`;
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+// ===== OPTIMIZE =====
+async function optimize() {
+  if (!checkKey()) return;
+  const copy     = document.getElementById('o-copy').value.trim();
+  const product  = document.getElementById('o-product').value.trim();
+  const audience = document.getElementById('o-audience').value.trim();
+  const brand    = document.getElementById('o-brand').value.trim();
+  const goal     = document.getElementById('o-goal').value.trim();
+
+  if (!copy) { alert('请输入需要优化的文案'); return; }
+
+  const btn = document.getElementById('optBtn');
+  btn.disabled = true;
+  document.getElementById('o-loading').classList.add('show');
+  document.getElementById('o-results').classList.remove('show');
+  document.getElementById('o-results').innerHTML = '';
+
+  const levelList = Object.entries(levelMeta).map(([k,v]) => `${v.tag}：${levelDescriptions[k]}`).join('\n');
+
+  const prompt = `你是一位顶级品牌文案专家，精通五段位文案方法论。
+
+五段位方法论说明：
+${levelList}
+
+产品背景：
+- 产品：${product || '未提供'}
+- 目标人群：${audience || '未提供'}
+- 品牌理念：${brand || '未提供'}
+- 优化目标：${goal || '整体提升文案调性和感染力'}
+
+需要优化的原始文案：
+「${copy}」
+
+请完成两件事：
+1. 诊断：判断这段文案目前处于哪个段位，指出2-3个具体不足之处
+2. 改写：用更高段位的思维，改写出3个不同风格的升级版本，每个版本标注使用了哪个段位的思维
+
+严格只输出JSON，不含任何其他文字和代码块标记：
+{
+  "diagnosis": {
+    "current_level": "第X段位",
+    "current_level_name": "段位名称",
+    "issues": ["不足1", "不足2", "不足3"]
+  },
+  "rewrites": [
+    {"level": "第X段位", "level_name": "段位名称", "copy": "改写后的文案"},
+    {"level": "第X段位", "level_name": "段位名称", "copy": "改写后的文案"},
+    {"level": "第X段位", "level_name": "段位名称", "copy": "改写后的文案"}
+  ]
+}`;
+
+  try {
+    const text   = await callClaude(prompt);
+    const clean  = text.replace(/```json|```/g, '').trim();
+    const parsed = JSON.parse(clean);
+
+    document.getElementById('o-loading').classList.remove('show');
+    const container = document.getElementById('o-results');
+    container.classList.add('show');
+    container.innerHTML = '';
+
+    // Diagnosis card
+    const diag = parsed.diagnosis;
+    const issuesHtml = (diag.issues || []).map(i => `<div class="diag-issue">${i}</div>`).join('');
+    const diagCard = document.createElement('div');
+    diagCard.className = 'diagnose-card optimize-result';
+    diagCard.innerHTML = `
+      <div class="card-header">
+        <span class="diag-badge">诊断报告</span>
+        <span class="diag-label">当前段位：${diag.current_level} · ${diag.current_level_name}</span>
+      </div>
+      <div class="diag-issues">${issuesHtml}</div>`;
+    container.appendChild(diagCard);
+
+    // Rewrite cards
+    (parsed.rewrites || []).forEach((r, i) => {
+      const safe = r.copy.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+      const card = document.createElement('div');
+      card.className = 'rewrite-card optimize-result';
+      card.style.animationDelay = (i * 0.1 + 0.1) + 's';
+      card.innerHTML = `
+        <div class="card-header">
+          <span class="rewrite-badge">${r.level}</span>
+          <span class="rewrite-label">${r.level_name}</span>
+        </div>
+        <div class="copy-line" onclick="copyLine(this,'${safe}')">${r.copy}</div>`;
+      container.appendChild(card);
+    });
+
+  } catch (err) {
+    document.getElementById('o-loading').classList.remove('show');
+    const container = document.getElementById('o-results');
+    container.classList.add('show');
+    container.innerHTML = `<div class="error-card"><div class="error-title">优化失败</div><div class="error-msg">${err.message}</div></div>`;
+  } finally {
+    btn.disabled = false;
+  }
+}
+</script>
+</body>
+</html>
