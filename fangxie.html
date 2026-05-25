@@ -1,0 +1,715 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>小红书爆文仿写器</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@300;400;600&family=DM+Mono:wght@300;400&family=Playfair+Display:ital,wght@0,400;1,400&display=swap" rel="stylesheet" />
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --ink: #1a1814; --ink-soft: #4a4640; --ink-muted: #9a9590;
+  --cream: #f7f4ef; --cream-dark: #ede9e2;
+  --accent: #c0392b; --accent-light: #f5c6c0; --accent-pale: #fdf5f3;
+  --gold: #b87333; --gold-pale: #f5ede0;
+  --border: rgba(26,24,20,0.12); --border-strong: rgba(26,24,20,0.25);
+  --tag-bg: #f0edf8; --tag-color: #6b5b95;
+  --green: #5a9e6f; --green-bg: #f0f8f3;
+  --serif: 'Noto Serif SC', Georgia, serif;
+  --mono: 'DM Mono', monospace;
+  --display: 'Playfair Display', serif;
+}
+body { font-family: var(--serif); background: var(--cream); color: var(--ink); min-height: 100vh; line-height: 1.7; }
+
+/* HEADER */
+header { border-bottom: 1px solid var(--border); padding: 1.75rem 0 1.25rem; text-align: center; background: var(--cream); position: sticky; top: 0; z-index: 100; }
+.logo-line { font-family: var(--mono); font-size: 10px; letter-spacing: 0.25em; color: var(--ink-muted); text-transform: uppercase; margin-bottom: 5px; }
+header h1 { font-family: var(--display); font-size: clamp(18px, 3.5vw, 26px); font-weight: 400; font-style: italic; color: var(--ink); }
+.tagline { font-family: var(--mono); font-size: 10px; color: var(--accent); letter-spacing: 0.2em; margin-top: 4px; }
+
+/* LAYOUT */
+.container { max-width: 760px; margin: 0 auto; padding: 0 24px; }
+main { padding: 2.5rem 0 6rem; }
+
+/* STEPS */
+.steps { display: flex; align-items: center; gap: 0; margin-bottom: 2.5rem; }
+.step { display: flex; align-items: center; gap: 8px; flex: 1; }
+.step-num { width: 26px; height: 26px; border-radius: 50%; border: 1px solid var(--border-strong); display: flex; align-items: center; justify-content: center; font-family: var(--mono); font-size: 10px; color: var(--ink-muted); flex-shrink: 0; transition: all 0.2s; }
+.step-label { font-family: var(--mono); font-size: 10px; letter-spacing: 0.1em; color: var(--ink-muted); text-transform: uppercase; white-space: nowrap; }
+.step-line { flex: 1; height: 1px; background: var(--border); margin: 0 8px; }
+.step.active .step-num { background: var(--ink); border-color: var(--ink); color: var(--cream); }
+.step.active .step-label { color: var(--ink); }
+.step.done .step-num { background: var(--green); border-color: var(--green); color: white; }
+
+/* DIVIDER */
+.divider { display: flex; align-items: center; gap: 14px; margin: 2rem 0 1.5rem; }
+.divider::before, .divider::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+.divider span { font-family: var(--mono); font-size: 10px; letter-spacing: 0.2em; color: var(--ink-muted); text-transform: uppercase; white-space: nowrap; }
+
+/* INPUT MODE TOGGLE */
+.input-toggle { display: flex; gap: 0; margin-bottom: 1.5rem; border: 1px solid var(--border-strong); border-radius: 2px; overflow: hidden; width: fit-content; }
+.toggle-btn { padding: 8px 20px; font-family: var(--mono); font-size: 10px; letter-spacing: 0.15em; text-transform: uppercase; cursor: pointer; background: transparent; border: none; color: var(--ink-muted); transition: all 0.18s; }
+.toggle-btn:first-child { border-right: 1px solid var(--border-strong); }
+.toggle-btn.active { background: var(--ink); color: var(--cream); }
+
+/* INPUT AREAS */
+.input-panel { display: none; }
+.input-panel.active { display: block; }
+
+.field label { display: block; font-family: var(--mono); font-size: 10px; letter-spacing: 0.18em; color: var(--ink-muted); text-transform: uppercase; margin-bottom: 8px; }
+.field textarea { width: 100%; background: transparent; border: none; border-bottom: 1px solid var(--border-strong); font-family: var(--serif); font-size: 14px; color: var(--ink); padding: 6px 0 8px; outline: none; resize: vertical; min-height: 160px; line-height: 1.7; transition: border-color 0.2s; }
+.field textarea::placeholder { color: var(--ink-muted); font-style: italic; }
+.field textarea:focus { border-bottom-color: var(--gold); }
+.field input[type="text"] { width: 100%; background: transparent; border: none; border-bottom: 1px solid var(--border-strong); font-family: var(--serif); font-size: 15px; color: var(--ink); padding: 6px 0 8px; outline: none; transition: border-color 0.2s; }
+.field input[type="text"]::placeholder { color: var(--ink-muted); font-style: italic; }
+.field input[type="text"]:focus { border-bottom-color: var(--gold); }
+
+/* IMAGE UPLOAD */
+.upload-zone { border: 1.5px dashed var(--border-strong); border-radius: 4px; padding: 2.5rem 1.5rem; text-align: center; cursor: pointer; transition: all 0.2s; background: transparent; position: relative; }
+.upload-zone:hover { border-color: var(--gold); background: var(--gold-pale); }
+.upload-zone.has-image { border-style: solid; border-color: var(--green); background: var(--green-bg); }
+.upload-icon { font-size: 2rem; margin-bottom: 0.75rem; display: block; }
+.upload-text { font-family: var(--mono); font-size: 11px; letter-spacing: 0.1em; color: var(--ink-muted); }
+.upload-hint { font-family: var(--mono); font-size: 10px; color: var(--ink-muted); margin-top: 6px; opacity: 0.7; }
+#imageInput { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+.preview-img { max-width: 100%; max-height: 300px; border-radius: 4px; display: none; margin: 0 auto; }
+.preview-img.show { display: block; }
+.remove-img { font-family: var(--mono); font-size: 10px; color: var(--accent); cursor: pointer; margin-top: 10px; display: none; letter-spacing: 0.1em; }
+.remove-img.show { display: block; }
+
+/* FORM GRID */
+.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 24px; }
+.form-full { margin-bottom: 24px; }
+
+/* ACTION BUTTON */
+.action-btn { width: 100%; padding: 16px; background: var(--ink); color: var(--cream); border: none; font-family: var(--mono); font-size: 12px; letter-spacing: 0.25em; text-transform: uppercase; cursor: pointer; transition: background 0.2s; border-radius: 2px; margin-top: 1.5rem; margin-bottom: 2.5rem; }
+.action-btn:hover { background: #3a3630; }
+.action-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+.action-btn.secondary { background: transparent; color: var(--ink); border: 1px solid var(--border-strong); margin-top: 0; }
+.action-btn.secondary:hover { background: var(--cream-dark); }
+
+/* LOADING */
+.loading { display: none; text-align: center; padding: 3rem 0; }
+.loading.show { display: block; }
+.loading-text { font-family: var(--mono); font-size: 11px; letter-spacing: 0.2em; color: var(--ink-muted); }
+.loading-text::after { content: '.'; animation: ldots 1.4s infinite; }
+@keyframes ldots { 0%{content:'.'} 33%{content:'..'} 66%{content:'...'} }
+
+/* ANALYSIS RESULT */
+.analysis-section { display: none; }
+.analysis-section.show { display: block; }
+
+.analysis-card { background: white; border: 1px solid var(--border); border-radius: 2px; padding: 1.5rem; margin-bottom: 1rem; animation: fadeUp 0.3s ease both; }
+@keyframes fadeUp { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+
+.analysis-card .card-header { display: flex; align-items: center; gap: 10px; margin-bottom: 1rem; padding-bottom: 0.875rem; border-bottom: 1px solid var(--border); }
+.badge { font-family: var(--mono); font-size: 10px; letter-spacing: 0.1em; padding: 3px 12px; border-radius: 20px; white-space: nowrap; }
+.badge-gold { background: #fff8e6; color: #9a6500; }
+.badge-red { background: var(--accent-pale); color: var(--accent); }
+.badge-purple { background: var(--tag-bg); color: var(--tag-color); }
+.badge-green { background: var(--green-bg); color: var(--green); }
+.card-subtitle { font-family: var(--mono); font-size: 11px; color: var(--ink-muted); }
+
+.analysis-item { margin-bottom: 1rem; }
+.analysis-item:last-child { margin-bottom: 0; }
+.analysis-label { font-family: var(--mono); font-size: 10px; letter-spacing: 0.15em; color: var(--ink-muted); text-transform: uppercase; margin-bottom: 4px; }
+.analysis-value { font-size: 14px; color: var(--ink-soft); line-height: 1.7; padding-left: 12px; border-left: 2px solid var(--accent-light); }
+
+.formula-box { background: var(--cream-dark); border-radius: 2px; padding: 1rem 1.25rem; margin-top: 0.5rem; }
+.formula-text { font-family: var(--mono); font-size: 12px; color: var(--ink); letter-spacing: 0.05em; line-height: 1.8; }
+
+/* PRODUCT FORM */
+.product-section { display: none; }
+.product-section.show { display: block; }
+
+/* REWRITE RESULT */
+.rewrite-section { display: none; }
+.rewrite-section.show { display: block; }
+
+.rewrite-card { background: white; border: 1px solid var(--border); border-radius: 2px; padding: 1.5rem; margin-bottom: 1.25rem; animation: fadeUp 0.35s ease both; }
+.copy-block { font-size: 15px; color: var(--ink); line-height: 1.85; padding: 1rem 3.5rem 1rem 1rem; border-left: 2px solid var(--accent-light); cursor: pointer; transition: all 0.18s; position: relative; border-radius: 0 2px 2px 0; white-space: pre-wrap; }
+.copy-block:hover { border-left-color: var(--gold); background: var(--gold-pale); }
+.copy-block:hover::after { content: '点击复制全文'; position: absolute; right: 12px; top: 12px; font-family: var(--mono); font-size: 9px; color: var(--ink-muted); }
+.copy-block.copied { border-left-color: var(--green); background: var(--green-bg); }
+.copy-block.copied::after { content: '已复制 ✓'; position: absolute; right: 12px; top: 12px; font-family: var(--mono); font-size: 9px; color: var(--green); }
+
+/* ERROR */
+.error-card { border: 1px solid #e8c4b8; background: #fdf5f3; border-radius: 2px; padding: 1.25rem 1.5rem; margin-bottom: 1rem; }
+.error-title { font-family: var(--mono); font-size: 10px; letter-spacing: 0.15em; color: var(--accent); margin-bottom: 6px; text-transform: uppercase; }
+.error-msg { font-size: 14px; color: var(--ink-soft); line-height: 1.6; }
+
+/* FOOTER */
+footer { text-align: center; border-top: 1px solid var(--border); padding: 2rem 0; font-family: var(--mono); font-size: 10px; letter-spacing: 0.12em; color: var(--ink-muted); }
+footer em { color: var(--gold); font-style: normal; }
+
+@media (max-width: 540px) {
+  .form-grid { grid-template-columns: 1fr; }
+  .steps { gap: 0; }
+  .step-label { display: none; }
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="container">
+    <div class="logo-line">XHS Viral Copywriting Studio</div>
+    <h1>小红书爆文仿写器</h1>
+    <div class="tagline">深度分析结构 · 精准仿写套路</div>
+  </div>
+</header>
+
+<main>
+  <div class="container">
+
+    <!-- PROGRESS STEPS -->
+    <div class="steps" id="steps">
+      <div class="step active" id="step1">
+        <div class="step-num">1</div>
+        <div class="step-label">输入爆文</div>
+      </div>
+      <div class="step-line"></div>
+      <div class="step" id="step2">
+        <div class="step-num">2</div>
+        <div class="step-label">深度分析</div>
+      </div>
+      <div class="step-line"></div>
+      <div class="step" id="step3">
+        <div class="step-num">3</div>
+        <div class="step-label">填入产品</div>
+      </div>
+      <div class="step-line"></div>
+      <div class="step" id="step4">
+        <div class="step-num">4</div>
+        <div class="step-label">生成仿写</div>
+      </div>
+    </div>
+
+    <!-- ===== STEP 1: INPUT ===== -->
+    <div class="divider"><span>Step 01 · 输入爆文</span></div>
+
+    <div class="input-toggle">
+      <button class="toggle-btn active" onclick="switchInput('text')">文字粘贴</button>
+      <button class="toggle-btn" onclick="switchInput('image')">截图上传</button>
+    </div>
+
+    <!-- Text input -->
+    <div class="input-panel active" id="panel-text">
+      <div class="field">
+        <label>爆文内容（标题 + 正文全部粘贴进来）</label>
+        <textarea id="viral-text" placeholder="把小红书爆文的标题和正文全部粘贴在这里...
+
+例如：
+【标题】我在墨尔本发现了一个秘密...
+【正文】三年前我还是一个..."></textarea>
+      </div>
+    </div>
+
+    <!-- Image input -->
+    <div class="input-panel" id="panel-image">
+      <div class="upload-zone" id="uploadZone" onclick="document.getElementById('imageInput').click()">
+        <input type="file" id="imageInput" accept="image/*" onchange="handleImage(event)" />
+        <span class="upload-icon">📷</span>
+        <div class="upload-text">点击上传截图，或拖拽图片到此处</div>
+        <div class="upload-hint">支持 JPG / PNG / WEBP · 建议截取完整的帖子内容</div>
+        <img class="preview-img" id="previewImg" />
+      </div>
+      <div class="remove-img" id="removeBtn" onclick="removeImage()">✕ 重新上传</div>
+    </div>
+
+    <button class="action-btn" id="analyzeBtn" onclick="analyze()">分析爆文结构 →</button>
+
+    <div class="loading" id="a-loading"><div class="loading-text">正在深度分析爆文结构</div></div>
+
+    <!-- ===== STEP 2: ANALYSIS ===== -->
+    <div class="analysis-section" id="analysisSection">
+      <div class="divider"><span>Step 02 · 深度分析报告</span></div>
+      <div id="analysisContent"></div>
+      <button class="action-btn" style="margin-top:0.5rem;" onclick="scrollToProduct()">用这个结构仿写我的产品 →</button>
+    </div>
+
+    <!-- ===== STEP 3: PRODUCT INFO ===== -->
+    <div class="product-section" id="productSection">
+      <div class="divider"><span>Step 03 · 填入你的产品信息</span></div>
+
+      <div class="form-grid">
+        <div class="field">
+          <label>产品名称</label>
+          <input type="text" id="p-product" placeholder="例：澳洲精品咖啡随行杯" />
+        </div>
+        <div class="field">
+          <label>价格区间</label>
+          <input type="text" id="p-price" placeholder="例：250 元人民币" />
+        </div>
+      </div>
+      <div class="form-grid">
+        <div class="field">
+          <label>目标人群</label>
+          <input type="text" id="p-audience" placeholder="例：35岁女性，中高端消费" />
+        </div>
+        <div class="field">
+          <label>核心卖点</label>
+          <input type="text" id="p-feature" placeholder="例：澳洲工艺，精品保温" />
+        </div>
+      </div>
+      <div class="form-full field">
+        <label>品牌理念 / 关键词</label>
+        <input type="text" id="p-brand" placeholder="例：Don't rush the good stuff，慢下来享受生活" />
+      </div>
+      <div class="form-full field">
+        <label>补充说明（选填）</label>
+        <input type="text" id="p-extra" placeholder="例：希望语气更温柔、加入个人故事感、突出澳洲背景..." />
+      </div>
+
+      <button class="action-btn" id="rewriteBtn" onclick="rewrite()">按爆文结构生成仿写 →</button>
+
+      <div class="loading" id="r-loading"><div class="loading-text">正在按爆文结构仿写</div></div>
+    </div>
+
+    <!-- ===== STEP 4: REWRITE ===== -->
+    <div class="rewrite-section" id="rewriteSection">
+      <div class="divider"><span>Step 04 · 仿写结果</span></div>
+      <div id="rewriteContent"></div>
+      <button class="action-btn secondary" onclick="resetAll()">↩ 重新开始，换一篇爆文</button>
+    </div>
+
+  </div>
+</main>
+
+<footer>
+  <div class="container">小红书爆文仿写器 · Powered by <em>Claude AI</em></div>
+</footer>
+
+<script>
+// ================================================
+// API Key 已安全存放在 Vercel 环境变量中，代码里无需填写
+// ================================================
+
+let currentImageBase64 = null;
+let analysisResult = null;
+let inputMode = 'text';
+
+// ===== UI HELPERS =====
+function switchInput(mode) {
+  inputMode = mode;
+  document.querySelectorAll('.toggle-btn').forEach((b, i) => {
+    b.classList.toggle('active', (mode === 'text' && i === 0) || (mode === 'image' && i === 1));
+  });
+  document.getElementById('panel-text').classList.toggle('active', mode === 'text');
+  document.getElementById('panel-image').classList.toggle('active', mode === 'image');
+}
+
+function setStep(n) {
+  for (let i = 1; i <= 4; i++) {
+    const el = document.getElementById('step' + i);
+    el.classList.remove('active', 'done');
+    if (i < n) el.classList.add('done');
+    if (i === n) el.classList.add('active');
+  }
+}
+
+function handleImage(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (ev) => {
+    currentImageBase64 = ev.target.result.split(',')[1];
+    document.getElementById('previewImg').src = ev.target.result;
+    document.getElementById('previewImg').classList.add('show');
+    document.getElementById('removeBtn').classList.add('show');
+    document.getElementById('uploadZone').classList.add('has-image');
+  };
+  reader.readAsDataURL(file);
+}
+
+function removeImage() {
+  currentImageBase64 = null;
+  document.getElementById('previewImg').classList.remove('show');
+  document.getElementById('removeBtn').classList.remove('show');
+  document.getElementById('uploadZone').classList.remove('has-image');
+  document.getElementById('imageInput').value = '';
+}
+
+function scrollToProduct() {
+  document.getElementById('productSection').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function resetAll() {
+  document.getElementById('viral-text').value = '';
+  removeImage();
+  document.getElementById('analysisSection').classList.remove('show');
+  document.getElementById('productSection').classList.remove('show');
+  document.getElementById('rewriteSection').classList.remove('show');
+  document.getElementById('analysisContent').innerHTML = '';
+  document.getElementById('rewriteContent').innerHTML = '';
+  analysisResult = null;
+  setStep(1);
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function copyBlock(el, text) {
+  navigator.clipboard.writeText(text).then(() => {
+    el.classList.add('copied');
+    setTimeout(() => el.classList.remove('copied'), 2000);
+  });
+}
+
+function checkKey() {
+  return true; // Key 由服务器管理，前端无需检查
+}
+
+// ===== CLAUDE API（通过自己的中转站，不暴露 Key）=====
+async function callClaude(messages) {
+  const res = await fetch('/api/claude', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      model: 'claude-haiku-4-5-20251001',
+      max_tokens: 4000,
+      messages,
+    }),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(`API 错误 ${res.status}：${err.error?.message || res.statusText}`);
+  }
+  const data = await res.json();
+  return data.content.map(i => i.text || '').join('');
+}
+
+// 强力 JSON 提取：从 AI 返回的任意文字中精准抠出 JSON
+function extractJSON(text) {
+  let t = text.replace(/```json/gi, '').replace(/```/g, '').trim();
+  // 找到第一个 { 和最后一个 }，截取中间部分
+  const first = t.indexOf('{');
+  const last = t.lastIndexOf('}');
+  if (first === -1 || last === -1 || last < first) {
+    throw new Error('AI 返回的内容里没有找到有效的 JSON 数据，请重试');
+  }
+  t = t.slice(first, last + 1);
+  return JSON.parse(t);
+}
+
+// ===== STEP 1 → 2: ANALYZE =====
+async function analyze() {
+  if (!checkKey()) return;
+
+  let userContent;
+
+  if (inputMode === 'text') {
+    const text = document.getElementById('viral-text').value.trim();
+    if (!text) { alert('请先粘贴爆文内容'); return; }
+    userContent = text;
+  } else {
+    if (!currentImageBase64) { alert('请先上传截图'); return; }
+    userContent = [
+      { type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: currentImageBase64 } },
+      { type: 'text', text: '请分析这张小红书帖子截图中的爆文内容。' }
+    ];
+  }
+
+  const btn = document.getElementById('analyzeBtn');
+  btn.disabled = true;
+  document.getElementById('a-loading').classList.add('show');
+
+  const systemPrompt = `你是一位顶级小红书内容策略专家，精通爆文结构拆解。
+
+请深度分析这篇小红书爆文。严格按下面的纯文本格式输出，不要用JSON，不要用代码块，每一项用"标记：内容"的形式，一项一行：
+
+【标题类型】填写标题钩子类型（如悬念型/数字型/对比型/痛点型/故事型）
+【标题公式】填写标题公式（如 [数字]+[结果]+[反转]）
+【标题分析】填写为什么这个标题能吸引点击
+【开头结构】填写开头结构类型（如场景代入/痛点共鸣/故事引入/结论前置）
+【钩子方法】填写具体钩住读者的方法
+【第一句公式】填写第一句话的写法公式
+【正文结构】填写正文结构（如问题-解决-结果/故事线/对比法）
+【情绪节奏】填写情绪如何推进
+【核心技巧】填写写作技巧，多个技巧用、分隔
+【结尾类型】填写结尾CTA类型（如互动引导/福利诱导/情感共鸣）
+【结尾公式】填写结尾公式
+【整体公式】用一句话总结整篇爆文的套路
+【语气风格】填写语气风格特点（如闺蜜聊天/专业种草/真实分享）
+【爆火原因】填写为什么这篇能爆，2-3条原因用、分隔`;
+
+  const messages = typeof userContent === 'string'
+    ? [{ role: 'user', content: systemPrompt + '\n\n爆文内容：\n' + userContent }]
+    : [{ role: 'user', content: [
+        ...(Array.isArray(userContent) ? userContent : [{ type: 'text', text: userContent }]),
+        { type: 'text', text: '\n\n' + systemPrompt }
+      ]}];
+
+  try {
+    const text = await callClaude(messages);
+    analysisResult = parseAnalysisText(text);
+
+    document.getElementById('a-loading').classList.remove('show');
+    setStep(2);
+    renderAnalysis(analysisResult);
+    document.getElementById('analysisSection').classList.add('show');
+    document.getElementById('productSection').classList.add('show');
+    setTimeout(() => {
+      document.getElementById('analysisSection').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 100);
+  } catch (err) {
+    document.getElementById('a-loading').classList.remove('show');
+    document.getElementById('analysisSection').classList.add('show');
+    document.getElementById('analysisContent').innerHTML = `<div class="error-card"><div class="error-title">分析失败</div><div class="error-msg">${err.message}</div></div>`;
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+// 解析分隔符格式的分析结果，返回与原 JSON 相同的结构
+function parseAnalysisText(text) {
+  function grab(label) {
+    const m = text.match(new RegExp('【' + label + '】\\s*(.+)'));
+    return m ? m[1].trim() : '';
+  }
+  const techStr = grab('核心技巧');
+  const viralStr = grab('爆火原因');
+  return {
+    title_hook: {
+      type: grab('标题类型') || '未识别',
+      formula: grab('标题公式') || '—',
+      analysis: grab('标题分析') || '—',
+    },
+    opening: {
+      structure: grab('开头结构') || '未识别',
+      hook_method: grab('钩子方法') || '—',
+      first_sentence_formula: grab('第一句公式') || '—',
+    },
+    body: {
+      content_structure: grab('正文结构') || '未识别',
+      emotion_rhythm: grab('情绪节奏') || '—',
+      key_techniques: techStr ? techStr.split(/[、，,]/).map(s => s.trim()).filter(s => s) : [],
+    },
+    ending: {
+      cta_type: grab('结尾类型') || '未识别',
+      cta_formula: grab('结尾公式') || '—',
+    },
+    overall_formula: grab('整体公式') || '—',
+    tone_style: grab('语气风格') || '—',
+    why_viral: viralStr ? viralStr.split(/[、，,]/).map(s => s.trim()).filter(s => s) : [],
+  };
+}
+
+function renderAnalysis(r) {
+  const container = document.getElementById('analysisContent');
+  container.innerHTML = '';
+
+  // Overall formula card
+  const overallCard = document.createElement('div');
+  overallCard.className = 'analysis-card';
+  overallCard.style.animationDelay = '0s';
+  overallCard.innerHTML = `
+    <div class="card-header">
+      <span class="badge badge-gold">爆文公式</span>
+      <span class="card-subtitle">${r.overall_formula}</span>
+    </div>
+    <div class="analysis-item">
+      <div class="analysis-label">语气风格</div>
+      <div class="analysis-value">${r.tone_style}</div>
+    </div>
+    <div class="analysis-item" style="margin-bottom:0">
+      <div class="analysis-label">爆火原因</div>
+      ${(r.why_viral || []).map(w => `<div class="analysis-value" style="margin-bottom:6px">${w}</div>`).join('')}
+    </div>`;
+  container.appendChild(overallCard);
+
+  // Title hook card
+  const titleCard = document.createElement('div');
+  titleCard.className = 'analysis-card';
+  titleCard.style.animationDelay = '0.08s';
+  titleCard.innerHTML = `
+    <div class="card-header">
+      <span class="badge badge-red">标题钩子</span>
+      <span class="card-subtitle">${r.title_hook.type}</span>
+    </div>
+    <div class="formula-box"><div class="formula-text">公式：${r.title_hook.formula}</div></div>
+    <div class="analysis-item" style="margin-top:12px;margin-bottom:0">
+      <div class="analysis-value">${r.title_hook.analysis}</div>
+    </div>`;
+  container.appendChild(titleCard);
+
+  // Opening card
+  const openCard = document.createElement('div');
+  openCard.className = 'analysis-card';
+  openCard.style.animationDelay = '0.16s';
+  openCard.innerHTML = `
+    <div class="card-header">
+      <span class="badge badge-purple">开头结构</span>
+      <span class="card-subtitle">${r.opening.structure}</span>
+    </div>
+    <div class="analysis-item">
+      <div class="analysis-label">钩子方法</div>
+      <div class="analysis-value">${r.opening.hook_method}</div>
+    </div>
+    <div class="analysis-item" style="margin-bottom:0">
+      <div class="analysis-label">第一句公式</div>
+      <div class="formula-box"><div class="formula-text">${r.opening.first_sentence_formula}</div></div>
+    </div>`;
+  container.appendChild(openCard);
+
+  // Body card
+  const bodyCard = document.createElement('div');
+  bodyCard.className = 'analysis-card';
+  bodyCard.style.animationDelay = '0.24s';
+  bodyCard.innerHTML = `
+    <div class="card-header">
+      <span class="badge badge-gold">正文结构</span>
+      <span class="card-subtitle">${r.body.content_structure}</span>
+    </div>
+    <div class="analysis-item">
+      <div class="analysis-label">情绪节奏</div>
+      <div class="analysis-value">${r.body.emotion_rhythm}</div>
+    </div>
+    <div class="analysis-item" style="margin-bottom:0">
+      <div class="analysis-label">核心技巧</div>
+      ${(r.body.key_techniques || []).map(t => `<div class="analysis-value" style="margin-bottom:6px">· ${t}</div>`).join('')}
+    </div>`;
+  container.appendChild(bodyCard);
+
+  // CTA card
+  const ctaCard = document.createElement('div');
+  ctaCard.className = 'analysis-card';
+  ctaCard.style.animationDelay = '0.32s';
+  ctaCard.innerHTML = `
+    <div class="card-header">
+      <span class="badge badge-green">结尾 CTA</span>
+      <span class="card-subtitle">${r.ending.cta_type}</span>
+    </div>
+    <div class="formula-box"><div class="formula-text">公式：${r.ending.cta_formula}</div></div>`;
+  container.appendChild(ctaCard);
+}
+
+// ===== STEP 3 → 4: REWRITE =====
+async function rewrite() {
+  if (!checkKey()) return;
+  if (!analysisResult) { alert('请先完成爆文分析'); return; }
+
+  const product  = document.getElementById('p-product').value.trim();
+  const price    = document.getElementById('p-price').value.trim();
+  const audience = document.getElementById('p-audience').value.trim();
+  const feature  = document.getElementById('p-feature').value.trim();
+  const brand    = document.getElementById('p-brand').value.trim();
+  const extra    = document.getElementById('p-extra').value.trim();
+
+  if (!product) { alert('请至少填写产品名称'); return; }
+
+  const btn = document.getElementById('rewriteBtn');
+  btn.disabled = true;
+  document.getElementById('r-loading').classList.add('show');
+  setStep(3);
+
+  const r = analysisResult;
+  const prompt = `你是顶级小红书文案专家。请严格按照以下爆文结构公式，为我的产品仿写3个不同版本的完整小红书帖子。
+
+【爆文结构公式】
+- 整体公式：${r.overall_formula}
+- 语气风格：${r.tone_style}
+- 标题类型：${r.title_hook.type}，公式：${r.title_hook.formula}
+- 开头结构：${r.opening.structure}，第一句公式：${r.opening.first_sentence_formula}
+- 正文结构：${r.body.content_structure}
+- 情绪节奏：${r.body.emotion_rhythm}
+- 核心技巧：${(r.body.key_techniques || []).join('、')}
+- 结尾CTA：${r.ending.cta_type}，公式：${r.ending.cta_formula}
+
+【我的产品信息】
+- 产品：${product}
+- 价格：${price || '未提供'}
+- 目标人群：${audience || '未提供'}
+- 核心卖点：${feature || '未提供'}
+- 品牌理念：${brand || '未提供'}
+- 补充要求：${extra || '无'}
+
+要求：
+1. 严格复刻爆文的结构套路，但内容完全换成我的产品
+2. 三个版本风格略有差异（情感故事版 / 干货种草版 / 闺蜜推荐版）
+3. 每个版本包含：标题 + 完整正文（有换行、有节奏感、有emoji）
+4. 结尾必须有互动引导
+
+【输出格式】严格按下面的纯文本格式输出，不要用JSON，不要用代码块。三个版本之间用一行 ===== 分隔。每个版本严格按以下三行标记格式：
+
+【风格】这里写版本风格名称
+【标题】这里写标题
+【正文】
+这里写完整正文，可以多行，可以有emoji
+=====
+【风格】第二个版本风格
+【标题】第二个标题
+【正文】
+第二个版本的正文
+=====
+【风格】第三个版本风格
+【标题】第三个标题
+【正文】
+第三个版本的正文`;
+
+  try {
+    const text = await callClaude([{ role: 'user', content: prompt }]);
+    const versions = parseRewriteText(text);
+    if (versions.length === 0) throw new Error('未能解析出仿写内容，请重试');
+
+    document.getElementById('r-loading').classList.remove('show');
+    setStep(4);
+    renderRewrite(versions);
+    document.getElementById('rewriteSection').classList.add('show');
+    setTimeout(() => {
+      document.getElementById('rewriteSection').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 100);
+  } catch (err) {
+    document.getElementById('r-loading').classList.remove('show');
+    document.getElementById('rewriteSection').classList.add('show');
+    document.getElementById('rewriteContent').innerHTML = `<div class="error-card"><div class="error-title">仿写失败</div><div class="error-msg">${err.message}</div></div>`;
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+// 解析分隔符格式的仿写结果
+function parseRewriteText(text) {
+  const blocks = text.split('=====').map(b => b.trim()).filter(b => b);
+  const versions = [];
+  blocks.forEach(block => {
+    const styleMatch = block.match(/【风格】\s*(.+)/);
+    const titleMatch = block.match(/【标题】\s*(.+)/);
+    const bodyMatch = block.match(/【正文】\s*([\s\S]+)/);
+    if (titleMatch && bodyMatch) {
+      versions.push({
+        style: styleMatch ? styleMatch[1].trim() : '仿写版本',
+        title: titleMatch[1].trim(),
+        body: bodyMatch[1].trim(),
+      });
+    }
+  });
+  return versions;
+}
+
+function renderRewrite(versions) {
+  const container = document.getElementById('rewriteContent');
+  container.innerHTML = '';
+  versions.forEach((v, i) => {
+    const fullText = `${v.title}\n\n${v.body}`;
+    const card = document.createElement('div');
+    card.className = 'rewrite-card';
+    card.style.animationDelay = (i * 0.1) + 's';
+    const safeText = fullText.replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/\n/g, '\\n');
+    card.innerHTML = `
+      <div class="card-header">
+        <span class="badge badge-purple">版本 ${i + 1}</span>
+        <span class="card-subtitle">${v.style}</span>
+      </div>
+      <div style="margin-bottom:0.75rem;">
+        <div class="analysis-label">标题</div>
+        <div style="font-size:16px;font-weight:600;color:var(--ink);padding:8px 0 0 12px;border-left:2px solid var(--accent)">${v.title}</div>
+      </div>
+      <div>
+        <div class="analysis-label">正文</div>
+        <div class="copy-block" onclick="copyBlock(this, '${safeText}')">${v.body.replace(/\n/g, '<br>')}</div>
+      </div>`;
+    container.appendChild(card);
+  });
+}
+</script>
+</body>
+</html>
