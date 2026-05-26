@@ -206,6 +206,7 @@ footer em { color: var(--gold); font-style: normal; }
 </style>
 </head>
 <body>
+<script>(function(){if(!localStorage.getItem('brand_auth_token'))window.location.replace('/login.html');})()</script>
 
 <nav class="top-nav">
   <div class="top-nav-inner">
@@ -214,6 +215,10 @@ footer em { color: var(--gold); font-style: normal; }
       <a class="top-nav-link" href="brand.html">品牌管理</a>
       <a class="top-nav-link" href="index.html">文案生成</a>
       <a class="top-nav-link active" href="fangxie.html">爆文仿写</a>
+    </div>
+    <div style="display:flex;align-items:center;gap:4px;">
+      <span id="navUserName" style="font-family:var(--mono);font-size:10px;color:rgba(255,255,255,0.35);letter-spacing:0.1em;padding:0 4px;"></span>
+      <button onclick="logout()" style="font-family:var(--mono);font-size:10px;letter-spacing:0.12em;text-transform:uppercase;color:rgba(255,255,255,0.5);background:transparent;border:none;cursor:pointer;padding:5px 10px;border-radius:2px;transition:all 0.15s;" onmouseover="this.style.color='white';this.style.background='rgba(255,255,255,0.1)'" onmouseout="this.style.color='rgba(255,255,255,0.5)';this.style.background='transparent'">退出</button>
     </div>
   </div>
 </nav>
@@ -1007,15 +1012,17 @@ ${brandContext ? `【品牌档案（写作时严格遵守）】\n${brandContext}
 function checkKey() { return true; } // Key 由服务器环境变量管理
 
 async function callClaude(messages) {
+  const token = localStorage.getItem('brand_auth_token') || '';
   const res = await fetch('/api/claude', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
     body: JSON.stringify({
       model: 'claude-haiku-4-5-20251001',
       max_tokens: 4000,
       messages,
     }),
   });
+  if (res.status === 401 || res.status === 403) { logout(); return ''; }
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
     throw new Error(`API 错误 ${res.status}：${err.error?.message || res.statusText}`);
@@ -1659,6 +1666,17 @@ function renderRewrite(versions) {
   const context = activeBrand ? `品牌：${activeBrand.name}` : '';
   versions.forEach((v, i) => renderVersionCard(container, v, i, context));
 }
+
+// ── 登录状态 ──
+function logout() {
+  ['brand_auth_token','brand_user_name','brand_user_role'].forEach(k => localStorage.removeItem(k));
+  window.location.replace('/login.html');
+}
+document.addEventListener('DOMContentLoaded', function() {
+  const name = localStorage.getItem('brand_user_name');
+  const el = document.getElementById('navUserName');
+  if (el && name) el.textContent = name;
+});
 
 // 初始化品牌选择器
 initBrandBar();

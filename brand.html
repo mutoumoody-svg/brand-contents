@@ -389,6 +389,7 @@ header {
 </style>
 </head>
 <body>
+<script>(function(){if(!localStorage.getItem('brand_auth_token'))window.location.replace('/login.html');})()</script>
 
 <header>
   <div class="header-inner">
@@ -399,6 +400,8 @@ header {
     <nav class="header-nav">
       <a class="nav-link" href="fangxie.html">爆文仿写</a>
       <a class="nav-link" href="index.html">文案生成</a>
+      <span id="navUserName" style="font-family:var(--mono);font-size:10px;color:rgba(255,255,255,0.35);letter-spacing:0.1em;padding:0 6px;"></span>
+      <button onclick="logout()" style="font-family:var(--mono);font-size:10px;letter-spacing:0.12em;text-transform:uppercase;color:rgba(255,255,255,0.5);background:transparent;border:none;cursor:pointer;padding:5px 10px;border-radius:2px;transition:all 0.15s;" onmouseover="this.style.color='white';this.style.background='rgba(255,255,255,0.1)'" onmouseout="this.style.color='rgba(255,255,255,0.5)';this.style.background='transparent'">退出</button>
     </nav>
   </div>
 </header>
@@ -1020,6 +1023,17 @@ if (brands.length > 0) {
 } else {
   document.getElementById('emptyState').style.display = 'flex';
 }
+
+// ── 登录状态 ──
+function logout() {
+  ['brand_auth_token','brand_user_name','brand_user_role'].forEach(k => localStorage.removeItem(k));
+  window.location.replace('/login.html');
+}
+document.addEventListener('DOMContentLoaded', function() {
+  const name = localStorage.getItem('brand_user_name');
+  const el = document.getElementById('navUserName');
+  if (el && name) el.textContent = name;
+});
 </script>
 </body>
 </html>

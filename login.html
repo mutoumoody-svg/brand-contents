@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>登录 · Brand Center</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@300;400;600&family=DM+Mono:wght@300;400&family=Playfair+Display:ital,wght@0,400;1,400&display=swap" rel="stylesheet"/>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --ink: #1a1814; --ink-soft: #4a4640; --ink-muted: #9a9590;
+  --cream: #f7f4ef; --cream-dark: #ede9e2;
+  --accent: #b87333; --accent-pale: #f5ede0;
+  --border: rgba(26,24,20,0.12); --border-strong: rgba(26,24,20,0.25);
+  --green: #5a9e6f; --green-bg: #f0f8f3;
+  --red: #c0392b; --red-bg: #fdf5f3; --red-border: #e8c4b8;
+  --serif: 'Noto Serif SC', Georgia, serif;
+  --mono: 'DM Mono', monospace;
+  --display: 'Playfair Display', serif;
+}
+body {
+  font-family: var(--serif);
+  background: var(--cream);
+  color: var(--ink);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+}
+.card {
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  padding: 2.5rem;
+  width: 100%;
+  max-width: 400px;
+}
+.logo {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+  margin-bottom: 8px;
+  text-align: center;
+}
+h1 {
+  font-family: var(--display);
+  font-size: 24px;
+  font-weight: 400;
+  font-style: italic;
+  text-align: center;
+  margin-bottom: 2rem;
+  color: var(--ink);
+}
+.field { margin-bottom: 1.5rem; }
+.field label {
+  display: block;
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  color: var(--ink-muted);
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+.field input {
+  width: 100%;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--border-strong);
+  font-family: var(--serif);
+  font-size: 15px;
+  color: var(--ink);
+  padding: 6px 0 8px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+.field input:focus { border-bottom-color: var(--accent); }
+.btn {
+  width: 100%;
+  padding: 14px;
+  background: var(--ink);
+  color: var(--cream);
+  border: none;
+  font-family: var(--mono);
+  font-size: 12px;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  cursor: pointer;
+  border-radius: 2px;
+  transition: background 0.2s;
+  margin-top: 0.5rem;
+}
+.btn:hover { background: #3a3630; }
+.btn:disabled { opacity: 0.45; cursor: not-allowed; }
+.msg {
+  border-radius: 2px;
+  padding: 10px 14px;
+  font-size: 13px;
+  margin-bottom: 1rem;
+  display: none;
+  line-height: 1.6;
+}
+.msg.error { background: var(--red-bg); border: 1px solid var(--red-border); color: var(--red); }
+.footer-link {
+  text-align: center;
+  margin-top: 1.5rem;
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  color: var(--ink-muted);
+}
+.footer-link a {
+  color: var(--ink-soft);
+  text-decoration: none;
+  border-bottom: 1px solid var(--border);
+}
+.footer-link a:hover { color: var(--ink); }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="logo">Brand Copywriting Studio</div>
+  <h1>登录</h1>
+  <div class="msg error" id="errorMsg"></div>
+  <div class="field">
+    <label>邮箱</label>
+    <input type="email" id="email" placeholder="your@email.com" autocomplete="email"/>
+  </div>
+  <div class="field">
+    <label>密码</label>
+    <input type="password" id="password" placeholder="••••••••" autocomplete="current-password"/>
+  </div>
+  <button class="btn" id="loginBtn" onclick="login()">登录 →</button>
+  <div class="footer-link" style="margin-top:1.25rem;">还没有账号？<a href="/register.html">申请注册</a></div>
+</div>
+
+<script>
+// 已登录则直接跳转
+if (localStorage.getItem('brand_auth_token')) window.location.replace('/index.html');
+
+document.getElementById('password').addEventListener('keydown', e => {
+  if (e.key === 'Enter') login();
+});
+
+async function login() {
+  const email    = document.getElementById('email').value.trim();
+  const password = document.getElementById('password').value;
+  const errEl    = document.getElementById('errorMsg');
+  const btn      = document.getElementById('loginBtn');
+  errEl.style.display = 'none';
+
+  if (!email || !password) {
+    errEl.textContent = '请填写邮箱和密码';
+    errEl.style.display = 'block';
+    return;
+  }
+
+  btn.disabled    = true;
+  btn.textContent = '登录中...';
+
+  try {
+    const res  = await fetch('/api/auth/login', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ email, password }),
+    });
+    const data = await res.json();
+
+    if (!res.ok) {
+      errEl.textContent    = data.error || '登录失败';
+      errEl.style.display  = 'block';
+      return;
+    }
+
+    localStorage.setItem('brand_auth_token', data.token);
+    localStorage.setItem('brand_user_name',  data.name);
+    localStorage.setItem('brand_user_role',  data.role);
+    window.location.replace('/index.html');
+  } catch {
+    errEl.textContent   = '网络错误，请重试';
+    errEl.style.display = 'block';
+  } finally {
+    btn.disabled    = false;
+    btn.textContent = '登录 →';
+  }
+}
+</script>
+</body>
+</html>
