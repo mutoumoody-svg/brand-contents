@@ -494,9 +494,20 @@ header {
             <div class="form-card-title" id="formTitle">新建品牌档案</div>
             <div class="form-card-subtitle">Brand Profile</div>
           </div>
+          <!-- 步骤指示器 -->
+          <div style="display:flex;align-items:center;gap:8px;margin-top:12px;">
+            <div id="stepDot1" style="width:24px;height:24px;border-radius:50%;background:var(--ink);color:var(--cream);font-family:var(--mono);font-size:11px;display:flex;align-items:center;justify-content:center;">1</div>
+            <div style="font-family:var(--mono);font-size:10px;letter-spacing:0.1em;" id="stepLabel1">基本信息</div>
+            <div style="flex:1;height:1px;background:var(--border);max-width:40px;"></div>
+            <div id="stepDot2" style="width:24px;height:24px;border-radius:50%;background:var(--border-strong);color:var(--ink-muted);font-family:var(--mono);font-size:11px;display:flex;align-items:center;justify-content:center;">2</div>
+            <div style="font-family:var(--mono);font-size:10px;letter-spacing:0.1em;color:var(--ink-muted);" id="stepLabel2">深度内容（可选）</div>
+          </div>
         </div>
 
         <div class="form-card-body">
+
+          <!-- ══ 第一步 ══ -->
+          <div id="formStep1">
 
           <!-- 1. 基本信息 -->
           <div class="form-section">
@@ -620,6 +631,11 @@ header {
             </div>
           </div>
 
+          </div><!-- /formStep1 -->
+
+          <!-- ══ 第二步 ══ -->
+          <div id="formStep2" style="display:none">
+
           <!-- 5. 品牌内涵 -->
           <div class="form-section">
             <div class="section-title">
@@ -692,11 +708,21 @@ header {
             </div>
           </div>
 
+          </div><!-- /formStep2 -->
+
         </div>
 
-        <div class="form-actions">
-          <button class="btn-primary" onclick="saveBrand()">保存品牌 →</button>
+        <!-- 第一步按钮 -->
+        <div class="form-actions" id="formActions1">
+          <button class="btn-primary" onclick="nextStep()">下一步 →</button>
           <button class="btn-secondary" onclick="cancelForm()">取消</button>
+          <button class="btn-secondary" onclick="saveStep1Only()" style="font-size:12px;color:var(--ink-muted);">直接保存</button>
+        </div>
+
+        <!-- 第二步按钮 -->
+        <div class="form-actions" id="formActions2" style="display:none">
+          <button class="btn-primary" onclick="saveBrand()">保存品牌 →</button>
+          <button class="btn-secondary" onclick="prevStep()">← 上一步</button>
           <button class="btn-danger" id="deleteBtn" onclick="deleteBrand()" style="display:none">删除品牌</button>
         </div>
 
@@ -733,6 +759,7 @@ let currentBrandId = null;
 let editingBrandId = null;
 let keywords = [];
 let forbidden = [];
+let _formStep = 1;  // 当前表单步骤
 
 // ── 从服务器加载品牌 ──
 async function loadBrandsFromServer() {
@@ -819,6 +846,100 @@ function showOrHide(wrapId, contentId, text) {
   else { wrap.style.display = 'none'; }
 }
 
+// ── 步骤切换 ──
+function showFormStep(n) {
+  _formStep = n;
+  document.getElementById('formStep1').style.display   = n === 1 ? '' : 'none';
+  document.getElementById('formStep2').style.display   = n === 2 ? '' : 'none';
+  document.getElementById('formActions1').style.display = n === 1 ? '' : 'none';
+  document.getElementById('formActions2').style.display = n === 2 ? '' : 'none';
+  // 步骤指示器样式
+  const d1 = document.getElementById('stepDot1');
+  const d2 = document.getElementById('stepDot2');
+  const l2 = document.getElementById('stepLabel2');
+  if (n === 1) {
+    d1.style.background = 'var(--ink)'; d1.style.color = 'var(--cream)';
+    d2.style.background = 'var(--border-strong)'; d2.style.color = 'var(--ink-muted)';
+    l2.style.color = 'var(--ink-muted)';
+  } else {
+    d1.style.background = 'var(--green)'; d1.style.color = 'white';
+    d2.style.background = 'var(--ink)'; d2.style.color = 'var(--cream)';
+    l2.style.color = 'var(--ink)';
+  }
+}
+
+// 收集第一步表单数据
+function collectFormData() {
+  return {
+    name:          document.getElementById('f-name').value.trim(),
+    slogan:        document.getElementById('f-slogan').value.trim(),
+    industry:      document.getElementById('f-industry').value,
+    price:         document.getElementById('f-price').value,
+    age:           document.getElementById('f-age').value.trim(),
+    gender:        document.getElementById('f-gender').value,
+    audience:      document.getElementById('f-audience').value.trim(),
+    tones:         [...document.querySelectorAll('.tone-pill.selected')].map(p => p.textContent),
+    keywords:      [...keywords],
+    forbidden:     [...forbidden],
+    value:         document.getElementById('f-value').value.trim(),
+    story:         document.getElementById('f-story').value.trim(),
+    sample:        document.getElementById('f-sample').value.trim(),
+    concern:       document.getElementById('f-concern').value.trim(),
+    afterbuy:      document.getElementById('f-afterbuy').value.trim(),
+    consumerVoice: document.getElementById('f-consumer-voice').value.trim(),
+    trigger:       document.getElementById('f-trigger').value.trim(),
+    share:         document.getElementById('f-share').value.trim(),
+  };
+}
+
+// 下一步（保存第一步数据到服务器，进入第二步）
+async function nextStep() {
+  const data = collectFormData();
+  if (!data.name) { alert('请填写品牌名称'); return; }
+  const btn = document.querySelector('#formActions1 .btn-primary');
+  btn.textContent = '保存中...'; btn.disabled = true;
+  try {
+    if (editingBrandId) {
+      await authFetch(`/api/brands/${editingBrandId}`, { method: 'PUT', body: JSON.stringify(data) });
+    } else {
+      const res = await authFetch('/api/brands', { method: 'POST', body: JSON.stringify(data) });
+      const json = await res.json();
+      editingBrandId = json.id;
+    }
+    await loadBrandsFromServer();
+    currentBrandId = editingBrandId;
+    renderSidebar();
+    showFormStep(2);
+  } catch (e) {
+    showToast('保存失败，请重试');
+  } finally {
+    btn.textContent = '下一步 →'; btn.disabled = false;
+  }
+}
+
+// 直接保存（只保存第一步，不进入第二步）
+async function saveStep1Only() {
+  const data = collectFormData();
+  if (!data.name) { alert('请填写品牌名称'); return; }
+  if (editingBrandId) {
+    await authFetch(`/api/brands/${editingBrandId}`, { method: 'PUT', body: JSON.stringify(data) });
+  } else {
+    const res = await authFetch('/api/brands', { method: 'POST', body: JSON.stringify(data) });
+    const json = await res.json();
+    editingBrandId = json.id;
+  }
+  await loadBrandsFromServer();
+  const savedId = editingBrandId;
+  editingBrandId = null;
+  currentBrandId = savedId;
+  if (brands.length === 1) setActiveBrandId(savedId);
+  showToast('品牌已保存 ✓');
+  viewBrand(savedId);
+}
+
+// 上一步
+function prevStep() { showFormStep(1); }
+
 // ── NEW / EDIT / CANCEL ──
 function newBrand() {
   editingBrandId = null;
@@ -826,6 +947,7 @@ function newBrand() {
   document.getElementById('formTitle').textContent = '新建品牌档案';
   document.getElementById('deleteBtn').style.display = 'none';
   clearForm();
+  showFormStep(1);
   document.getElementById('emptyState').style.display = 'none';
   document.getElementById('brandView').classList.remove('show');
   document.getElementById('brandForm').classList.add('show');
@@ -839,6 +961,7 @@ function editBrand() {
   document.getElementById('formTitle').textContent = '编辑品牌档案';
   document.getElementById('deleteBtn').style.display = 'block';
   fillForm(b);
+  showFormStep(1);
   document.getElementById('brandView').classList.remove('show');
   document.getElementById('brandForm').classList.add('show');
 }
@@ -892,53 +1015,22 @@ function fillForm(b) {
   renderKeywords(); renderForbidden();
 }
 
-// ── SAVE ──
+// ── SAVE（第二步完整保存）──
 async function saveBrand() {
-  const name = document.getElementById('f-name').value.trim();
-  if (!name) { alert('请填写品牌名称'); return; }
+  const data = collectFormData();
+  if (!data.name) { alert('请填写品牌名称'); return; }
 
-  const tones = [...document.querySelectorAll('.tone-pill.selected')].map(p => p.textContent);
-  const data = {
-    name,
-    slogan:        document.getElementById('f-slogan').value.trim(),
-    industry:      document.getElementById('f-industry').value,
-    price:         document.getElementById('f-price').value,
-    age:           document.getElementById('f-age').value.trim(),
-    gender:        document.getElementById('f-gender').value,
-    audience:      document.getElementById('f-audience').value.trim(),
-    tones,
-    keywords:      [...keywords],
-    forbidden:     [...forbidden],
-    value:         document.getElementById('f-value').value.trim(),
-    story:         document.getElementById('f-story').value.trim(),
-    sample:        document.getElementById('f-sample').value.trim(),
-    concern:       document.getElementById('f-concern').value.trim(),
-    afterbuy:      document.getElementById('f-afterbuy').value.trim(),
-    consumerVoice: document.getElementById('f-consumer-voice').value.trim(),
-    trigger:       document.getElementById('f-trigger').value.trim(),
-    share:         document.getElementById('f-share').value.trim(),
-  };
-
-  let savedId = editingBrandId;
-  if (editingBrandId) {
-    const res = await authFetch(`/api/brands/${editingBrandId}`, {
-      method: 'PUT', body: JSON.stringify(data),
-    });
-    if (!res.ok) { showToast('保存失败'); return; }
-  } else {
-    const res = await authFetch('/api/brands', {
-      method: 'POST', body: JSON.stringify(data),
-    });
-    if (!res.ok) { showToast('保存失败'); return; }
-    const json = await res.json();
-    savedId = json.id;
-  }
+  // editingBrandId 在 nextStep() 里已经设好；如果从编辑直接跳到第二步也有值
+  const res = await authFetch(`/api/brands/${editingBrandId}`, {
+    method: 'PUT', body: JSON.stringify(data),
+  });
+  if (!res.ok) { showToast('保存失败'); return; }
 
   await loadBrandsFromServer();
+  const savedId = editingBrandId;
   currentBrandId = savedId;
   editingBrandId = null;
 
-  // 如果是第一个品牌，自动设为当前品牌
   if (brands.length === 1) setActiveBrandId(savedId);
 
   showToast('品牌已保存 ✓');
