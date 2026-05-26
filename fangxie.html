@@ -40,18 +40,24 @@ body { font-family: var(--serif); background: var(--cream); color: var(--ink); m
 .brand-bar-clear { font-family: var(--mono); font-size: 10px; color: var(--ink-muted); background: transparent; border: none; cursor: pointer; padding: 4px 8px; }
 .brand-bar-clear:hover { color: var(--ink); }
 
-/* HISTORY PANEL */
-.history-toggle { display:flex; align-items:center; justify-content:space-between; padding:12px 16px; background:var(--cream-dark); border:1px solid var(--border); border-radius:2px; cursor:pointer; margin-bottom:8px; transition:background 0.15s; }
-.history-toggle:hover { background:var(--cream-mid,#e5e0d8); }
-.history-toggle-label { font-family:var(--mono); font-size:11px; letter-spacing:0.15em; text-transform:uppercase; color:var(--ink-soft); display:flex; align-items:center; gap:8px; }
-.history-count { background:var(--ink); color:var(--cream); font-family:var(--mono); font-size:10px; padding:2px 8px; border-radius:20px; }
-.history-toggle-arrow { font-family:var(--mono); font-size:12px; color:var(--ink-muted); transition:transform 0.2s; }
-.history-toggle.open .history-toggle-arrow { transform:rotate(180deg); }
-.history-panel { display:none; border:1px solid var(--border); border-radius:2px; overflow:hidden; margin-bottom:2rem; }
-.history-panel.open { display:block; }
-.history-empty { padding:2rem; text-align:center; font-family:var(--mono); font-size:11px; color:var(--ink-muted); letter-spacing:0.1em; }
-.history-item { border-bottom:1px solid var(--border); padding:1rem 1.25rem; background:white; }
+/* HISTORY TOOLBAR */
+.history-toolbar { display:none; align-items:center; justify-content:space-between; padding:10px 16px; background:#edf4fa; border-bottom:1px solid #b8d4e8; }
+.history-toolbar.show { display:flex; }
+.history-toolbar-left { display:flex; align-items:center; gap:10px; }
+.history-toolbar-selected { font-family:var(--mono); font-size:11px; color:#2c5f8a; letter-spacing:0.08em; }
+.history-toolbar-right { display:flex; gap:8px; }
+.toolbar-btn { font-family:var(--mono); font-size:10px; letter-spacing:0.1em; padding:6px 14px; border-radius:2px; cursor:pointer; transition:all 0.15s; }
+.toolbar-btn-export { background:var(--ink); color:var(--cream); border:none; }
+.toolbar-btn-export:hover { background:var(--ink-soft); }
+.toolbar-btn-cancel { background:transparent; color:var(--ink-muted); border:1px solid var(--border-strong); }
+.toolbar-btn-cancel:hover { background:var(--cream-dark); color:var(--ink); }
+
+/* HISTORY ITEM CHECKBOX */
+.history-item { border-bottom:1px solid var(--border); padding:1rem 1.25rem; background:white; display:flex; gap:12px; align-items:flex-start; transition:background 0.15s; }
+.history-item.selected { background:#f0f8ff; }
 .history-item:last-child { border-bottom:none; }
+.history-checkbox { width:16px; height:16px; margin-top:3px; cursor:pointer; flex-shrink:0; accent-color:var(--ink); }
+.history-item-content { flex:1; min-width:0; }
 .history-item-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:8px; }
 .history-item-meta { display:flex; align-items:center; gap:8px; }
 .history-item-tag { font-family:var(--mono); font-size:9px; letter-spacing:0.1em; background:var(--tag-bg); color:var(--tag-color); padding:2px 8px; border-radius:20px; }
@@ -61,12 +67,12 @@ body { font-family: var(--serif); background: var(--cream); color: var(--ink); m
 .history-action-btn:hover { background:var(--cream-dark); color:var(--ink); }
 .history-action-btn.del:hover { border-color:#e8c4b8; color:var(--red,#c0392b); background:#fdf5f3; }
 .history-item-title { font-size:14px; font-weight:600; color:var(--ink); margin-bottom:6px; }
-.history-item-body { font-size:13px; color:var(--ink-soft); line-height:1.7; max-height:80px; overflow:hidden; position:relative; cursor:pointer; }
-.history-item-body::after { content:''; position:absolute; bottom:0; left:0; right:0; height:24px; background:linear-gradient(transparent,white); }
+.history-item-body { font-size:13px; color:var(--ink-soft); line-height:1.7; max-height:72px; overflow:hidden; position:relative; cursor:pointer; }
+.history-item-body::after { content:'点击展开'; position:absolute; bottom:0; left:0; right:0; height:28px; background:linear-gradient(transparent,white); display:flex; align-items:flex-end; padding-bottom:2px; font-family:var(--mono); font-size:9px; color:var(--ink-muted); }
 .history-item-body.expanded { max-height:none; }
 .history-item-body.expanded::after { display:none; }
-.history-clear-btn { width:100%; padding:10px; font-family:var(--mono); font-size:10px; letter-spacing:0.15em; text-transform:uppercase; border:none; background:var(--cream-dark); color:var(--ink-muted); cursor:pointer; border-top:1px solid var(--border); transition:all 0.15s; }
-.history-clear-btn:hover { color:var(--red,#c0392b); background:#fdf5f3; }
+.history-select-all-row { display:flex; align-items:center; gap:8px; padding:8px 16px; border-bottom:1px solid var(--border); background:var(--cream); }
+.history-select-all-label { font-family:var(--mono); font-size:10px; color:var(--ink-muted); letter-spacing:0.1em; cursor:pointer; }
 
 /* CONTINUE STYLE BUTTON */
 .continue-btn { display:inline-flex; align-items:center; gap:6px; margin-top:10px; padding:7px 14px; font-family:var(--mono); font-size:10px; letter-spacing:0.12em; text-transform:uppercase; border:1px solid var(--border-strong); border-radius:2px; background:transparent; color:var(--ink-soft); cursor:pointer; transition:all 0.18s; }
@@ -481,8 +487,26 @@ AI 会学习这段内容的语气、节奏、用词习惯，然后用同样的�
     <span class="history-toggle-arrow">▾</span>
   </div>
   <div class="history-panel" id="historyPanel">
+    <!-- 多选工具栏 -->
+    <div class="history-toolbar" id="historyToolbar">
+      <div class="history-toolbar-left">
+        <span class="history-toolbar-selected" id="selectedCount">已选 0 条</span>
+      </div>
+      <div class="history-toolbar-right">
+        <button class="toolbar-btn toolbar-btn-export" onclick="exportSelectedToExcel()">↓ 导出 Excel</button>
+        <button class="toolbar-btn toolbar-btn-cancel" onclick="cancelSelection()">取消</button>
+      </div>
+    </div>
+    <!-- 全选行 -->
+    <div class="history-select-all-row" id="selectAllRow" style="display:none;">
+      <input type="checkbox" id="selectAllCheck" onchange="toggleSelectAll(this.checked)" style="width:16px;height:16px;cursor:pointer;accent-color:var(--ink);" />
+      <label class="history-select-all-label" for="selectAllCheck">全选</label>
+    </div>
     <div id="historyList"><div class="history-empty">还没有生成过文案</div></div>
-    <button class="history-clear-btn" onclick="clearHistory()">清空全部历史记录</button>
+    <div style="display:flex;gap:0;border-top:1px solid var(--border);">
+      <button class="history-clear-btn" style="flex:1;padding:10px;font-family:var(--mono);font-size:10px;letter-spacing:0.15em;text-transform:uppercase;border:none;background:var(--cream-dark);color:var(--ink-muted);cursor:pointer;transition:all 0.15s;" onmouseover="this.style.color='#c0392b';this.style.background='#fdf5f3'" onmouseout="this.style.color='';this.style.background=''" onclick="clearHistory()">清空全部历史记录</button>
+      <button class="history-clear-btn" style="flex:1;padding:10px;font-family:var(--mono);font-size:10px;letter-spacing:0.15em;text-transform:uppercase;border:none;border-left:1px solid var(--border);background:var(--cream-dark);color:var(--ink-muted);cursor:pointer;transition:all 0.15s;" onmouseover="this.style.color='#2c5f8a';this.style.background='#edf4fa'" onmouseout="this.style.color='';this.style.background=''" onclick="startMultiSelect()">多选导出</button>
+    </div>
   </div>
 </div>
 
@@ -1186,19 +1210,38 @@ function saveToHistory(version, context) {
   renderHistory();
 }
 
+let multiSelectMode = false;
+
 function renderHistory() {
   const history = loadHistory();
   document.getElementById('historyCount').textContent = history.length;
   const list = document.getElementById('historyList');
+  const selectAllRow = document.getElementById('selectAllRow');
+
   if (history.length === 0) {
-    list.innerHTML = '<div class="history-empty">还没有生成过文案</div>';
+    list.innerHTML = '<div class="history-empty" style="padding:2rem;text-align:center;font-family:var(--mono);font-size:11px;color:var(--ink-muted);letter-spacing:0.1em;">还没有生成过文案</div>';
+    selectAllRow.style.display = 'none';
     return;
   }
+
+  selectAllRow.style.display = multiSelectMode ? 'flex' : 'none';
   list.innerHTML = '';
+
   history.forEach(item => {
     const el = document.createElement('div');
     el.className = 'history-item';
-    el.innerHTML = `
+    el.dataset.id = item.id;
+
+    const checkbox = document.createElement('input');
+    checkbox.type = 'checkbox';
+    checkbox.className = 'history-checkbox';
+    checkbox.dataset.id = item.id;
+    checkbox.style.display = multiSelectMode ? 'block' : 'none';
+    checkbox.onchange = updateSelectionCount;
+
+    const content = document.createElement('div');
+    content.className = 'history-item-content';
+    content.innerHTML = `
       <div class="history-item-header">
         <div class="history-item-meta">
           <span class="history-item-tag">${item.style || '仿写版本'}</span>
@@ -1211,8 +1254,75 @@ function renderHistory() {
       </div>
       <div class="history-item-title">${item.title}</div>
       <div class="history-item-body" id="hb-${item.id}" onclick="toggleHistoryBody('${item.id}')">${item.body.replace(/\n/g,'<br>')}</div>`;
+
+    el.appendChild(checkbox);
+    el.appendChild(content);
     list.appendChild(el);
   });
+}
+
+function startMultiSelect() {
+  multiSelectMode = true;
+  document.getElementById('historyToolbar').classList.add('show');
+  document.getElementById('selectAllCheck').checked = false;
+  updateSelectionCount();
+  renderHistory();
+  // 确保面板打开
+  document.getElementById('historyPanel').classList.add('open');
+  document.getElementById('historyToggle').classList.add('open');
+}
+
+function cancelSelection() {
+  multiSelectMode = false;
+  document.getElementById('historyToolbar').classList.remove('show');
+  document.getElementById('selectAllCheck').checked = false;
+  renderHistory();
+}
+
+function toggleSelectAll(checked) {
+  document.querySelectorAll('.history-checkbox').forEach(cb => cb.checked = checked);
+  updateSelectionCount();
+}
+
+function updateSelectionCount() {
+  const count = document.querySelectorAll('.history-checkbox:checked').length;
+  document.getElementById('selectedCount').textContent = `已选 ${count} 条`;
+}
+
+function exportSelectedToExcel() {
+  const selectedIds = [...document.querySelectorAll('.history-checkbox:checked')].map(cb => cb.dataset.id);
+  if (selectedIds.length === 0) { alert('请先勾选要导出的文案'); return; }
+
+  const history = loadHistory();
+  const selected = selectedIds.map(id => history.find(h => h.id === id)).filter(Boolean);
+
+  // 构建 CSV 内容（Excel 兼容）
+  const rows = [['风格', '时间', '标题', '正文']];
+  selected.forEach(item => {
+    rows.push([
+      item.style || '仿写版本',
+      item.time,
+      item.title,
+      item.body.replace(/\n/g, ' ').replace(/,/g, '，'), // 处理换行和逗号
+    ]);
+  });
+
+  // 转成带 BOM 的 UTF-8 CSV（让 Excel 正确识别中文）
+  const csvContent = '\uFEFF' + rows.map(row =>
+    row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(',')
+  ).join('\n');
+
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `文案历史记录_${new Date().toLocaleDateString('zh-CN').replace(/\//g,'-')}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+
+  cancelSelection();
 }
 
 function toggleHistory() {
@@ -1230,8 +1340,8 @@ function copyHistoryItem(id) {
   const item = loadHistory().find(h => h.id === id);
   if (!item) return;
   navigator.clipboard.writeText(`${item.title}\n\n${item.body}`).then(() => {
-    const btn = document.querySelector(`[onclick="copyHistoryItem('${id}')"]`);
-    if (btn) { btn.textContent = '已复制 ✓'; setTimeout(() => btn.textContent = '复制', 1500); }
+    const btns = document.querySelectorAll(`[onclick="copyHistoryItem('${id}')"]`);
+    btns.forEach(btn => { btn.textContent = '已复制 ✓'; setTimeout(() => btn.textContent = '复制', 1500); });
   });
 }
 
@@ -1244,6 +1354,8 @@ function deleteHistoryItem(id) {
 function clearHistory() {
   if (!confirm('确定清空所有历史记录吗？')) return;
   localStorage.removeItem(HISTORY_KEY);
+  multiSelectMode = false;
+  document.getElementById('historyToolbar').classList.remove('show');
   renderHistory();
 }
 
