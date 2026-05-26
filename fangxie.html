@@ -1211,6 +1211,7 @@ function saveToHistory(version, context) {
 }
 
 let multiSelectMode = false;
+const selectedIds = new Set(); // 用 Set 追踪选中状态，不依赖 DOM
 
 function renderHistory() {
   const history = loadHistory();
@@ -1229,15 +1230,26 @@ function renderHistory() {
 
   history.forEach(item => {
     const el = document.createElement('div');
-    el.className = 'history-item';
+    el.className = 'history-item' + (selectedIds.has(item.id) ? ' selected' : '');
     el.dataset.id = item.id;
 
     const checkbox = document.createElement('input');
     checkbox.type = 'checkbox';
     checkbox.className = 'history-checkbox';
     checkbox.dataset.id = item.id;
+    checkbox.checked = selectedIds.has(item.id);
     checkbox.style.display = multiSelectMode ? 'block' : 'none';
-    checkbox.onchange = updateSelectionCount;
+    checkbox.onchange = (e) => {
+      if (e.target.checked) {
+        selectedIds.add(item.id);
+        el.classList.add('selected');
+      } else {
+        selectedIds.delete(item.id);
+        el.classList.remove('selected');
+        document.getElementById('selectAllCheck').checked = false;
+      }
+      updateSelectionCount();
+    };
 
     const content = document.createElement('div');
     content.className = 'history-item-content';
@@ -1259,55 +1271,59 @@ function renderHistory() {
     el.appendChild(content);
     list.appendChild(el);
   });
+
+  updateSelectionCount();
 }
 
 function startMultiSelect() {
   multiSelectMode = true;
+  selectedIds.clear();
   document.getElementById('historyToolbar').classList.add('show');
   document.getElementById('selectAllCheck').checked = false;
   updateSelectionCount();
   renderHistory();
-  // 确保面板打开
   document.getElementById('historyPanel').classList.add('open');
   document.getElementById('historyToggle').classList.add('open');
 }
 
 function cancelSelection() {
   multiSelectMode = false;
+  selectedIds.clear();
   document.getElementById('historyToolbar').classList.remove('show');
   document.getElementById('selectAllCheck').checked = false;
   renderHistory();
 }
 
 function toggleSelectAll(checked) {
-  document.querySelectorAll('.history-checkbox').forEach(cb => cb.checked = checked);
-  updateSelectionCount();
+  const history = loadHistory();
+  if (checked) {
+    history.forEach(item => selectedIds.add(item.id));
+  } else {
+    selectedIds.clear();
+  }
+  renderHistory();
 }
 
 function updateSelectionCount() {
-  const count = document.querySelectorAll('.history-checkbox:checked').length;
-  document.getElementById('selectedCount').textContent = `已选 ${count} 条`;
+  document.getElementById('selectedCount').textContent = `已选 ${selectedIds.size} 条`;
 }
 
 function exportSelectedToExcel() {
-  const selectedIds = [...document.querySelectorAll('.history-checkbox:checked')].map(cb => cb.dataset.id);
-  if (selectedIds.length === 0) { alert('请先勾选要导出的文案'); return; }
+  if (selectedIds.size === 0) { alert('请先勾选要导出的文案'); return; }
 
   const history = loadHistory();
-  const selected = selectedIds.map(id => history.find(h => h.id === id)).filter(Boolean);
+  const selected = history.filter(h => selectedIds.has(h.id));
 
-  // 构建 CSV 内容（Excel 兼容）
   const rows = [['风格', '时间', '标题', '正文']];
   selected.forEach(item => {
     rows.push([
       item.style || '仿写版本',
       item.time,
       item.title,
-      item.body.replace(/\n/g, ' ').replace(/,/g, '，'), // 处理换行和逗号
+      item.body.replace(/\n/g, ' '),
     ]);
   });
 
-  // 转成带 BOM 的 UTF-8 CSV（让 Excel 正确识别中文）
   const csvContent = '\uFEFF' + rows.map(row =>
     row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(',')
   ).join('\n');
