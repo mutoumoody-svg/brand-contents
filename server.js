@@ -144,6 +144,53 @@ app.delete('/api/admin/users/:id', authenticateToken, requireAdmin, (req, res) =
 });
 
 // ══════════════════════════════════════════
+//  共享内容库
+// ══════════════════════════════════════════
+db.exec(`
+  CREATE TABLE IF NOT EXISTS content (
+    id         INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id    INTEGER NOT NULL,
+    user_name  TEXT    NOT NULL,
+    type       TEXT    DEFAULT 'fangxie',
+    brand_name TEXT    DEFAULT '',
+    style      TEXT    DEFAULT '',
+    title      TEXT    DEFAULT '',
+    body       TEXT    NOT NULL,
+    context    TEXT    DEFAULT '',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  )
+`);
+
+// 获取全部内容（按时间倒序）
+app.get('/api/content', authenticateToken, (req, res) => {
+  const rows = db.prepare(
+    'SELECT id, user_id, user_name, type, brand_name, style, title, body, context, created_at FROM content ORDER BY created_at DESC LIMIT 300'
+  ).all();
+  res.json(rows);
+});
+
+// 保存内容
+app.post('/api/content', authenticateToken, (req, res) => {
+  const { type, brand_name, style, title, body, context } = req.body || {};
+  if (!body) return res.status(400).json({ error: '内容不能为空' });
+  const result = db.prepare(
+    'INSERT INTO content (user_id, user_name, type, brand_name, style, title, body, context) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
+  ).run(req.user.id, req.user.name, type || 'fangxie', brand_name || '', style || '', title || '', body, context || '');
+  res.json({ id: result.lastInsertRowid });
+});
+
+// 删除内容（只能删自己的，管理员可删任意）
+app.delete('/api/content/:id', authenticateToken, (req, res) => {
+  const item = db.prepare('SELECT user_id FROM content WHERE id = ?').get(req.params.id);
+  if (!item) return res.status(404).json({ error: '内容不存在' });
+  if (item.user_id !== req.user.id && req.user.role !== 'admin') {
+    return res.status(403).json({ error: '只能删除自己的内容' });
+  }
+  db.prepare('DELETE FROM content WHERE id = ?').run(req.params.id);
+  res.json({ ok: true });
+});
+
+// ══════════════════════════════════════════
 //  Claude API 中转（需登录）
 // ══════════════════════════════════════════
 app.post('/api/claude', authenticateToken, async (req, res) => {
