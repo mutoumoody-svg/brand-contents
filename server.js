@@ -290,12 +290,10 @@ app.post('/api/claude', authenticateToken, async (req, res) => {
     return res.status(500).json({ error: { message: '服务器未配置 ANTHROPIC_API_KEY' } });
   }
   try {
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
+    const response = await fetch('https://anthorpic-proxy.mutoumoody.workers.dev/', {
       method: 'POST',
       headers: {
-        'Content-Type':      'application/json',
-        'x-api-key':         API_KEY,
-        'anthropic-version': '2023-06-01',
+        'Content-Type': 'application/json',
       },
       body: JSON.stringify(req.body),
     });
