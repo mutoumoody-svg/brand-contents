@@ -278,8 +278,8 @@ AI 会学习这段内容的语气、节奏、用词习惯，然后用同样的�
 
       <div class="form-grid">
         <div class="field">
-          <label>产品名称</label>
-          <input type="text" id="q-product" placeholder="例：澳洲精品咖啡随行杯" style="width:100%;background:transparent;border:none;border-bottom:1px solid var(--border-strong);font-family:var(--serif);font-size:15px;color:var(--ink);padding:6px 0 8px;outline:none;transition:border-color 0.2s;" />
+          <label>产品名称（选填）</label>
+          <input type="text" id="q-product" placeholder="例：澳洲精品咖啡随行杯，不填则由品牌档案决定" style="width:100%;background:transparent;border:none;border-bottom:1px solid var(--border-strong);font-family:var(--serif);font-size:15px;color:var(--ink);padding:6px 0 8px;outline:none;transition:border-color 0.2s;" />
         </div>
         <div class="field">
           <label>核心卖点</label>
@@ -408,7 +408,7 @@ AI 会学习这段内容的语气、节奏、用词习惯，然后用同样的�
         <div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--border);">
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
             <div class="field">
-              <label>本次产品名称</label>
+              <label>本次产品名称（选填）</label>
               <input type="text" id="p-product" placeholder="例：澳洲精品咖啡随行杯" />
             </div>
             <div class="field">
@@ -426,7 +426,7 @@ AI 会学习这段内容的语气、节奏、用词习惯，然后用同样的�
         </div>
         <div class="form-grid">
           <div class="field">
-            <label>产品名称</label>
+            <label>产品名称（选填）</label>
             <input type="text" id="p-product-manual" placeholder="例：澳洲精品咖啡随行杯" />
           </div>
           <div class="field">
@@ -733,7 +733,6 @@ async function quickCopy() {
   if (qInputMode === 'image' && !qImageBase64) {
     alert('请先上传截图'); return;
   }
-  if (!product) { alert('请填写产品名称'); return; }
 
   const btn = document.getElementById('quickBtn');
   btn.disabled = true;
@@ -1071,8 +1070,6 @@ async function rewrite() {
   const audience = usingBrand ? (activeBrand.audience || '') : document.getElementById('p-audience').value.trim();
   const feature  = usingBrand ? '' : document.getElementById('p-feature').value.trim();
   const brand    = usingBrand ? (activeBrand.slogan || '') : document.getElementById('p-brand').value.trim();
-
-  if (!product) { alert('请填写产品名称'); return; }
 
   const btn = document.getElementById('rewriteBtn');
   btn.disabled = true;
