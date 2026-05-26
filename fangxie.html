@@ -21,8 +21,27 @@
 }
 body { font-family: var(--serif); background: var(--cream); color: var(--ink); min-height: 100vh; line-height: 1.7; }
 
+/* TOP NAV */
+.top-nav { background: var(--ink); height: 44px; display: flex; align-items: center; position: sticky; top: 0; z-index: 200; }
+.top-nav-inner { max-width: 760px; margin: 0 auto; padding: 0 24px; display: flex; align-items: center; justify-content: space-between; width: 100%; }
+.top-nav-logo { font-family: var(--mono); font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase; color: rgba(255,255,255,0.5); text-decoration: none; }
+.top-nav-links { display: flex; gap: 4px; }
+.top-nav-link { font-family: var(--mono); font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(255,255,255,0.5); text-decoration: none; padding: 5px 10px; border-radius: 2px; transition: all 0.15s; }
+.top-nav-link:hover { color: white; background: rgba(255,255,255,0.1); }
+.top-nav-link.active { color: white; }
+
+/* BRAND BAR */
+.brand-bar { background: #edf4fa; border-bottom: 1px solid #b8d4e8; padding: 10px 0; display: none; }
+.brand-bar.show { display: block; }
+.brand-bar-inner { max-width: 760px; margin: 0 auto; padding: 0 24px; display: flex; align-items: center; gap: 12px; }
+.brand-bar-label { font-family: var(--mono); font-size: 10px; letter-spacing: 0.15em; text-transform: uppercase; color: var(--ink-muted); white-space: nowrap; }
+.brand-bar-select { flex: 1; background: white; border: 1px solid var(--border-strong); border-radius: 2px; font-family: var(--serif); font-size: 13px; color: var(--ink); padding: 6px 10px; outline: none; cursor: pointer; }
+.brand-bar-badge { font-family: var(--mono); font-size: 10px; color: #2c5f8a; background: #ddeef8; padding: 3px 10px; border-radius: 20px; white-space: nowrap; }
+.brand-bar-clear { font-family: var(--mono); font-size: 10px; color: var(--ink-muted); background: transparent; border: none; cursor: pointer; padding: 4px 8px; }
+.brand-bar-clear:hover { color: var(--ink); }
+
 /* HEADER */
-header { border-bottom: 1px solid var(--border); padding: 1.75rem 0 1.25rem; text-align: center; background: var(--cream); position: sticky; top: 0; z-index: 100; }
+header { border-bottom: 1px solid var(--border); padding: 1.75rem 0 1.25rem; text-align: center; background: var(--cream); }
 .logo-line { font-family: var(--mono); font-size: 10px; letter-spacing: 0.25em; color: var(--ink-muted); text-transform: uppercase; margin-bottom: 5px; }
 header h1 { font-family: var(--display); font-size: clamp(18px, 3.5vw, 26px); font-weight: 400; font-style: italic; color: var(--ink); }
 .tagline { font-family: var(--mono); font-size: 10px; color: var(--accent); letter-spacing: 0.2em; margin-top: 4px; }
@@ -151,6 +170,28 @@ footer em { color: var(--gold); font-style: normal; }
 </head>
 <body>
 
+<nav class="top-nav">
+  <div class="top-nav-inner">
+    <a class="top-nav-logo" href="brand.html">Brand Center</a>
+    <div class="top-nav-links">
+      <a class="top-nav-link" href="brand.html">品牌管理</a>
+      <a class="top-nav-link" href="index.html">文案生成</a>
+      <a class="top-nav-link active" href="fangxie.html">爆文仿写</a>
+    </div>
+  </div>
+</nav>
+
+<div class="brand-bar" id="brandBar">
+  <div class="brand-bar-inner">
+    <span class="brand-bar-label">当前品牌</span>
+    <select class="brand-bar-select" id="brandSelect" onchange="onBrandChange()">
+      <option value="">— 不使用品牌（手动填写）—</option>
+    </select>
+    <span class="brand-bar-badge" id="brandBadge" style="display:none">已加载品牌调性</span>
+    <button class="brand-bar-clear" onclick="clearBrand()">清除</button>
+  </div>
+</div>
+
 <header>
   <div class="container">
     <div class="logo-line">XHS Viral Copywriting Studio</div>
@@ -232,6 +273,10 @@ footer em { color: var(--gold); font-style: normal; }
     <div class="product-section" id="productSection">
       <div class="divider"><span>Step 03 · 填入你的产品信息</span></div>
 
+      <div id="brandFillNotice" style="display:none; background:#edf4fa; border:1px solid #b8d4e8; border-radius:2px; padding:10px 16px; margin-bottom:20px; font-family:var(--mono); font-size:11px; color:#2c5f8a; letter-spacing:0.05em;">
+        ✓ 已从品牌档案自动填入信息，可手动修改
+      </div>
+
       <div class="form-grid">
         <div class="field">
           <label>产品名称</label>
@@ -284,6 +329,86 @@ footer em { color: var(--gold); font-style: normal; }
 // ================================================
 // API Key 已安全存放在 Vercel 环境变量中，代码里无需填写
 // ================================================
+
+// ── 品牌管理 ──
+const BRAND_STORAGE_KEY = 'brand_center_v1';
+const BRAND_ACTIVE_KEY  = 'brand_center_active';
+let activeBrand = null;
+
+function loadBrandsFromStorage() {
+  try { return JSON.parse(localStorage.getItem(BRAND_STORAGE_KEY)) || []; } catch { return []; }
+}
+
+function initBrandBar() {
+  const brands = loadBrandsFromStorage();
+  const select = document.getElementById('brandSelect');
+  const bar = document.getElementById('brandBar');
+
+  // 清空已有选项（保留第一个空选项）
+  while (select.options.length > 1) select.remove(1);
+
+  if (brands.length > 0) {
+    bar.classList.add('show');
+    brands.forEach(b => {
+      const opt = document.createElement('option');
+      opt.value = b.id;
+      opt.textContent = b.name + (b.industry ? ` · ${b.industry}` : '');
+      select.appendChild(opt);
+    });
+
+    // 自动选择上次使用的品牌
+    const activeId = localStorage.getItem(BRAND_ACTIVE_KEY);
+    if (activeId && brands.find(b => b.id === activeId)) {
+      select.value = activeId;
+      onBrandChange();
+    }
+  }
+}
+
+function onBrandChange() {
+  const brands = loadBrandsFromStorage();
+  const id = document.getElementById('brandSelect').value;
+  activeBrand = brands.find(b => b.id === id) || null;
+  const badge = document.getElementById('brandBadge');
+
+  if (activeBrand) {
+    badge.style.display = 'inline';
+    // 自动填入产品信息区
+    if (activeBrand.audience) document.getElementById('p-audience').value = activeBrand.audience;
+    if (activeBrand.slogan || activeBrand.value) {
+      document.getElementById('p-brand').value = [activeBrand.slogan, activeBrand.value].filter(Boolean).join('；').slice(0, 120);
+    }
+    document.getElementById('brandFillNotice').style.display = 'block';
+  } else {
+    badge.style.display = 'none';
+    document.getElementById('brandFillNotice').style.display = 'none';
+    activeBrand = null;
+  }
+}
+
+function clearBrand() {
+  document.getElementById('brandSelect').value = '';
+  document.getElementById('brandBadge').style.display = 'none';
+  document.getElementById('brandFillNotice').style.display = 'none';
+  activeBrand = null;
+}
+
+function buildBrandContext() {
+  if (!activeBrand) return '';
+  const b = activeBrand;
+  const parts = [`【品牌名称】${b.name}`];
+  if (b.slogan)    parts.push(`【品牌Slogan】${b.slogan}`);
+  if (b.industry)  parts.push(`【行业】${b.industry}`);
+  if (b.price)     parts.push(`【价格定位】${b.price}`);
+  if (b.audience)  parts.push(`【目标人群】${b.audience}`);
+  if (b.tones?.length) parts.push(`【品牌调性】${b.tones.join('、')}`);
+  if (b.keywords?.length) parts.push(`【核心关键词】${b.keywords.join('、')}`);
+  if (b.forbidden?.length) parts.push(`【禁止使用的词】${b.forbidden.join('、')}`);
+  if (b.value)     parts.push(`【品牌价值观】${b.value}`);
+  if (b.story)     parts.push(`【品牌故事】${b.story}`);
+  if (b.sample)    parts.push(`【参考文案风格样本】\n${b.sample}`);
+  return parts.join('\n');
+}
 
 let currentImageBase64 = null;
 let analysisResult = null;
@@ -364,7 +489,7 @@ async function callClaude(messages) {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      model: 'claude-sonnet-4-6',
+      model: 'claude-haiku-4-5-20251001',
       max_tokens: 4000,
       messages,
     }),
@@ -602,6 +727,7 @@ async function rewrite() {
   setStep(3);
 
   const r = analysisResult;
+  const brandContext = buildBrandContext();
   const prompt = `你是顶级小红书文案专家。请严格按照以下爆文结构公式，为我的产品仿写3个不同版本的完整小红书帖子。
 
 【爆文结构公式】
@@ -614,21 +740,23 @@ async function rewrite() {
 - 核心技巧：${(r.body.key_techniques || []).join('、')}
 - 结尾CTA：${r.ending.cta_type}，公式：${r.ending.cta_formula}
 
-【我的产品信息】
+${brandContext ? `【品牌档案（请严格遵守品牌调性、关键词和禁忌词）】\n${brandContext}\n` : ''}
+【产品信息】
 - 产品：${product}
 - 价格：${price || '未提供'}
-- 目标人群：${audience || '未提供'}
+- 目标人群：${audience || (activeBrand?.audience) || '未提供'}
 - 核心卖点：${feature || '未提供'}
-- 品牌理念：${brand || '未提供'}
+- 品牌理念：${brand || (activeBrand?.slogan) || '未提供'}
 - 补充要求：${extra || '无'}
 
 要求：
-1. 严格复刻爆文的结构套路，但内容完全换成我的产品
-2. 三个版本风格略有差异（情感故事版 / 干货种草版 / 闺蜜推荐版）
-3. 每个版本包含：标题 + 完整正文（有换行、有节奏感、有emoji）
-4. 结尾必须有互动引导
+1. 严格复刻爆文的结构套路，内容完全换成我的产品
+2. ${brandContext ? '严格遵守品牌档案中的调性、关键词风格，避免使用禁忌词' : '保持品牌一致性'}
+3. 三个版本风格略有差异（情感故事版 / 干货种草版 / 闺蜜推荐版）
+4. 每个版本包含：标题 + 完整正文（有换行、有节奏感、有emoji）
+5. 结尾必须有互动引导
 
-【输出格式】严格按下面的纯文本格式输出，不要用JSON，不要用代码块。三个版本之间用一行 ===== 分隔。每个版本严格按以下三行标记格式：
+【输出格式】严格按下面的纯文本格式输出，不要用JSON，不要用代码块。三个版本之间用一行 ===== 分隔：
 
 【风格】这里写版本风格名称
 【标题】这里写标题
@@ -710,6 +838,9 @@ function renderRewrite(versions) {
     container.appendChild(card);
   });
 }
+
+// 初始化品牌选择器
+initBrandBar();
 </script>
 </body>
 </html>

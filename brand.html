@@ -1,0 +1,977 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>品牌中心</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@300;400;600&family=DM+Mono:wght@300;400;500&family=Playfair+Display:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet" />
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --ink: #1a1814;
+  --ink-soft: #4a4640;
+  --ink-muted: #9a9590;
+  --cream: #f7f4ef;
+  --cream-dark: #ede9e2;
+  --cream-mid: #e5e0d8;
+  --accent: #2c5f8a;
+  --accent-pale: #edf4fa;
+  --accent-light: #b8d4e8;
+  --gold: #b87333;
+  --gold-pale: #f5ede0;
+  --green: #5a9e6f;
+  --green-bg: #f0f8f3;
+  --red: #c0392b;
+  --red-bg: #fdf5f3;
+  --border: rgba(26,24,20,0.1);
+  --border-strong: rgba(26,24,20,0.2);
+  --serif: 'Noto Serif SC', Georgia, serif;
+  --mono: 'DM Mono', monospace;
+  --display: 'Playfair Display', serif;
+  --shadow: 0 1px 3px rgba(26,24,20,0.08), 0 4px 16px rgba(26,24,20,0.04);
+  --shadow-lg: 0 4px 24px rgba(26,24,20,0.12);
+}
+
+html { scroll-behavior: smooth; }
+body { font-family: var(--serif); background: var(--cream); color: var(--ink); min-height: 100vh; }
+
+/* ── HEADER ── */
+header {
+  background: var(--ink);
+  color: var(--cream);
+  padding: 0;
+  position: sticky; top: 0; z-index: 200;
+}
+.header-inner {
+  max-width: 1100px; margin: 0 auto; padding: 0 32px;
+  display: flex; align-items: center; justify-content: space-between;
+  height: 56px;
+}
+.brand-logo {
+  display: flex; align-items: center; gap: 12px;
+}
+.brand-logo-mark {
+  width: 32px; height: 32px;
+  border: 1px solid rgba(255,255,255,0.3);
+  border-radius: 2px;
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--display);
+  font-size: 16px;
+  font-style: italic;
+  color: var(--cream);
+}
+.brand-logo-text {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.7);
+}
+.header-nav {
+  display: flex; gap: 4px;
+}
+.nav-link {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.5);
+  text-decoration: none;
+  padding: 6px 12px;
+  border-radius: 2px;
+  transition: all 0.15s;
+}
+.nav-link:hover { color: white; background: rgba(255,255,255,0.1); }
+
+/* ── LAYOUT ── */
+.app { max-width: 1100px; margin: 0 auto; padding: 40px 32px 80px; display: grid; grid-template-columns: 280px 1fr; gap: 32px; }
+
+/* ── SIDEBAR ── */
+.sidebar {}
+.sidebar-section { margin-bottom: 8px; }
+.sidebar-label {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  color: var(--ink-muted);
+  text-transform: uppercase;
+  padding: 0 4px;
+  margin-bottom: 8px;
+  display: block;
+}
+.brand-list { list-style: none; margin-bottom: 12px; }
+.brand-item {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 12px;
+  border-radius: 2px;
+  cursor: pointer;
+  transition: all 0.15s;
+  border: 1px solid transparent;
+  margin-bottom: 2px;
+}
+.brand-item:hover { background: var(--cream-dark); }
+.brand-item.active {
+  background: var(--accent-pale);
+  border-color: var(--accent-light);
+}
+.brand-item-name {
+  font-size: 14px;
+  color: var(--ink);
+  font-weight: 400;
+}
+.brand-item.active .brand-item-name { color: var(--accent); font-weight: 600; }
+.brand-item-industry {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--ink-muted);
+  margin-top: 2px;
+}
+.brand-item-actions { display: flex; gap: 4px; opacity: 0; transition: opacity 0.15s; }
+.brand-item:hover .brand-item-actions { opacity: 1; }
+.icon-btn {
+  width: 22px; height: 22px;
+  border: none; background: transparent; cursor: pointer;
+  border-radius: 2px; display: flex; align-items: center; justify-content: center;
+  font-size: 11px; color: var(--ink-muted);
+  transition: all 0.15s;
+}
+.icon-btn:hover { background: var(--cream-mid); color: var(--red); }
+
+.new-brand-btn {
+  width: 100%; padding: 10px 12px;
+  border: 1px dashed var(--border-strong);
+  background: transparent; border-radius: 2px;
+  font-family: var(--mono); font-size: 10px;
+  letter-spacing: 0.15em; text-transform: uppercase;
+  color: var(--ink-muted); cursor: pointer;
+  transition: all 0.15s; text-align: center;
+}
+.new-brand-btn:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-pale); }
+
+.active-brand-card {
+  background: var(--ink);
+  border-radius: 2px;
+  padding: 16px;
+  margin-top: 24px;
+}
+.active-brand-card-label {
+  font-family: var(--mono); font-size: 9px;
+  letter-spacing: 0.2em; text-transform: uppercase;
+  color: rgba(255,255,255,0.4); margin-bottom: 6px;
+}
+.active-brand-card-name {
+  font-family: var(--display); font-size: 18px;
+  font-style: italic; color: white; margin-bottom: 4px;
+}
+.active-brand-card-slogan {
+  font-size: 12px; color: rgba(255,255,255,0.5);
+  font-style: italic; line-height: 1.5;
+}
+.active-brand-card-tools {
+  margin-top: 14px; padding-top: 14px;
+  border-top: 1px solid rgba(255,255,255,0.1);
+}
+.active-brand-card-tools-label {
+  font-family: var(--mono); font-size: 9px;
+  letter-spacing: 0.15em; text-transform: uppercase;
+  color: rgba(255,255,255,0.3); margin-bottom: 8px;
+}
+.tool-link {
+  display: block; padding: 7px 10px; border-radius: 2px;
+  font-family: var(--mono); font-size: 10px;
+  letter-spacing: 0.1em; text-transform: uppercase;
+  color: rgba(255,255,255,0.6); text-decoration: none;
+  transition: all 0.15s; margin-bottom: 2px;
+}
+.tool-link:hover { background: rgba(255,255,255,0.1); color: white; }
+
+/* ── MAIN CONTENT ── */
+.main-content {}
+
+.empty-state {
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  min-height: 400px; text-align: center;
+}
+.empty-icon { font-size: 3rem; margin-bottom: 1rem; opacity: 0.3; }
+.empty-title { font-family: var(--display); font-size: 22px; font-style: italic; color: var(--ink-soft); margin-bottom: 8px; }
+.empty-desc { font-size: 14px; color: var(--ink-muted); line-height: 1.7; margin-bottom: 24px; }
+
+/* ── FORM ── */
+.form-card {
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+.form-card-header {
+  padding: 20px 28px;
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.form-card-title {
+  font-family: var(--display); font-size: 20px;
+  font-style: italic; color: var(--ink);
+}
+.form-card-subtitle {
+  font-family: var(--mono); font-size: 10px;
+  letter-spacing: 0.15em; color: var(--ink-muted);
+  text-transform: uppercase; margin-top: 2px;
+}
+.form-card-body { padding: 28px; }
+
+.form-section { margin-bottom: 32px; }
+.form-section:last-child { margin-bottom: 0; }
+.section-title {
+  display: flex; align-items: center; gap: 10px;
+  margin-bottom: 20px; padding-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+}
+.section-num {
+  width: 22px; height: 22px; border-radius: 50%;
+  background: var(--ink); color: var(--cream);
+  font-family: var(--mono); font-size: 10px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.section-name {
+  font-family: var(--mono); font-size: 11px;
+  letter-spacing: 0.15em; text-transform: uppercase;
+  color: var(--ink-soft);
+}
+.section-desc { font-size: 12px; color: var(--ink-muted); margin-left: auto; }
+
+.field-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; }
+.field-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-bottom: 20px; }
+.field-full { margin-bottom: 20px; }
+.field-full:last-child { margin-bottom: 0; }
+
+.field label {
+  display: block; font-family: var(--mono);
+  font-size: 10px; letter-spacing: 0.15em;
+  text-transform: uppercase; color: var(--ink-muted);
+  margin-bottom: 7px;
+}
+.field input, .field textarea, .field select {
+  width: 100%; background: var(--cream);
+  border: 1px solid var(--border-strong);
+  border-radius: 2px; font-family: var(--serif);
+  font-size: 14px; color: var(--ink);
+  padding: 9px 12px; outline: none;
+  transition: border-color 0.2s, background 0.2s;
+  -webkit-appearance: none;
+}
+.field input::placeholder, .field textarea::placeholder { color: var(--ink-muted); font-style: italic; }
+.field input:focus, .field textarea:focus, .field select:focus {
+  border-color: var(--accent); background: white;
+}
+.field textarea { resize: vertical; min-height: 90px; line-height: 1.6; }
+.field textarea.tall { min-height: 130px; }
+.field select {
+  cursor: pointer;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%239a9590'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 12px center;
+  background-color: var(--cream); padding-right: 32px;
+}
+.field-hint { font-family: var(--mono); font-size: 10px; color: var(--ink-muted); margin-top: 5px; line-height: 1.5; }
+
+/* TONE PILLS */
+.tone-grid { display: flex; flex-wrap: wrap; gap: 8px; }
+.tone-pill {
+  padding: 6px 14px; border: 1px solid var(--border-strong);
+  border-radius: 20px; font-family: var(--serif); font-size: 13px;
+  cursor: pointer; transition: all 0.15s; background: transparent;
+  color: var(--ink-soft);
+}
+.tone-pill:hover { border-color: var(--accent); color: var(--accent); }
+.tone-pill.selected { background: var(--accent); border-color: var(--accent); color: white; }
+
+/* KEYWORDS */
+.keywords-wrap { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; min-height: 40px; padding: 6px; border: 1px solid var(--border-strong); border-radius: 2px; background: var(--cream); cursor: text; }
+.keywords-wrap:focus-within { border-color: var(--accent); background: white; }
+.keyword-tag { display: flex; align-items: center; gap: 4px; background: var(--ink); color: var(--cream); padding: 3px 10px; border-radius: 20px; font-family: var(--mono); font-size: 11px; }
+.keyword-tag button { background: transparent; border: none; color: rgba(255,255,255,0.6); cursor: pointer; font-size: 12px; line-height: 1; padding: 0 0 0 2px; }
+.keyword-tag button:hover { color: white; }
+.keyword-input { border: none; background: transparent; outline: none; font-family: var(--serif); font-size: 14px; color: var(--ink); min-width: 80px; flex: 1; padding: 2px 4px; }
+.keyword-input::placeholder { color: var(--ink-muted); font-style: italic; }
+
+/* FORM ACTIONS */
+.form-actions {
+  padding: 20px 28px;
+  border-top: 1px solid var(--border);
+  display: flex; align-items: center; gap: 12px;
+  background: var(--cream);
+}
+.btn-primary {
+  padding: 11px 28px; background: var(--ink); color: var(--cream);
+  border: none; border-radius: 2px; font-family: var(--mono);
+  font-size: 11px; letter-spacing: 0.2em; text-transform: uppercase;
+  cursor: pointer; transition: background 0.15s;
+}
+.btn-primary:hover { background: var(--ink-soft); }
+.btn-secondary {
+  padding: 11px 20px; background: transparent; color: var(--ink-soft);
+  border: 1px solid var(--border-strong); border-radius: 2px;
+  font-family: var(--mono); font-size: 11px; letter-spacing: 0.15em;
+  text-transform: uppercase; cursor: pointer; transition: all 0.15s;
+}
+.btn-secondary:hover { background: var(--cream-dark); }
+.btn-danger {
+  padding: 11px 20px; background: transparent; color: var(--red);
+  border: 1px solid #e8c4b8; border-radius: 2px;
+  font-family: var(--mono); font-size: 11px; letter-spacing: 0.15em;
+  text-transform: uppercase; cursor: pointer; transition: all 0.15s;
+  margin-left: auto;
+}
+.btn-danger:hover { background: var(--red-bg); }
+
+/* SAVE TOAST */
+.toast {
+  position: fixed; bottom: 32px; left: 50%; transform: translateX(-50%) translateY(20px);
+  background: var(--ink); color: var(--cream);
+  padding: 12px 24px; border-radius: 2px;
+  font-family: var(--mono); font-size: 11px; letter-spacing: 0.1em;
+  opacity: 0; transition: all 0.3s; pointer-events: none; z-index: 999;
+}
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+/* BRAND PREVIEW (view mode) */
+.brand-view { display: none; }
+.brand-view.show { display: block; }
+.brand-form { display: none; }
+.brand-form.show { display: block; }
+
+.preview-hero {
+  background: var(--ink); border-radius: 2px;
+  padding: 32px; margin-bottom: 20px;
+  position: relative; overflow: hidden;
+}
+.preview-hero::before {
+  content: '';
+  position: absolute; top: -40px; right: -40px;
+  width: 180px; height: 180px;
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 50%;
+}
+.preview-hero::after {
+  content: '';
+  position: absolute; top: -20px; right: -20px;
+  width: 120px; height: 120px;
+  border: 1px solid rgba(255,255,255,0.04);
+  border-radius: 50%;
+}
+.preview-label { font-family: var(--mono); font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase; color: rgba(255,255,255,0.4); margin-bottom: 8px; }
+.preview-name { font-family: var(--display); font-size: 32px; font-style: italic; color: white; margin-bottom: 8px; line-height: 1.2; }
+.preview-slogan { font-size: 15px; color: rgba(255,255,255,0.6); font-style: italic; margin-bottom: 16px; }
+.preview-tags { display: flex; gap: 8px; flex-wrap: wrap; }
+.preview-tag { padding: 4px 12px; border: 1px solid rgba(255,255,255,0.15); border-radius: 20px; font-family: var(--mono); font-size: 10px; letter-spacing: 0.1em; color: rgba(255,255,255,0.6); }
+
+.preview-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+.preview-card { background: white; border: 1px solid var(--border); border-radius: 2px; padding: 20px; }
+.preview-card-label { font-family: var(--mono); font-size: 10px; letter-spacing: 0.15em; text-transform: uppercase; color: var(--ink-muted); margin-bottom: 10px; }
+.preview-card-content { font-size: 14px; color: var(--ink-soft); line-height: 1.7; }
+.preview-card-pills { display: flex; flex-wrap: wrap; gap: 6px; }
+.preview-card-pill { padding: 4px 12px; background: var(--accent-pale); border: 1px solid var(--accent-light); border-radius: 20px; font-family: var(--mono); font-size: 11px; color: var(--accent); }
+.preview-card-pill.gold { background: var(--gold-pale); border-color: #e8d5b7; color: var(--gold); }
+.preview-card-pill.dark { background: var(--ink); color: var(--cream); border-color: var(--ink); }
+
+.preview-full { background: white; border: 1px solid var(--border); border-radius: 2px; padding: 20px; margin-bottom: 16px; }
+.preview-full-label { font-family: var(--mono); font-size: 10px; letter-spacing: 0.15em; text-transform: uppercase; color: var(--ink-muted); margin-bottom: 10px; }
+.preview-full-content { font-size: 14px; color: var(--ink-soft); line-height: 1.8; white-space: pre-wrap; }
+
+.preview-actions { display: flex; gap: 10px; }
+
+@media (max-width: 768px) {
+  .app { grid-template-columns: 1fr; }
+  .field-grid, .field-grid-3, .preview-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <div class="brand-logo">
+      <div class="brand-logo-mark">B</div>
+      <div class="brand-logo-text">Brand Center</div>
+    </div>
+    <nav class="header-nav">
+      <a class="nav-link" href="fangxie.html">爆文仿写</a>
+      <a class="nav-link" href="index.html">文案生成</a>
+    </nav>
+  </div>
+</header>
+
+<div class="app">
+
+  <!-- ── SIDEBAR ── -->
+  <aside class="sidebar">
+    <span class="sidebar-label">品牌库</span>
+    <ul class="brand-list" id="brandList"></ul>
+    <button class="new-brand-btn" onclick="newBrand()">＋ 新建品牌</button>
+
+    <div class="active-brand-card" id="activeBrandCard" style="display:none">
+      <div class="active-brand-card-label">当前品牌</div>
+      <div class="active-brand-card-name" id="activeBrandName">—</div>
+      <div class="active-brand-card-slogan" id="activeBrandSlogan"></div>
+      <div class="active-brand-card-tools">
+        <div class="active-brand-card-tools-label">用这个品牌去写</div>
+        <a class="tool-link" href="index.html" onclick="passActiveBrand()">文案生成器 →</a>
+        <a class="tool-link" href="fangxie.html" onclick="passActiveBrand()">爆文仿写器 →</a>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ── MAIN ── -->
+  <main class="main-content">
+
+    <!-- EMPTY STATE -->
+    <div class="empty-state" id="emptyState">
+      <div class="empty-icon">◈</div>
+      <div class="empty-title">还没有品牌</div>
+      <div class="empty-desc">创建你的第一个品牌档案<br>所有文案工具都会自动使用品牌的调性和风格</div>
+      <button class="btn-primary" onclick="newBrand()">新建品牌 →</button>
+    </div>
+
+    <!-- BRAND VIEW MODE -->
+    <div class="brand-view" id="brandView">
+      <div class="preview-hero">
+        <div class="preview-label">Brand Profile</div>
+        <div class="preview-name" id="pvName"></div>
+        <div class="preview-slogan" id="pvSlogan"></div>
+        <div class="preview-tags" id="pvTags"></div>
+      </div>
+
+      <div class="preview-grid">
+        <div class="preview-card">
+          <div class="preview-card-label">目标人群</div>
+          <div class="preview-card-content" id="pvAudience"></div>
+        </div>
+        <div class="preview-card">
+          <div class="preview-card-label">语气风格</div>
+          <div class="preview-card-pills" id="pvTones"></div>
+        </div>
+        <div class="preview-card">
+          <div class="preview-card-label">核心关键词</div>
+          <div class="preview-card-pills" id="pvKeywords"></div>
+        </div>
+        <div class="preview-card">
+          <div class="preview-card-label">禁忌词</div>
+          <div class="preview-card-pills" id="pvForbidden"></div>
+        </div>
+      </div>
+
+      <div class="preview-full" id="pvValueWrap">
+        <div class="preview-full-label">品牌价值观 / 理念</div>
+        <div class="preview-full-content" id="pvValue"></div>
+      </div>
+
+      <div class="preview-full" id="pvStoryWrap">
+        <div class="preview-full-label">品牌故事 / 背景</div>
+        <div class="preview-full-content" id="pvStory"></div>
+      </div>
+
+      <div class="preview-full" id="pvSampleWrap">
+        <div class="preview-full-label">参考文案样本（AI 学习风格用）</div>
+        <div class="preview-full-content" id="pvSample"></div>
+      </div>
+
+      <div class="preview-actions">
+        <button class="btn-primary" onclick="editBrand()">编辑品牌 →</button>
+        <button class="btn-secondary" onclick="setActiveBrand(currentBrandId)">设为当前品牌</button>
+      </div>
+    </div>
+
+    <!-- BRAND FORM MODE -->
+    <div class="brand-form" id="brandForm">
+      <div class="form-card">
+        <div class="form-card-header">
+          <div>
+            <div class="form-card-title" id="formTitle">新建品牌档案</div>
+            <div class="form-card-subtitle">Brand Profile</div>
+          </div>
+        </div>
+
+        <div class="form-card-body">
+
+          <!-- 1. 基本信息 -->
+          <div class="form-section">
+            <div class="section-title">
+              <div class="section-num">1</div>
+              <div class="section-name">基本信息</div>
+            </div>
+            <div class="field-grid">
+              <div class="field">
+                <label>品牌名称 *</label>
+                <input type="text" id="f-name" placeholder="例：MUTO Studio" />
+              </div>
+              <div class="field">
+                <label>所属行业</label>
+                <select id="f-industry">
+                  <option value="">选择行业...</option>
+                  <option>生活方式 / 家居</option>
+                  <option>美妆 / 护肤</option>
+                  <option>食品 / 饮品</option>
+                  <option>服装 / 配饰</option>
+                  <option>咖啡 / 茶饮</option>
+                  <option>健康 / 运动</option>
+                  <option>母婴 / 亲子</option>
+                  <option>科技 / 数码</option>
+                  <option>教育 / 培训</option>
+                  <option>旅行 / 酒店</option>
+                  <option>宠物</option>
+                  <option>其他</option>
+                </select>
+              </div>
+            </div>
+            <div class="field-grid">
+              <div class="field">
+                <label>价格定位</label>
+                <select id="f-price">
+                  <option value="">选择定位...</option>
+                  <option>大众亲民（100元以下）</option>
+                  <option>中端品质（100–300元）</option>
+                  <option>中高端（300–800元）</option>
+                  <option>高端精品（800–2000元）</option>
+                  <option>奢侈品（2000元以上）</option>
+                </select>
+              </div>
+              <div class="field">
+                <label>品牌 Slogan</label>
+                <input type="text" id="f-slogan" placeholder="例：Don't rush the good stuff" />
+              </div>
+            </div>
+          </div>
+
+          <!-- 2. 目标人群 -->
+          <div class="form-section">
+            <div class="section-title">
+              <div class="section-num">2</div>
+              <div class="section-name">目标人群</div>
+            </div>
+            <div class="field-grid">
+              <div class="field">
+                <label>年龄范围</label>
+                <input type="text" id="f-age" placeholder="例：25–35岁" />
+              </div>
+              <div class="field">
+                <label>性别倾向</label>
+                <select id="f-gender">
+                  <option value="">不限</option>
+                  <option>主要女性</option>
+                  <option>主要男性</option>
+                  <option>男女均等</option>
+                </select>
+              </div>
+            </div>
+            <div class="field-full field">
+              <label>人群画像（详细描述你的目标用户是谁）</label>
+              <textarea id="f-audience" placeholder="例：一线城市职场女性，有独立消费能力，注重生活品质，喜欢探索精品小众品牌，对"慢生活"和"自我取悦"有强烈认同感..."></textarea>
+              <div class="field-hint">越详细越好，这会影响所有文案的用户视角</div>
+            </div>
+          </div>
+
+          <!-- 3. 品牌调性 -->
+          <div class="form-section">
+            <div class="section-title">
+              <div class="section-num">3</div>
+              <div class="section-name">品牌调性</div>
+              <div class="section-desc">可多选</div>
+            </div>
+            <div class="tone-grid" id="toneGrid">
+              <button class="tone-pill" onclick="toggleTone(this)">高端精致</button>
+              <button class="tone-pill" onclick="toggleTone(this)">温柔治愈</button>
+              <button class="tone-pill" onclick="toggleTone(this)">清冷高级</button>
+              <button class="tone-pill" onclick="toggleTone(this)">活泼有趣</button>
+              <button class="tone-pill" onclick="toggleTone(this)">专业权威</button>
+              <button class="tone-pill" onclick="toggleTone(this)">真实亲切</button>
+              <button class="tone-pill" onclick="toggleTone(this)">文艺小众</button>
+              <button class="tone-pill" onclick="toggleTone(this)">简约克制</button>
+              <button class="tone-pill" onclick="toggleTone(this)">自然有机</button>
+              <button class="tone-pill" onclick="toggleTone(this)">都市摩登</button>
+              <button class="tone-pill" onclick="toggleTone(this)">慵懒随性</button>
+              <button class="tone-pill" onclick="toggleTone(this)">励志正能量</button>
+            </div>
+          </div>
+
+          <!-- 4. 品牌语言 -->
+          <div class="form-section">
+            <div class="section-title">
+              <div class="section-num">4</div>
+              <div class="section-name">品牌语言</div>
+            </div>
+            <div class="field-full field">
+              <label>核心关键词（按回车添加）</label>
+              <div class="keywords-wrap" id="keywordsWrap" onclick="document.getElementById('keywordInput').focus()">
+                <input type="text" id="keywordInput" class="keyword-input" placeholder="输入关键词，回车添加..." onkeydown="handleKeyword(event,'keywords')" />
+              </div>
+              <div class="field-hint">品牌文案中应该经常出现的词语，例如：慢下来、精品、值得、从容</div>
+            </div>
+            <div class="field-full field">
+              <label>禁忌词（按回车添加）</label>
+              <div class="keywords-wrap" id="forbiddenWrap" onclick="document.getElementById('forbiddenInput').focus()">
+                <input type="text" id="forbiddenInput" class="keyword-input" placeholder="输入禁忌词，回车添加..." onkeydown="handleKeyword(event,'forbidden')" />
+              </div>
+              <div class="field-hint">品牌文案中不应出现的词语，例如：便宜、促销、划算、清仓</div>
+            </div>
+          </div>
+
+          <!-- 5. 品牌内涵 -->
+          <div class="form-section">
+            <div class="section-title">
+              <div class="section-num">5</div>
+              <div class="section-name">品牌内涵</div>
+            </div>
+            <div class="field-full field">
+              <label>品牌价值观 / 理念</label>
+              <textarea class="tall" id="f-value" placeholder="例：我们相信好东西不用急。这个时代什么都快，但真正值得的事情，从来都需要时间。我们做的每一件产品，都是给那些愿意慢下来的人..."></textarea>
+            </div>
+            <div class="field-full field">
+              <label>品牌故事 / 背景</label>
+              <textarea id="f-story" placeholder="例：品牌创立于2019年的墨尔本，创始人因为一杯改变了她对咖啡认知的手冲，开始重新思考"随行"这件事..."></textarea>
+            </div>
+          </div>
+
+          <!-- 6. 参考样本 -->
+          <div class="form-section">
+            <div class="section-title">
+              <div class="section-num">6</div>
+              <div class="section-name">参考文案样本</div>
+              <div class="section-desc">让 AI 学习你的风格</div>
+            </div>
+            <div class="field-full field">
+              <label>粘贴你觉得最能代表品牌风格的文案（可以是多段）</label>
+              <textarea class="tall" id="f-sample" placeholder="例：
+你打算买一只彩色咖啡杯 那就是它了
+
+从STTOKE所有颜色里，选一只最让人挪不开眼的，我们大概会选择星彩紫...
+
+（粘贴你喜欢的品牌文案，AI会学习这种风格）"></textarea>
+              <div class="field-hint">这是最有价值的一项——AI 会学习这些文案的节奏、用词、句式，让生成的内容更符合你的品牌风格</div>
+            </div>
+          </div>
+
+        </div>
+
+        <div class="form-actions">
+          <button class="btn-primary" onclick="saveBrand()">保存品牌 →</button>
+          <button class="btn-secondary" onclick="cancelForm()">取消</button>
+          <button class="btn-danger" id="deleteBtn" onclick="deleteBrand()" style="display:none">删除品牌</button>
+        </div>
+
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── DATA ──
+const STORAGE_KEY = 'brand_center_v1';
+const ACTIVE_KEY  = 'brand_center_active';
+
+function loadBrands() {
+  try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; }
+  catch { return []; }
+}
+function saveBrands(brands) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(brands));
+}
+function getActiveBrandId() {
+  return localStorage.getItem(ACTIVE_KEY) || null;
+}
+function setActiveBrandId(id) {
+  localStorage.setItem(ACTIVE_KEY, id);
+}
+
+let brands = loadBrands();
+let currentBrandId = null;
+let editingBrandId = null;
+let keywords = [];
+let forbidden = [];
+
+// ── RENDER SIDEBAR ──
+function renderSidebar() {
+  const list = document.getElementById('brandList');
+  const activeId = getActiveBrandId();
+  list.innerHTML = '';
+  brands.forEach(b => {
+    const li = document.createElement('li');
+    li.className = 'brand-item' + (b.id === currentBrandId ? ' active' : '');
+    li.innerHTML = `
+      <div onclick="viewBrand('${b.id}')">
+        <div class="brand-item-name">${b.name}</div>
+        <div class="brand-item-industry">${b.industry || '未设置行业'}</div>
+      </div>
+      <div class="brand-item-actions">
+        <button class="icon-btn" title="设为当前" onclick="setActiveBrand('${b.id}');event.stopPropagation()">★</button>
+        <button class="icon-btn" title="编辑" onclick="viewBrand('${b.id}');editBrand();event.stopPropagation()">✎</button>
+      </div>`;
+    list.appendChild(li);
+  });
+
+  const activeId2 = getActiveBrandId();
+  const activeBrand = brands.find(b => b.id === activeId2);
+  const card = document.getElementById('activeBrandCard');
+  if (activeBrand) {
+    card.style.display = 'block';
+    document.getElementById('activeBrandName').textContent = activeBrand.name;
+    document.getElementById('activeBrandSlogan').textContent = activeBrand.slogan || '';
+  } else {
+    card.style.display = 'none';
+  }
+}
+
+// ── VIEW BRAND ──
+function viewBrand(id) {
+  currentBrandId = id;
+  const b = brands.find(x => x.id === id);
+  if (!b) return;
+
+  document.getElementById('emptyState').style.display = 'none';
+  document.getElementById('brandView').classList.add('show');
+  document.getElementById('brandForm').classList.remove('show');
+
+  document.getElementById('pvName').textContent = b.name;
+  document.getElementById('pvSlogan').textContent = b.slogan || '';
+
+  const tags = [];
+  if (b.industry) tags.push(b.industry);
+  if (b.price) tags.push(b.price);
+  if (b.age) tags.push(b.age);
+  if (b.gender && b.gender !== '不限') tags.push(b.gender);
+  document.getElementById('pvTags').innerHTML = tags.map(t => `<span class="preview-tag">${t}</span>`).join('');
+
+  document.getElementById('pvAudience').textContent = b.audience || '—';
+
+  const toneEl = document.getElementById('pvTones');
+  toneEl.innerHTML = (b.tones || []).map(t => `<span class="preview-card-pill">${t}</span>`).join('') || '<span style="color:var(--ink-muted);font-size:13px">未设置</span>';
+
+  const kwEl = document.getElementById('pvKeywords');
+  kwEl.innerHTML = (b.keywords || []).map(t => `<span class="preview-card-pill">${t}</span>`).join('') || '<span style="color:var(--ink-muted);font-size:13px">未设置</span>';
+
+  const fbEl = document.getElementById('pvForbidden');
+  fbEl.innerHTML = (b.forbidden || []).map(t => `<span class="preview-card-pill gold">${t}</span>`).join('') || '<span style="color:var(--ink-muted);font-size:13px">未设置</span>';
+
+  showOrHide('pvValueWrap', 'pvValue', b.value);
+  showOrHide('pvStoryWrap', 'pvStory', b.story);
+  showOrHide('pvSampleWrap', 'pvSample', b.sample);
+
+  renderSidebar();
+}
+
+function showOrHide(wrapId, contentId, text) {
+  const wrap = document.getElementById(wrapId);
+  const content = document.getElementById(contentId);
+  if (text) { wrap.style.display = 'block'; content.textContent = text; }
+  else { wrap.style.display = 'none'; }
+}
+
+// ── NEW / EDIT / CANCEL ──
+function newBrand() {
+  editingBrandId = null;
+  currentBrandId = null;
+  document.getElementById('formTitle').textContent = '新建品牌档案';
+  document.getElementById('deleteBtn').style.display = 'none';
+  clearForm();
+  document.getElementById('emptyState').style.display = 'none';
+  document.getElementById('brandView').classList.remove('show');
+  document.getElementById('brandForm').classList.add('show');
+  renderSidebar();
+}
+
+function editBrand() {
+  const b = brands.find(x => x.id === currentBrandId);
+  if (!b) return;
+  editingBrandId = currentBrandId;
+  document.getElementById('formTitle').textContent = '编辑品牌档案';
+  document.getElementById('deleteBtn').style.display = 'block';
+  fillForm(b);
+  document.getElementById('brandView').classList.remove('show');
+  document.getElementById('brandForm').classList.add('show');
+}
+
+function cancelForm() {
+  document.getElementById('brandForm').classList.remove('show');
+  if (brands.length === 0) {
+    document.getElementById('emptyState').style.display = 'flex';
+  } else if (currentBrandId) {
+    viewBrand(currentBrandId);
+  } else {
+    viewBrand(brands[0].id);
+  }
+}
+
+// ── FORM FILL / CLEAR ──
+function clearForm() {
+  ['f-name','f-slogan','f-age','f-audience','f-value','f-story','f-sample'].forEach(id => {
+    document.getElementById(id).value = '';
+  });
+  document.getElementById('f-industry').value = '';
+  document.getElementById('f-price').value = '';
+  document.getElementById('f-gender').value = '';
+  document.querySelectorAll('.tone-pill').forEach(p => p.classList.remove('selected'));
+  keywords = []; forbidden = [];
+  renderKeywords(); renderForbidden();
+}
+
+function fillForm(b) {
+  document.getElementById('f-name').value = b.name || '';
+  document.getElementById('f-slogan').value = b.slogan || '';
+  document.getElementById('f-industry').value = b.industry || '';
+  document.getElementById('f-price').value = b.price || '';
+  document.getElementById('f-age').value = b.age || '';
+  document.getElementById('f-gender').value = b.gender || '';
+  document.getElementById('f-audience').value = b.audience || '';
+  document.getElementById('f-value').value = b.value || '';
+  document.getElementById('f-story').value = b.story || '';
+  document.getElementById('f-sample').value = b.sample || '';
+  document.querySelectorAll('.tone-pill').forEach(p => {
+    p.classList.toggle('selected', (b.tones || []).includes(p.textContent));
+  });
+  keywords = [...(b.keywords || [])];
+  forbidden = [...(b.forbidden || [])];
+  renderKeywords(); renderForbidden();
+}
+
+// ── SAVE ──
+function saveBrand() {
+  const name = document.getElementById('f-name').value.trim();
+  if (!name) { alert('请填写品牌名称'); return; }
+
+  const tones = [...document.querySelectorAll('.tone-pill.selected')].map(p => p.textContent);
+
+  const data = {
+    id: editingBrandId || Date.now().toString(),
+    name,
+    slogan: document.getElementById('f-slogan').value.trim(),
+    industry: document.getElementById('f-industry').value,
+    price: document.getElementById('f-price').value,
+    age: document.getElementById('f-age').value.trim(),
+    gender: document.getElementById('f-gender').value,
+    audience: document.getElementById('f-audience').value.trim(),
+    tones,
+    keywords: [...keywords],
+    forbidden: [...forbidden],
+    value: document.getElementById('f-value').value.trim(),
+    story: document.getElementById('f-story').value.trim(),
+    sample: document.getElementById('f-sample').value.trim(),
+    updatedAt: new Date().toISOString(),
+  };
+
+  if (editingBrandId) {
+    const idx = brands.findIndex(b => b.id === editingBrandId);
+    if (idx !== -1) brands[idx] = data;
+  } else {
+    brands.push(data);
+  }
+
+  saveBrands(brands);
+  currentBrandId = data.id;
+  editingBrandId = null;
+
+  // 如果是第一个品牌，自动设为当前品牌
+  if (brands.length === 1) setActiveBrandId(data.id);
+
+  showToast('品牌已保存 ✓');
+  viewBrand(data.id);
+  renderSidebar();
+}
+
+// ── DELETE ──
+function deleteBrand() {
+  if (!confirm(`确定要删除「${brands.find(b => b.id === editingBrandId)?.name}」吗？此操作不可撤销。`)) return;
+  brands = brands.filter(b => b.id !== editingBrandId);
+  saveBrands(brands);
+  if (getActiveBrandId() === editingBrandId) localStorage.removeItem(ACTIVE_KEY);
+  editingBrandId = null;
+  currentBrandId = null;
+  document.getElementById('brandForm').classList.remove('show');
+  document.getElementById('brandView').classList.remove('show');
+  if (brands.length > 0) viewBrand(brands[0].id);
+  else document.getElementById('emptyState').style.display = 'flex';
+  renderSidebar();
+  showToast('品牌已删除');
+}
+
+// ── SET ACTIVE ──
+function setActiveBrand(id) {
+  setActiveBrandId(id);
+  renderSidebar();
+  showToast('已设为当前品牌 ✓');
+}
+
+// 把当前品牌数据存到 sessionStorage 供其他工具读取
+function passActiveBrand() {
+  const id = getActiveBrandId();
+  const b = brands.find(x => x.id === id);
+  if (b) sessionStorage.setItem('active_brand', JSON.stringify(b));
+}
+
+// ── TONE TOGGLE ──
+function toggleTone(el) { el.classList.toggle('selected'); }
+
+// ── KEYWORDS ──
+function handleKeyword(e, type) {
+  if (e.key !== 'Enter') return;
+  e.preventDefault();
+  const input = document.getElementById(type === 'keywords' ? 'keywordInput' : 'forbiddenInput');
+  const val = input.value.trim();
+  if (!val) return;
+  if (type === 'keywords') { keywords.push(val); renderKeywords(); }
+  else { forbidden.push(val); renderForbidden(); }
+  input.value = '';
+}
+
+function renderKeywords() {
+  const wrap = document.getElementById('keywordsWrap');
+  const input = document.getElementById('keywordInput');
+  wrap.innerHTML = '';
+  keywords.forEach((k, i) => {
+    const tag = document.createElement('span');
+    tag.className = 'keyword-tag';
+    tag.innerHTML = `${k}<button onclick="removeKeyword(${i})">×</button>`;
+    wrap.appendChild(tag);
+  });
+  wrap.appendChild(input);
+}
+
+function renderForbidden() {
+  const wrap = document.getElementById('forbiddenWrap');
+  const input = document.getElementById('forbiddenInput');
+  wrap.innerHTML = '';
+  forbidden.forEach((k, i) => {
+    const tag = document.createElement('span');
+    tag.className = 'keyword-tag';
+    tag.innerHTML = `${k}<button onclick="removeForbidden(${i})">×</button>`;
+    wrap.appendChild(tag);
+  });
+  wrap.appendChild(input);
+}
+
+function removeKeyword(i) { keywords.splice(i, 1); renderKeywords(); }
+function removeForbidden(i) { forbidden.splice(i, 1); renderForbidden(); }
+
+// ── TOAST ──
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+// ── INIT ──
+renderSidebar();
+if (brands.length > 0) {
+  const activeId = getActiveBrandId();
+  const startId = (activeId && brands.find(b => b.id === activeId)) ? activeId : brands[0].id;
+  viewBrand(startId);
+} else {
+  document.getElementById('emptyState').style.display = 'flex';
+}
+</script>
+</body>
+</html>
