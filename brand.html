@@ -652,6 +652,43 @@ header {
             </div>
           </div>
 
+          <!-- 7. 消费者洞察 -->
+          <div class="form-section">
+            <div class="section-title">
+              <div class="section-num">7</div>
+              <div class="section-name">消费者洞察</div>
+              <div class="section-desc">让文案真正打动人心</div>
+            </div>
+            <div style="background:var(--cream-dark);border-radius:2px;padding:12px 16px;margin-bottom:20px;font-size:13px;color:var(--ink-muted);line-height:1.7;">
+              这一步是让 AI 真正站在消费者角度写文案的关键。用消费者自己的语言来描述，越真实越好，不需要品牌化的措辞。
+            </div>
+            <div class="field-full field">
+              <label>她们买之前最大的顾虑是什么？</label>
+              <textarea id="f-concern" placeholder="例：价格有点贵，不确定值不值；不知道保温效果是否真的好；担心设计好看但不实用；怕买回来不适合自己的使用场景..."></textarea>
+              <div class="field-hint">真实的购买疑虑，文案要提前化解这些顾虑</div>
+            </div>
+            <div class="field-full field">
+              <label>她们买了之后最常说的一句话是什么？</label>
+              <textarea id="f-afterbuy" placeholder="例：早买早享受，之前那些将就的杯子真的白用了；每天早上看到它都心情很好；朋友问我在哪买的，说很好看..."></textarea>
+              <div class="field-hint">买后感受是最真实的产品证言，也是最能打动潜在消费者的内容</div>
+            </div>
+            <div class="field-full field">
+              <label>她们私下怎么描述这个产品？（用她们自己的语言）</label>
+              <textarea id="f-consumer-voice" placeholder="例：就是那种喝咖啡会好喝一点点的杯子；有点贵但是看着就很高兴；带出去会被问在哪买的那种；装咖啡不会有怪味的杯子..."></textarea>
+              <div class="field-hint">消费者的口语描述，是文案最好的素材来源</div>
+            </div>
+            <div class="field-full field">
+              <label>什么样的场景最能触发她们购买？</label>
+              <textarea id="f-trigger" placeholder="例：看到别人拿着好看的杯子上班；自己的旧杯子喝咖啡有塑料味；想给自己买一个"对自己好一点"的东西；手机拍照想有好看的道具..."></textarea>
+              <div class="field-hint">购买触发场景，帮助文案找到最准确的情绪切入点</div>
+            </div>
+            <div class="field-full field">
+              <label>她们会把这个产品分享给谁？为什么分享？</label>
+              <textarea id="f-share" placeholder="例：分享给同样喜欢咖啡的朋友，因为觉得她会喜欢；发小红书因为颜值太高了值得分享；推荐给想买随行杯的闺蜜，因为真的好用..."></textarea>
+              <div class="field-hint">分享动机决定了文案的社交传播力</div>
+            </div>
+          </div>
+
         </div>
 
         <div class="form-actions">
@@ -807,7 +844,8 @@ function cancelForm() {
 
 // ── FORM FILL / CLEAR ──
 function clearForm() {
-  ['f-name','f-slogan','f-age','f-audience','f-value','f-story','f-sample'].forEach(id => {
+  ['f-name','f-slogan','f-age','f-audience','f-value','f-story','f-sample',
+   'f-concern','f-afterbuy','f-consumer-voice','f-trigger','f-share'].forEach(id => {
     document.getElementById(id).value = '';
   });
   document.getElementById('f-industry').value = '';
@@ -829,6 +867,11 @@ function fillForm(b) {
   document.getElementById('f-value').value = b.value || '';
   document.getElementById('f-story').value = b.story || '';
   document.getElementById('f-sample').value = b.sample || '';
+  document.getElementById('f-concern').value = b.concern || '';
+  document.getElementById('f-afterbuy').value = b.afterbuy || '';
+  document.getElementById('f-consumer-voice').value = b.consumerVoice || '';
+  document.getElementById('f-trigger').value = b.trigger || '';
+  document.getElementById('f-share').value = b.share || '';
   document.querySelectorAll('.tone-pill').forEach(p => {
     p.classList.toggle('selected', (b.tones || []).includes(p.textContent));
   });
@@ -859,6 +902,11 @@ function saveBrand() {
     value: document.getElementById('f-value').value.trim(),
     story: document.getElementById('f-story').value.trim(),
     sample: document.getElementById('f-sample').value.trim(),
+    concern: document.getElementById('f-concern').value.trim(),
+    afterbuy: document.getElementById('f-afterbuy').value.trim(),
+    consumerVoice: document.getElementById('f-consumer-voice').value.trim(),
+    trigger: document.getElementById('f-trigger').value.trim(),
+    share: document.getElementById('f-share').value.trim(),
     updatedAt: new Date().toISOString(),
   };
 

@@ -244,6 +244,7 @@ footer em { color: var(--gold); font-style: normal; }
     <div style="display:flex;gap:0;margin-bottom:2rem;border:1px solid var(--border-strong);border-radius:2px;overflow:hidden;">
       <button id="tab-quick" onclick="switchTab('quick')" style="flex:1;padding:11px 0;font-family:var(--mono);font-size:11px;letter-spacing:0.15em;text-transform:uppercase;border:none;cursor:pointer;background:var(--ink);color:var(--cream);transition:all 0.18s;">快速仿写</button>
       <button id="tab-deep" onclick="switchTab('deep')" style="flex:1;padding:11px 0;font-family:var(--mono);font-size:11px;letter-spacing:0.15em;text-transform:uppercase;border:none;border-left:1px solid var(--border-strong);cursor:pointer;background:transparent;color:var(--ink-muted);transition:all 0.18s;">深度分析仿写</button>
+      <button id="tab-diagnose" onclick="switchTab('diagnose')" style="flex:1;padding:11px 0;font-family:var(--mono);font-size:11px;letter-spacing:0.15em;text-transform:uppercase;border:none;border-left:1px solid var(--border-strong);cursor:pointer;background:transparent;color:var(--ink-muted);transition:all 0.18s;">文案诊断升级</button>
     </div>
 
     <!-- ===== QUICK COPY PANEL ===== -->
@@ -474,6 +475,31 @@ AI 会学习这段内容的语气、节奏、用词习惯，然后用同样的�
 
     </div><!-- end panel-deep -->
 
+    <!-- ===== DIAGNOSE PANEL ===== -->
+    <div id="panel-diagnose" style="display:none;">
+      <div class="divider"><span>输入你的文案草稿</span></div>
+
+      <div class="field" style="margin-bottom:20px;">
+        <label>待诊断的文案（标题 + 正文）</label>
+        <textarea id="d-copy" style="width:100%;background:transparent;border:none;border-bottom:1px solid var(--border-strong);font-family:var(--serif);font-size:14px;color:var(--ink);padding:6px 0 8px;outline:none;resize:vertical;min-height:160px;line-height:1.7;transition:border-color 0.2s;" placeholder="把你写好或者初稿的文案粘贴进来，AI 会从品牌、产品、消费者三个角度来诊断并升级..."></textarea>
+      </div>
+
+      <div id="d-brand-notice" style="display:none;background:#edf4fa;border:1px solid #b8d4e8;border-radius:2px;padding:10px 16px;margin-bottom:16px;font-family:var(--mono);font-size:11px;color:#2c5f8a;letter-spacing:0.05em;">✓ 已加载品牌档案，诊断将基于你的品牌定位和消费者洞察</div>
+
+      <div class="form-full field" style="margin-bottom:20px;">
+        <label style="display:block;font-family:var(--mono);font-size:10px;letter-spacing:0.18em;color:var(--ink-muted);text-transform:uppercase;margin-bottom:8px;">诊断重点（选填）</label>
+        <input type="text" id="d-focus" style="width:100%;background:transparent;border:none;border-bottom:1px solid var(--border-strong);font-family:var(--serif);font-size:15px;color:var(--ink);padding:6px 0 8px;outline:none;transition:border-color 0.2s;" placeholder="例：希望消费者更有参与感；觉得太像广告了；想让人看完想评论..." />
+      </div>
+
+      <button class="action-btn" id="diagnoseBtn" onclick="diagnose()" style="margin-top:0.5rem;">三角色诊断并升级 →</button>
+
+      <div class="loading" id="d-loading" style="display:none;text-align:center;padding:3rem 0;">
+        <div class="loading-text">正在从三个角度诊断你的文案</div>
+      </div>
+
+      <div id="d-results" style="display:none;margin-top:1rem;"></div>
+    </div>
+
   </div>
 </main>
 
@@ -574,12 +600,14 @@ function onBrandChange() {
     // 快速仿写面板也同步
     if (activeBrand.audience) document.getElementById('q-audience').value = activeBrand.audience;
     document.getElementById('q-brand-notice').style.display = 'block';
+    document.getElementById('d-brand-notice').style.display = 'block';
   } else {
     badge.style.display = 'none';
     document.getElementById('brandPreviewCard').style.display = 'none';
     document.getElementById('manualForm').style.display = 'block';
     document.getElementById('brandFillNotice').style.display = 'none';
     document.getElementById('q-brand-notice').style.display = 'none';
+    document.getElementById('d-brand-notice').style.display = 'none';
     activeBrand = null;
   }
 }
@@ -605,6 +633,25 @@ function buildBrandContext() {
   if (!activeBrand) return '';
   const b = activeBrand;
   const parts = [`【品牌名称】${b.name}`];
+  if (b.slogan)    parts.push(`【品牌Slogan】${b.slogan}`);
+  if (b.industry)  parts.push(`【行业】${b.industry}`);
+  if (b.price)     parts.push(`【价格定位】${b.price}`);
+  if (b.audience)  parts.push(`【目标人群】${b.audience}`);
+  if (b.tones?.length) parts.push(`【品牌调性】${b.tones.join('、')}`);
+  if (b.keywords?.length) parts.push(`【核心关键词】${b.keywords.join('、')}`);
+  if (b.forbidden?.length) parts.push(`【禁止使用的词】${b.forbidden.join('、')}`);
+  if (b.value)     parts.push(`【品牌价值观】${b.value}`);
+  if (b.story)     parts.push(`【品牌故事】${b.story}`);
+  if (b.sample)    parts.push(`【参考文案风格样本】
+${b.sample}`);
+  if (b.concern)       parts.push(`【消费者购买前最大顾虑】${b.concern}`);
+  if (b.afterbuy)      parts.push(`【消费者买后最常说的话】${b.afterbuy}`);
+  if (b.consumerVoice) parts.push(`【消费者私下如何描述产品】${b.consumerVoice}`);
+  if (b.trigger)       parts.push(`【触发购买的场景】${b.trigger}`);
+  if (b.share)         parts.push(`【分享动机】${b.share}`);
+  return parts.join('
+');
+}`];
   if (b.slogan)    parts.push(`【品牌Slogan】${b.slogan}`);
   if (b.industry)  parts.push(`【行业】${b.industry}`);
   if (b.price)     parts.push(`【价格定位】${b.price}`);
@@ -701,13 +748,132 @@ function copyBlock(el) {
 // ── TAB 切换 ──
 // ── 主 Tab 切换 ──
 function switchTab(tab) {
-  const isQuick = tab === 'quick';
-  document.getElementById('panel-quick').style.display = isQuick ? 'block' : 'none';
-  document.getElementById('panel-deep').style.display  = isQuick ? 'none'  : 'block';
-  document.getElementById('tab-quick').style.background = isQuick ? 'var(--ink)' : 'transparent';
-  document.getElementById('tab-quick').style.color      = isQuick ? 'var(--cream)' : 'var(--ink-muted)';
-  document.getElementById('tab-deep').style.background  = isQuick ? 'transparent' : 'var(--ink)';
-  document.getElementById('tab-deep').style.color       = isQuick ? 'var(--ink-muted)' : 'var(--cream)';
+  const tabs = ['quick','deep','diagnose'];
+  tabs.forEach(t => {
+    const isActive = t === tab;
+    document.getElementById('panel-' + t).style.display = isActive ? 'block' : 'none';
+    const btn = document.getElementById('tab-' + t);
+    btn.style.background = isActive ? 'var(--ink)' : 'transparent';
+    btn.style.color = isActive ? 'var(--cream)' : 'var(--ink-muted)';
+  });
+}
+
+// ── 文案诊断升级 ──
+async function diagnose() {
+  const copy  = document.getElementById('d-copy').value.trim();
+  const focus = document.getElementById('d-focus').value.trim();
+
+  if (!copy) { alert('请先粘贴需要诊断的文案'); return; }
+
+  const btn = document.getElementById('diagnoseBtn');
+  btn.disabled = true;
+  document.getElementById('d-loading').style.display = 'block';
+  document.getElementById('d-results').style.display = 'none';
+  document.getElementById('d-results').innerHTML = '';
+
+  const brandContext = buildBrandContext();
+
+  const prompt = `你是一位同时具备品牌经理、产品经理和消费者心理三重视角的顶级文案专家。
+
+请从以下三个角色的角度，对这篇文案进行深度诊断，然后给出升级版本。
+
+${brandContext ? `【品牌档案】\n${brandContext}\n` : ''}
+【待诊断的文案】
+${copy}
+
+${focus ? `【特别关注】${focus}` : ''}
+
+请按以下格式输出诊断报告和升级文案，严格用标记分隔，不要用JSON：
+
+【品牌经理诊断】
+从品牌一致性角度：这篇文案哪里符合品牌调性，哪里偏离了？关键信息是否传递到位？（2-3条具体问题）
+
+【产品经理诊断】
+从产品价值角度：核心卖点是否清晰？用户价值是否可感知？有没有说了但消费者感受不到的地方？（2-3条具体问题）
+
+【消费者诊断】
+从消费者角度：我为什么要看这篇文案？和我有什么关系？看完我想做什么？参与感够吗？（2-3条具体问题）
+
+【升级版本1：消费者参与感版】
+标题：
+正文：
+（重点解决：让消费者觉得"说的就是我"，结尾有互动钩子）
+
+【升级版本2：品牌调性强化版】
+标题：
+正文：
+（重点解决：品牌语言更精准，调性更一致，同时消费者看得懂）
+
+【升级版本3：传播扩散版】
+标题：
+正文：
+（重点解决：让人看完想转发、想评论、想分享给朋友）`;
+
+  try {
+    const text = await callClaude([{ role: 'user', content: prompt }]);
+
+    document.getElementById('d-loading').style.display = 'none';
+    const container = document.getElementById('d-results');
+    container.style.display = 'block';
+
+    // 解析诊断报告
+    const diagSection = document.createElement('div');
+    diagSection.className = 'divider';
+    diagSection.innerHTML = '<span>诊断报告</span>';
+    container.appendChild(diagSection);
+
+    const diagNames = ['品牌经理诊断','产品经理诊断','消费者诊断'];
+    const diagColors = ['#fff8e6','#f0edf8','#f0f8f3'];
+    const diagTextColors = ['#9a6500','#6b5b95','#5a9e6f'];
+
+    diagNames.forEach((name, i) => {
+      const match = text.match(new RegExp(`【${name}】([\\s\\S]*?)(?=【|$)`));
+      if (!match) return;
+      const card = document.createElement('div');
+      card.className = 'analysis-card';
+      card.style.animationDelay = (i * 0.08) + 's';
+      card.style.marginBottom = '10px';
+      const issues = match[1].trim().split('\n').filter(l => l.trim()).map(l =>
+        `<div style="display:flex;gap:8px;font-size:13px;color:var(--ink-soft);line-height:1.7;margin-bottom:6px;"><span style="color:${diagTextColors[i]};flex-shrink:0;">→</span><span>${l.replace(/^[·•\-\d\.\s]+/, '')}</span></div>`
+      ).join('');
+      card.innerHTML = `
+        <div class="card-header">
+          <span class="badge" style="background:${diagColors[i]};color:${diagTextColors[i]};font-family:var(--mono);font-size:10px;padding:3px 12px;border-radius:20px;">${name}</span>
+        </div>
+        ${issues}`;
+      container.appendChild(card);
+    });
+
+    // 解析升级版本
+    const upgradeSection = document.createElement('div');
+    upgradeSection.className = 'divider';
+    upgradeSection.style.marginTop = '1.5rem';
+    upgradeSection.innerHTML = '<span>升级版本（点击正文复制）</span>';
+    container.appendChild(upgradeSection);
+
+    const upgradeNames = ['升级版本1：消费者参与感版','升级版本2：品牌调性强化版','升级版本3：传播扩散版'];
+    upgradeNames.forEach((name, i) => {
+      const match = text.match(new RegExp(`【${name}】([\\s\\S]*?)(?=【|$)`));
+      if (!match) return;
+      const block = match[1].trim();
+      const titleMatch = block.match(/标题[：:]\s*(.+)/);
+      const bodyMatch  = block.match(/正文[：:]\s*([\s\S]+?)(?=（重点|$)/);
+      if (!titleMatch) return;
+      const title = titleMatch[1].trim();
+      const body  = bodyMatch ? bodyMatch[1].trim() : block;
+
+      const v = { style: name.replace('升级版本1：','').replace('升级版本2：','').replace('升级版本3：',''), title, body };
+      renderVersionCard(container, v, i, `诊断升级·${activeBrand?.name || ''}`);
+    });
+
+  } catch (err) {
+    document.getElementById('d-loading').style.display = 'none';
+    const container = document.getElementById('d-results');
+    container.style.display = 'block';
+    container.innerHTML = `<div class="error-card"><div class="error-title">诊断失败</div><div class="error-msg">${err.message}</div></div>`;
+  } finally {
+    btn.disabled = false;
+  }
 }
 
 // ── 快速仿写输入模式切换 ──
