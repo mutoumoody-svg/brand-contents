@@ -338,35 +338,21 @@ function buildBrandContext() {
   if (!activeBrand) return '';
   const b = activeBrand;
   const parts = [`【品牌名称】${b.name}`];
-  if (b.slogan)    parts.push(`【品牌Slogan】${b.slogan}`);
-  if (b.industry)  parts.push(`【行业】${b.industry}`);
-  if (b.price)     parts.push(`【价格定位】${b.price}`);
-  if (b.audience)  parts.push(`【目标人群】${b.audience}`);
-  if (b.tones?.length) parts.push(`【品牌调性】${b.tones.join('、')}`);
-  if (b.keywords?.length) parts.push(`【核心关键词】${b.keywords.join('、')}`);
-  if (b.forbidden?.length) parts.push(`【禁止使用的词】${b.forbidden.join('、')}`);
-  if (b.value)     parts.push(`【品牌价值观】${b.value}`);
-  if (b.story)     parts.push(`【品牌故事】${b.story}`);
-  if (b.sample)    parts.push(`【参考文案风格样本】
-${b.sample}`);
-  if (b.concern)       parts.push(`【消费者购买前最大顾虑】${b.concern}`);
-  if (b.afterbuy)      parts.push(`【消费者买后最常说的话】${b.afterbuy}`);
-  if (b.consumerVoice) parts.push(`【消费者私下如何描述产品】${b.consumerVoice}`);
-  if (b.trigger)       parts.push(`【触发购买的场景】${b.trigger}`);
-  if (b.share)         parts.push(`【分享动机】${b.share}`);
-  return parts.join('
-');
-}`];
-  if (b.slogan)    parts.push(`【品牌Slogan】${b.slogan}`);
-  if (b.industry)  parts.push(`【行业】${b.industry}`);
-  if (b.price)     parts.push(`【价格定位】${b.price}`);
-  if (b.audience)  parts.push(`【目标人群】${b.audience}`);
+  if (b.slogan)         parts.push(`【品牌Slogan】${b.slogan}`);
+  if (b.industry)       parts.push(`【行业】${b.industry}`);
+  if (b.price)          parts.push(`【价格定位】${b.price}`);
+  if (b.audience)       parts.push(`【目标人群】${b.audience}`);
   if (b.tones?.length)    parts.push(`【品牌调性】${b.tones.join('、')}`);
   if (b.keywords?.length) parts.push(`【核心关键词】${b.keywords.join('、')}`);
   if (b.forbidden?.length) parts.push(`【禁止使用的词】${b.forbidden.join('、')}`);
-  if (b.value)     parts.push(`【品牌价值观】${b.value}`);
-  if (b.story)     parts.push(`【品牌故事】${b.story}`);
-  if (b.sample)    parts.push(`【参考文案风格样本】\n${b.sample}`);
+  if (b.value)          parts.push(`【品牌价值观】${b.value}`);
+  if (b.story)          parts.push(`【品牌故事】${b.story}`);
+  if (b.sample)         parts.push(`【参考文案风格样本】\n${b.sample}`);
+  if (b.concern)        parts.push(`【消费者购买前最大顾虑】${b.concern}`);
+  if (b.afterbuy)       parts.push(`【消费者买后最常说的话】${b.afterbuy}`);
+  if (b.consumerVoice)  parts.push(`【消费者私下如何描述产品】${b.consumerVoice}`);
+  if (b.trigger)        parts.push(`【触发购买的场景】${b.trigger}`);
+  if (b.share)          parts.push(`【分享动机】${b.share}`);
   return parts.join('\n');
 }
 
