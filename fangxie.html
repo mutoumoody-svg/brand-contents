@@ -203,6 +203,81 @@ footer em { color: var(--gold); font-style: normal; }
 <main>
   <div class="container">
 
+    <!-- MODE TOGGLE -->
+    <div style="display:flex;gap:0;margin-bottom:2rem;border:1px solid var(--border-strong);border-radius:2px;overflow:hidden;">
+      <button id="tab-quick" onclick="switchTab('quick')" style="flex:1;padding:11px 0;font-family:var(--mono);font-size:11px;letter-spacing:0.15em;text-transform:uppercase;border:none;cursor:pointer;background:var(--ink);color:var(--cream);transition:all 0.18s;">快速仿写</button>
+      <button id="tab-deep" onclick="switchTab('deep')" style="flex:1;padding:11px 0;font-family:var(--mono);font-size:11px;letter-spacing:0.15em;text-transform:uppercase;border:none;border-left:1px solid var(--border-strong);cursor:pointer;background:transparent;color:var(--ink-muted);transition:all 0.18s;">深度分析仿写</button>
+    </div>
+
+    <!-- ===== QUICK COPY PANEL ===== -->
+    <div id="panel-quick">
+      <div class="divider"><span>贴入参考内容</span></div>
+
+      <!-- 输入方式切换 -->
+      <div class="input-toggle" style="margin-bottom:1.5rem;">
+        <button class="toggle-btn active" id="q-tab-text" onclick="switchQInput('text')">文字粘贴</button>
+        <button class="toggle-btn" id="q-tab-image" onclick="switchQInput('image')">截图上传</button>
+      </div>
+
+      <!-- 文字输入 -->
+      <div id="q-panel-text" style="margin-bottom:20px;">
+        <div class="field">
+          <label>参考文案（任何你觉得风格好的内容）</label>
+          <textarea id="q-ref" style="width:100%;background:transparent;border:none;border-bottom:1px solid var(--border-strong);font-family:var(--serif);font-size:14px;color:var(--ink);padding:6px 0 8px;outline:none;resize:vertical;min-height:180px;line-height:1.7;transition:border-color 0.2s;" placeholder="把你喜欢的文案、文章片段、品牌故事、种草笔记等粘贴进来...
+
+AI 会学习这段内容的语气、节奏、用词习惯，然后用同样的风格帮你写。"></textarea>
+        </div>
+      </div>
+
+      <!-- 图片上传 -->
+      <div id="q-panel-image" style="display:none;margin-bottom:20px;">
+        <div class="upload-zone" id="q-uploadZone" onclick="document.getElementById('q-imageInput').click()">
+          <input type="file" id="q-imageInput" accept="image/*" onchange="handleQImage(event)" style="position:absolute;inset:0;opacity:0;cursor:pointer;" />
+          <span class="upload-icon">📷</span>
+          <div class="upload-text">点击上传截图，或拖拽图片到此处</div>
+          <div class="upload-hint">支持 JPG / PNG / WEBP · 截取你想仿写风格的内容</div>
+          <img class="preview-img" id="q-previewImg" />
+        </div>
+        <div class="remove-img" id="q-removeBtn" onclick="removeQImage()" style="display:none;">✕ 重新上传</div>
+      </div>
+
+      <div class="divider"><span>你的产品信息</span></div>
+
+      <div id="q-brand-notice" style="display:none;background:#edf4fa;border:1px solid #b8d4e8;border-radius:2px;padding:10px 16px;margin-bottom:16px;font-family:var(--mono);font-size:11px;color:#2c5f8a;letter-spacing:0.05em;">✓ 已从品牌档案自动填入信息，可手动修改</div>
+
+      <div class="form-grid">
+        <div class="field">
+          <label>产品名称</label>
+          <input type="text" id="q-product" placeholder="例：澳洲精品咖啡随行杯" style="width:100%;background:transparent;border:none;border-bottom:1px solid var(--border-strong);font-family:var(--serif);font-size:15px;color:var(--ink);padding:6px 0 8px;outline:none;transition:border-color 0.2s;" />
+        </div>
+        <div class="field">
+          <label>核心卖点</label>
+          <input type="text" id="q-feature" placeholder="例：澳洲工艺，长效保温" style="width:100%;background:transparent;border:none;border-bottom:1px solid var(--border-strong);font-family:var(--serif);font-size:15px;color:var(--ink);padding:6px 0 8px;outline:none;transition:border-color 0.2s;" />
+        </div>
+      </div>
+      <div class="form-grid">
+        <div class="field">
+          <label>目标人群</label>
+          <input type="text" id="q-audience" placeholder="例：35岁女性，中高端消费" style="width:100%;background:transparent;border:none;border-bottom:1px solid var(--border-strong);font-family:var(--serif);font-size:15px;color:var(--ink);padding:6px 0 8px;outline:none;transition:border-color 0.2s;" />
+        </div>
+        <div class="field">
+          <label>补充要求（选填）</label>
+          <input type="text" id="q-extra" placeholder="例：更温柔、加故事感、突出澳洲背景..." style="width:100%;background:transparent;border:none;border-bottom:1px solid var(--border-strong);font-family:var(--serif);font-size:15px;color:var(--ink);padding:6px 0 8px;outline:none;transition:border-color 0.2s;" />
+        </div>
+      </div>
+
+      <button class="action-btn" id="quickBtn" onclick="quickCopy()" style="margin-top:1.5rem;">按参考风格生成仿写 →</button>
+
+      <div class="loading" id="q-loading" style="display:none;text-align:center;padding:3rem 0;">
+        <div class="loading-text">正在学习参考风格并仿写</div>
+      </div>
+
+      <div id="q-results" style="display:none;margin-top:1rem;"></div>
+    </div>
+
+    <!-- ===== DEEP ANALYSIS PANEL ===== -->
+    <div id="panel-deep" style="display:none;">
+
     <!-- PROGRESS STEPS -->
     <div class="steps" id="steps">
       <div class="step active" id="step1">
@@ -217,7 +292,7 @@ footer em { color: var(--gold); font-style: normal; }
       <div class="step-line"></div>
       <div class="step" id="step3">
         <div class="step-num">3</div>
-        <div class="step-label">填入产品</div>
+        <div class="step-label">产品信息</div>
       </div>
       <div class="step-line"></div>
       <div class="step" id="step4">
@@ -271,39 +346,81 @@ footer em { color: var(--gold); font-style: normal; }
 
     <!-- ===== STEP 3: PRODUCT INFO ===== -->
     <div class="product-section" id="productSection">
-      <div class="divider"><span>Step 03 · 填入你的产品信息</span></div>
+      <div class="divider"><span>Step 03 · 产品 / 品牌信息</span></div>
 
-      <div id="brandFillNotice" style="display:none; background:#edf4fa; border:1px solid #b8d4e8; border-radius:2px; padding:10px 16px; margin-bottom:20px; font-family:var(--mono); font-size:11px; color:#2c5f8a; letter-spacing:0.05em;">
-        ✓ 已从品牌档案自动填入信息，可手动修改
+      <!-- 有品牌时：显示品牌预览卡片 -->
+      <div id="brandPreviewCard" style="display:none; background:white; border:1px solid var(--border); border-radius:2px; padding:1.25rem 1.5rem; margin-bottom:1.25rem;">
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:1rem; padding-bottom:0.875rem; border-bottom:1px solid var(--border);">
+          <div style="display:flex; align-items:center; gap:10px;">
+            <span style="font-family:var(--mono);font-size:10px;letter-spacing:0.1em;background:#edf4fa;color:#2c5f8a;padding:3px 12px;border-radius:20px;">品牌档案已加载</span>
+            <span id="bpc-name" style="font-family:var(--display);font-size:18px;font-style:italic;color:var(--ink);"></span>
+          </div>
+          <button onclick="showManualForm()" style="font-family:var(--mono);font-size:10px;color:var(--ink-muted);background:transparent;border:none;cursor:pointer;letter-spacing:0.1em;">手动填写 ↓</button>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:12px;">
+          <div>
+            <div style="font-family:var(--mono);font-size:9px;letter-spacing:0.15em;text-transform:uppercase;color:var(--ink-muted);margin-bottom:4px;">行业 / 定位</div>
+            <div id="bpc-industry" style="font-size:13px;color:var(--ink-soft);"></div>
+          </div>
+          <div>
+            <div style="font-family:var(--mono);font-size:9px;letter-spacing:0.15em;text-transform:uppercase;color:var(--ink-muted);margin-bottom:4px;">目标人群</div>
+            <div id="bpc-audience" style="font-size:13px;color:var(--ink-soft);"></div>
+          </div>
+          <div>
+            <div style="font-family:var(--mono);font-size:9px;letter-spacing:0.15em;text-transform:uppercase;color:var(--ink-muted);margin-bottom:4px;">品牌调性</div>
+            <div id="bpc-tones" style="font-size:13px;color:var(--ink-soft);"></div>
+          </div>
+        </div>
+        <div id="bpc-slogan-row" style="font-size:13px;color:var(--ink-muted);font-style:italic;padding-top:10px;border-top:1px solid var(--border);"></div>
+
+        <!-- 只保留产品名称和补充说明 -->
+        <div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--border);">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+            <div class="field">
+              <label>本次产品名称</label>
+              <input type="text" id="p-product" placeholder="例：澳洲精品咖啡随行杯" />
+            </div>
+            <div class="field">
+              <label>补充说明（选填）</label>
+              <input type="text" id="p-extra" placeholder="例：突出保温功能、加入故事感..." />
+            </div>
+          </div>
+        </div>
       </div>
 
-      <div class="form-grid">
-        <div class="field">
-          <label>产品名称</label>
-          <input type="text" id="p-product" placeholder="例：澳洲精品咖啡随行杯" />
+      <!-- 没有品牌时：手动填写表单 -->
+      <div id="manualForm">
+        <div id="brandFillNotice" style="display:none; background:#edf4fa; border:1px solid #b8d4e8; border-radius:2px; padding:10px 16px; margin-bottom:20px; font-family:var(--mono); font-size:11px; color:#2c5f8a; letter-spacing:0.05em;">
+          ✓ 已从品牌档案自动填入信息，可手动修改
         </div>
-        <div class="field">
-          <label>价格区间</label>
-          <input type="text" id="p-price" placeholder="例：250 元人民币" />
+        <div class="form-grid">
+          <div class="field">
+            <label>产品名称</label>
+            <input type="text" id="p-product-manual" placeholder="例：澳洲精品咖啡随行杯" />
+          </div>
+          <div class="field">
+            <label>价格区间</label>
+            <input type="text" id="p-price" placeholder="例：250 元人民币" />
+          </div>
         </div>
-      </div>
-      <div class="form-grid">
-        <div class="field">
-          <label>目标人群</label>
-          <input type="text" id="p-audience" placeholder="例：35岁女性，中高端消费" />
+        <div class="form-grid">
+          <div class="field">
+            <label>目标人群</label>
+            <input type="text" id="p-audience" placeholder="例：35岁女性，中高端消费" />
+          </div>
+          <div class="field">
+            <label>核心卖点</label>
+            <input type="text" id="p-feature" placeholder="例：澳洲工艺，精品保温" />
+          </div>
         </div>
-        <div class="field">
-          <label>核心卖点</label>
-          <input type="text" id="p-feature" placeholder="例：澳洲工艺，精品保温" />
+        <div class="form-full field">
+          <label>品牌理念 / 关键词</label>
+          <input type="text" id="p-brand" placeholder="例：Don't rush the good stuff，慢下来享受生活" />
         </div>
-      </div>
-      <div class="form-full field">
-        <label>品牌理念 / 关键词</label>
-        <input type="text" id="p-brand" placeholder="例：Don't rush the good stuff，慢下来享受生活" />
-      </div>
-      <div class="form-full field">
-        <label>补充说明（选填）</label>
-        <input type="text" id="p-extra" placeholder="例：希望语气更温柔、加入个人故事感、突出澳洲背景..." />
+        <div class="form-full field">
+          <label>补充说明（选填）</label>
+          <input type="text" id="p-extra-manual" placeholder="例：希望语气更温柔、加入个人故事感、突出澳洲背景..." />
+        </div>
       </div>
 
       <button class="action-btn" id="rewriteBtn" onclick="rewrite()">按爆文结构生成仿写 →</button>
@@ -317,6 +434,8 @@ footer em { color: var(--gold); font-style: normal; }
       <div id="rewriteContent"></div>
       <button class="action-btn secondary" onclick="resetAll()">↩ 重新开始，换一篇爆文</button>
     </div>
+
+    </div><!-- end panel-deep -->
 
   </div>
 </main>
@@ -373,16 +492,35 @@ function onBrandChange() {
 
   if (activeBrand) {
     badge.style.display = 'inline';
-    // 自动填入产品信息区
-    if (activeBrand.audience) document.getElementById('p-audience').value = activeBrand.audience;
-    if (activeBrand.slogan || activeBrand.value) {
-      document.getElementById('p-brand').value = [activeBrand.slogan, activeBrand.value].filter(Boolean).join('；').slice(0, 120);
-    }
-    document.getElementById('brandFillNotice').style.display = 'block';
+    // 显示品牌预览卡片，隐藏手动表单
+    document.getElementById('brandPreviewCard').style.display = 'block';
+    document.getElementById('manualForm').style.display = 'none';
+    // 填充预览卡片内容
+    document.getElementById('bpc-name').textContent = activeBrand.name;
+    document.getElementById('bpc-industry').textContent = [activeBrand.industry, activeBrand.price].filter(Boolean).join(' · ') || '—';
+    document.getElementById('bpc-audience').textContent = activeBrand.audience ? activeBrand.audience.slice(0, 30) + (activeBrand.audience.length > 30 ? '...' : '') : '—';
+    document.getElementById('bpc-tones').textContent = (activeBrand.tones || []).slice(0, 3).join('、') || '—';
+    document.getElementById('bpc-slogan-row').textContent = activeBrand.slogan ? `"${activeBrand.slogan}"` : '';
+    // 快速仿写面板也同步
+    if (activeBrand.audience) document.getElementById('q-audience').value = activeBrand.audience;
+    document.getElementById('q-brand-notice').style.display = 'block';
   } else {
     badge.style.display = 'none';
+    document.getElementById('brandPreviewCard').style.display = 'none';
+    document.getElementById('manualForm').style.display = 'block';
     document.getElementById('brandFillNotice').style.display = 'none';
+    document.getElementById('q-brand-notice').style.display = 'none';
     activeBrand = null;
+  }
+}
+
+function showManualForm() {
+  document.getElementById('brandPreviewCard').style.display = 'none';
+  document.getElementById('manualForm').style.display = 'block';
+  if (activeBrand) {
+    if (activeBrand.audience) document.getElementById('p-audience').value = activeBrand.audience;
+    if (activeBrand.slogan)   document.getElementById('p-brand').value = activeBrand.slogan;
+    document.getElementById('brandFillNotice').style.display = 'block';
   }
 }
 
@@ -479,8 +617,176 @@ function copyBlock(el, text) {
   });
 }
 
-function checkKey() {
-  return true; // Key 由服务器管理，前端无需检查
+// ── TAB 切换 ──
+// ── 主 Tab 切换 ──
+function switchTab(tab) {
+  const isQuick = tab === 'quick';
+  document.getElementById('panel-quick').style.display = isQuick ? 'block' : 'none';
+  document.getElementById('panel-deep').style.display  = isQuick ? 'none'  : 'block';
+  document.getElementById('tab-quick').style.background = isQuick ? 'var(--ink)' : 'transparent';
+  document.getElementById('tab-quick').style.color      = isQuick ? 'var(--cream)' : 'var(--ink-muted)';
+  document.getElementById('tab-deep').style.background  = isQuick ? 'transparent' : 'var(--ink)';
+  document.getElementById('tab-deep').style.color       = isQuick ? 'var(--ink-muted)' : 'var(--cream)';
+}
+
+// ── 快速仿写输入模式切换 ──
+let qImageBase64 = null;
+let qInputMode = 'text';
+
+function switchQInput(mode) {
+  qInputMode = mode;
+  document.getElementById('q-panel-text').style.display  = mode === 'text'  ? 'block' : 'none';
+  document.getElementById('q-panel-image').style.display = mode === 'image' ? 'block' : 'none';
+  document.getElementById('q-tab-text').classList.toggle('active', mode === 'text');
+  document.getElementById('q-tab-image').classList.toggle('active', mode === 'image');
+}
+
+function handleQImage(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (ev) => {
+    qImageBase64 = ev.target.result.split(',')[1];
+    document.getElementById('q-previewImg').src = ev.target.result;
+    document.getElementById('q-previewImg').classList.add('show');
+    document.getElementById('q-removeBtn').style.display = 'block';
+    document.getElementById('q-uploadZone').classList.add('has-image');
+  };
+  reader.readAsDataURL(file);
+}
+
+function removeQImage() {
+  qImageBase64 = null;
+  document.getElementById('q-previewImg').classList.remove('show');
+  document.getElementById('q-removeBtn').style.display = 'none';
+  document.getElementById('q-uploadZone').classList.remove('has-image');
+  document.getElementById('q-imageInput').value = '';
+}
+
+// ── 快速仿写 ──
+async function quickCopy() {
+  const product  = document.getElementById('q-product').value.trim();
+  const feature  = document.getElementById('q-feature').value.trim();
+  const audience = document.getElementById('q-audience').value.trim();
+  const extra    = document.getElementById('q-extra').value.trim();
+
+  if (qInputMode === 'text' && !document.getElementById('q-ref').value.trim()) {
+    alert('请先粘贴参考内容'); return;
+  }
+  if (qInputMode === 'image' && !qImageBase64) {
+    alert('请先上传截图'); return;
+  }
+  if (!product) { alert('请填写产品名称'); return; }
+
+  const btn = document.getElementById('quickBtn');
+  btn.disabled = true;
+  document.getElementById('q-loading').style.display = 'block';
+  document.getElementById('q-results').style.display = 'none';
+  document.getElementById('q-results').innerHTML = '';
+
+  const brandContext = buildBrandContext();
+  const refText = qInputMode === 'text' ? document.getElementById('q-ref').value.trim() : '';
+
+  const promptText = `你是一位顶级品牌文案专家。
+
+请仔细研读以下参考内容，完整学习其语气风格、用词习惯、句式节奏、情绪表达方式，然后用完全相同的风格，为我的产品写3个不同版本的文案。
+
+${refText ? `【参考内容（请深度学习这种风格）】\n${refText}` : '【参考内容】请深度学习图片中文案的语气风格、用词习惯、句式节奏，完整还原这种写作风格。'}
+
+${brandContext ? `【品牌档案（写作时严格遵守）】\n${brandContext}\n` : ''}
+【我的产品信息】
+- 产品名称：${product}
+- 核心卖点：${feature || '未提供'}
+- 目标人群：${audience || (activeBrand?.audience) || '未提供'}
+- 补充要求：${extra || '无'}
+
+【写作要求】
+1. 完整复刻参考内容的语气、节奏、用词风格
+2. 内容完全换成我的产品，不能照抄参考内容的任何句子
+3. ${brandContext ? '严格遵守品牌档案的调性和关键词，避免禁忌词' : '保持品牌一致性'}
+4. 三个版本各有侧重（情感故事版 / 产品种草版 / 场景代入版）
+5. 每个版本有标题和完整正文，有换行和emoji
+
+【输出格式】纯文本，三个版本用 ===== 分隔：
+
+【风格】版本风格名称
+【标题】标题
+【正文】
+完整正文内容
+=====
+【风格】版本风格名称
+【标题】标题
+【正文】
+完整正文内容
+=====
+【风格】版本风格名称
+【标题】标题
+【正文】
+完整正文内容`;
+
+  const messages = qInputMode === 'image'
+    ? [{ role: 'user', content: [
+        { type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: qImageBase64 } },
+        { type: 'text', text: promptText }
+      ]}]
+    : [{ role: 'user', content: promptText }];
+
+  try {
+    const text = await callClaude(messages);
+    const versions = parseRewriteText(text);
+    if (versions.length === 0) throw new Error('未能解析出仿写内容，请重试');
+
+    document.getElementById('q-loading').style.display = 'none';
+    const container = document.getElementById('q-results');
+    container.style.display = 'block';
+
+    const divider = document.createElement('div');
+    divider.className = 'divider';
+    divider.innerHTML = '<span>仿写结果（点击正文复制）</span>';
+    container.appendChild(divider);
+
+    versions.forEach((v, i) => {
+      const fullText = `${v.title}\n\n${v.body}`;
+      const safeText = fullText.replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/\n/g,'\\n');
+      const card = document.createElement('div');
+      card.className = 'rewrite-card';
+      card.style.animationDelay = (i * 0.1) + 's';
+      card.innerHTML = `
+        <div class="card-header">
+          <span class="badge badge-purple">版本 ${i+1}</span>
+          <span class="card-subtitle">${v.style}</span>
+        </div>
+        <div style="margin-bottom:0.75rem;">
+          <div class="analysis-label">标题</div>
+          <div style="font-size:16px;font-weight:600;color:var(--ink);padding:8px 0 0 12px;border-left:2px solid var(--accent)">${v.title}</div>
+        </div>
+        <div>
+          <div class="analysis-label">正文（点击复制）</div>
+          <div class="copy-block" onclick="copyBlock(this,'${safeText}')">${v.body.replace(/\n/g,'<br>')}</div>
+        </div>`;
+      container.appendChild(card);
+    });
+
+    const resetBtn = document.createElement('button');
+    resetBtn.className = 'action-btn secondary';
+    resetBtn.style.marginTop = '0.5rem';
+    resetBtn.textContent = '↩ 重新开始';
+    resetBtn.onclick = () => {
+      document.getElementById('q-ref').value = '';
+      removeQImage();
+      container.style.display = 'none';
+      container.innerHTML = '';
+    };
+    container.appendChild(resetBtn);
+
+  } catch (err) {
+    document.getElementById('q-loading').style.display = 'none';
+    const container = document.getElementById('q-results');
+    container.style.display = 'block';
+    container.innerHTML = `<div class="error-card"><div class="error-title">仿写失败</div><div class="error-msg">${err.message}</div></div>`;
+  } finally {
+    btn.disabled = false;
+  }
 }
 
 // ===== CLAUDE API（通过自己的中转站，不暴露 Key）=====
@@ -712,14 +1018,20 @@ async function rewrite() {
   if (!checkKey()) return;
   if (!analysisResult) { alert('请先完成爆文分析'); return; }
 
-  const product  = document.getElementById('p-product').value.trim();
-  const price    = document.getElementById('p-price').value.trim();
-  const audience = document.getElementById('p-audience').value.trim();
-  const feature  = document.getElementById('p-feature').value.trim();
-  const brand    = document.getElementById('p-brand').value.trim();
-  const extra    = document.getElementById('p-extra').value.trim();
+  // 智能读取：有品牌用品牌档案，没有品牌用手动表单
+  const usingBrand = activeBrand && document.getElementById('brandPreviewCard').style.display !== 'none';
+  const product  = usingBrand
+    ? document.getElementById('p-product').value.trim()
+    : document.getElementById('p-product-manual').value.trim();
+  const extra    = usingBrand
+    ? document.getElementById('p-extra').value.trim()
+    : document.getElementById('p-extra-manual').value.trim();
+  const price    = usingBrand ? (activeBrand.price || '') : document.getElementById('p-price').value.trim();
+  const audience = usingBrand ? (activeBrand.audience || '') : document.getElementById('p-audience').value.trim();
+  const feature  = usingBrand ? '' : document.getElementById('p-feature').value.trim();
+  const brand    = usingBrand ? (activeBrand.slogan || '') : document.getElementById('p-brand').value.trim();
 
-  if (!product) { alert('请至少填写产品名称'); return; }
+  if (!product) { alert('请填写产品名称'); return; }
 
   const btn = document.getElementById('rewriteBtn');
   btn.disabled = true;
