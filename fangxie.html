@@ -829,6 +829,8 @@ ${brandContext ? `【品牌档案（写作时严格遵守）】\n${brandContext}
 }
 
 // ===== CLAUDE API（通过自己的中转站，不暴露 Key）=====
+function checkKey() { return true; } // Key 由服务器环境变量管理
+
 async function callClaude(messages) {
   const res = await fetch('/api/claude', {
     method: 'POST',
