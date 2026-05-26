@@ -191,6 +191,98 @@ app.delete('/api/content/:id', authenticateToken, (req, res) => {
 });
 
 // ══════════════════════════════════════════
+//  品牌库（共享，所有用户可读写）
+// ══════════════════════════════════════════
+db.exec(`
+  CREATE TABLE IF NOT EXISTS brands (
+    id             INTEGER PRIMARY KEY AUTOINCREMENT,
+    name           TEXT NOT NULL,
+    slogan         TEXT DEFAULT '',
+    industry       TEXT DEFAULT '',
+    price          TEXT DEFAULT '',
+    age            TEXT DEFAULT '',
+    gender         TEXT DEFAULT '',
+    audience       TEXT DEFAULT '',
+    tones          TEXT DEFAULT '[]',
+    keywords       TEXT DEFAULT '[]',
+    forbidden      TEXT DEFAULT '[]',
+    value          TEXT DEFAULT '',
+    story          TEXT DEFAULT '',
+    sample         TEXT DEFAULT '',
+    concern        TEXT DEFAULT '',
+    afterbuy       TEXT DEFAULT '',
+    consumer_voice TEXT DEFAULT '',
+    trigger        TEXT DEFAULT '',
+    share          TEXT DEFAULT '',
+    updated_at     DATETIME DEFAULT CURRENT_TIMESTAMP
+  )
+`);
+
+// 获取全部品牌
+app.get('/api/brands', authenticateToken, (req, res) => {
+  const rows = db.prepare('SELECT * FROM brands ORDER BY name ASC').all();
+  const brands = rows.map(r => ({
+    ...r,
+    tones:        JSON.parse(r.tones    || '[]'),
+    keywords:     JSON.parse(r.keywords || '[]'),
+    forbidden:    JSON.parse(r.forbidden|| '[]'),
+    consumerVoice: r.consumer_voice,
+  }));
+  res.json(brands);
+});
+
+// 新建品牌
+app.post('/api/brands', authenticateToken, (req, res) => {
+  const { name, slogan, industry, price, age, gender, audience,
+          tones, keywords, forbidden, value, story, sample,
+          concern, afterbuy, consumerVoice, trigger, share } = req.body || {};
+  if (!name) return res.status(400).json({ error: '品牌名称不能为空' });
+  const result = db.prepare(`
+    INSERT INTO brands
+      (name, slogan, industry, price, age, gender, audience,
+       tones, keywords, forbidden, value, story, sample,
+       concern, afterbuy, consumer_voice, trigger, share)
+    VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+  `).run(
+    name, slogan||'', industry||'', price||'', age||'', gender||'', audience||'',
+    JSON.stringify(tones||[]), JSON.stringify(keywords||[]), JSON.stringify(forbidden||[]),
+    value||'', story||'', sample||'',
+    concern||'', afterbuy||'', consumerVoice||'', trigger||'', share||''
+  );
+  res.json({ id: result.lastInsertRowid });
+});
+
+// 更新品牌
+app.put('/api/brands/:id', authenticateToken, (req, res) => {
+  const { name, slogan, industry, price, age, gender, audience,
+          tones, keywords, forbidden, value, story, sample,
+          concern, afterbuy, consumerVoice, trigger, share } = req.body || {};
+  if (!name) return res.status(400).json({ error: '品牌名称不能为空' });
+  db.prepare(`
+    UPDATE brands SET
+      name=?, slogan=?, industry=?, price=?, age=?, gender=?, audience=?,
+      tones=?, keywords=?, forbidden=?,
+      value=?, story=?, sample=?,
+      concern=?, afterbuy=?, consumer_voice=?, trigger=?, share=?,
+      updated_at=CURRENT_TIMESTAMP
+    WHERE id=?
+  `).run(
+    name, slogan||'', industry||'', price||'', age||'', gender||'', audience||'',
+    JSON.stringify(tones||[]), JSON.stringify(keywords||[]), JSON.stringify(forbidden||[]),
+    value||'', story||'', sample||'',
+    concern||'', afterbuy||'', consumerVoice||'', trigger||'', share||'',
+    req.params.id
+  );
+  res.json({ ok: true });
+});
+
+// 删除品牌
+app.delete('/api/brands/:id', authenticateToken, (req, res) => {
+  db.prepare('DELETE FROM brands WHERE id=?').run(req.params.id);
+  res.json({ ok: true });
+});
+
+// ══════════════════════════════════════════
 //  Claude API 中转（需登录）
 // ══════════════════════════════════════════
 app.post('/api/claude', authenticateToken, async (req, res) => {

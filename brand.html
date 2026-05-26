@@ -709,52 +709,61 @@ header {
 <div class="toast" id="toast"></div>
 
 <script>
-// ── DATA ──
-const STORAGE_KEY = 'brand_center_v1';
-const ACTIVE_KEY  = 'brand_center_active';
-
-function loadBrands() {
-  try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; }
-  catch { return []; }
+// ── AUTH ──
+function getToken() { return localStorage.getItem('brand_auth_token') || ''; }
+function authFetch(url, opts = {}) {
+  return fetch(url, {
+    ...opts,
+    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + getToken(), ...(opts.headers || {}) },
+  });
 }
-function saveBrands(brands) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(brands));
-}
-function getActiveBrandId() {
-  return localStorage.getItem(ACTIVE_KEY) || null;
-}
-function setActiveBrandId(id) {
-  localStorage.setItem(ACTIVE_KEY, id);
+function logout() {
+  ['brand_auth_token','brand_user_name','brand_user_role'].forEach(k => localStorage.removeItem(k));
+  window.location.replace('/login.html');
 }
 
-let brands = loadBrands();
+// ── 当前品牌偏好（per-user，存 localStorage）──
+const ACTIVE_KEY = 'brand_center_active';
+function getActiveBrandId() { return localStorage.getItem(ACTIVE_KEY) || null; }
+function setActiveBrandId(id) { localStorage.setItem(ACTIVE_KEY, String(id)); }
+
+// ── STATE ──
+let brands = [];
 let currentBrandId = null;
 let editingBrandId = null;
 let keywords = [];
 let forbidden = [];
 
+// ── 从服务器加载品牌 ──
+async function loadBrandsFromServer() {
+  try {
+    const res = await authFetch('/api/brands');
+    if (!res.ok) { if (res.status === 401) logout(); return; }
+    brands = await res.json();
+  } catch (e) { console.error('加载品牌失败', e); }
+}
+
 // ── RENDER SIDEBAR ──
 function renderSidebar() {
   const list = document.getElementById('brandList');
-  const activeId = getActiveBrandId();
   list.innerHTML = '';
   brands.forEach(b => {
     const li = document.createElement('li');
-    li.className = 'brand-item' + (b.id === currentBrandId ? ' active' : '');
+    li.className = 'brand-item' + (String(b.id) === String(currentBrandId) ? ' active' : '');
     li.innerHTML = `
-      <div onclick="viewBrand('${b.id}')">
+      <div onclick="viewBrand(${b.id})">
         <div class="brand-item-name">${b.name}</div>
         <div class="brand-item-industry">${b.industry || '未设置行业'}</div>
       </div>
       <div class="brand-item-actions">
-        <button class="icon-btn" title="设为当前" onclick="setActiveBrand('${b.id}');event.stopPropagation()">★</button>
-        <button class="icon-btn" title="编辑" onclick="viewBrand('${b.id}');editBrand();event.stopPropagation()">✎</button>
+        <button class="icon-btn" title="设为当前" onclick="setActiveBrand(${b.id});event.stopPropagation()">★</button>
+        <button class="icon-btn" title="编辑" onclick="viewBrand(${b.id});editBrand();event.stopPropagation()">✎</button>
       </div>`;
     list.appendChild(li);
   });
 
-  const activeId2 = getActiveBrandId();
-  const activeBrand = brands.find(b => b.id === activeId2);
+  const activeId = getActiveBrandId();
+  const activeBrand = brands.find(b => String(b.id) === String(activeId));
   const card = document.getElementById('activeBrandCard');
   if (activeBrand) {
     card.style.display = 'block';
@@ -768,7 +777,7 @@ function renderSidebar() {
 // ── VIEW BRAND ──
 function viewBrand(id) {
   currentBrandId = id;
-  const b = brands.find(x => x.id === id);
+  const b = brands.find(x => String(x.id) === String(id));
   if (!b) return;
 
   document.getElementById('emptyState').style.display = 'none';
@@ -824,7 +833,7 @@ function newBrand() {
 }
 
 function editBrand() {
-  const b = brands.find(x => x.id === currentBrandId);
+  const b = brands.find(x => String(x.id) === String(currentBrandId));
   if (!b) return;
   editingBrandId = currentBrandId;
   document.getElementById('formTitle').textContent = '编辑品牌档案';
@@ -884,62 +893,74 @@ function fillForm(b) {
 }
 
 // ── SAVE ──
-function saveBrand() {
+async function saveBrand() {
   const name = document.getElementById('f-name').value.trim();
   if (!name) { alert('请填写品牌名称'); return; }
 
   const tones = [...document.querySelectorAll('.tone-pill.selected')].map(p => p.textContent);
-
   const data = {
-    id: editingBrandId || Date.now().toString(),
     name,
-    slogan: document.getElementById('f-slogan').value.trim(),
-    industry: document.getElementById('f-industry').value,
-    price: document.getElementById('f-price').value,
-    age: document.getElementById('f-age').value.trim(),
-    gender: document.getElementById('f-gender').value,
-    audience: document.getElementById('f-audience').value.trim(),
+    slogan:        document.getElementById('f-slogan').value.trim(),
+    industry:      document.getElementById('f-industry').value,
+    price:         document.getElementById('f-price').value,
+    age:           document.getElementById('f-age').value.trim(),
+    gender:        document.getElementById('f-gender').value,
+    audience:      document.getElementById('f-audience').value.trim(),
     tones,
-    keywords: [...keywords],
-    forbidden: [...forbidden],
-    value: document.getElementById('f-value').value.trim(),
-    story: document.getElementById('f-story').value.trim(),
-    sample: document.getElementById('f-sample').value.trim(),
-    concern: document.getElementById('f-concern').value.trim(),
-    afterbuy: document.getElementById('f-afterbuy').value.trim(),
+    keywords:      [...keywords],
+    forbidden:     [...forbidden],
+    value:         document.getElementById('f-value').value.trim(),
+    story:         document.getElementById('f-story').value.trim(),
+    sample:        document.getElementById('f-sample').value.trim(),
+    concern:       document.getElementById('f-concern').value.trim(),
+    afterbuy:      document.getElementById('f-afterbuy').value.trim(),
     consumerVoice: document.getElementById('f-consumer-voice').value.trim(),
-    trigger: document.getElementById('f-trigger').value.trim(),
-    share: document.getElementById('f-share').value.trim(),
-    updatedAt: new Date().toISOString(),
+    trigger:       document.getElementById('f-trigger').value.trim(),
+    share:         document.getElementById('f-share').value.trim(),
   };
 
+  let savedId = editingBrandId;
   if (editingBrandId) {
-    const idx = brands.findIndex(b => b.id === editingBrandId);
-    if (idx !== -1) brands[idx] = data;
+    const res = await authFetch(`/api/brands/${editingBrandId}`, {
+      method: 'PUT', body: JSON.stringify(data),
+    });
+    if (!res.ok) { showToast('保存失败'); return; }
   } else {
-    brands.push(data);
+    const res = await authFetch('/api/brands', {
+      method: 'POST', body: JSON.stringify(data),
+    });
+    if (!res.ok) { showToast('保存失败'); return; }
+    const json = await res.json();
+    savedId = json.id;
   }
 
-  saveBrands(brands);
-  currentBrandId = data.id;
+  await loadBrandsFromServer();
+  currentBrandId = savedId;
   editingBrandId = null;
 
   // 如果是第一个品牌，自动设为当前品牌
-  if (brands.length === 1) setActiveBrandId(data.id);
+  if (brands.length === 1) setActiveBrandId(savedId);
 
   showToast('品牌已保存 ✓');
-  viewBrand(data.id);
+  viewBrand(savedId);
   renderSidebar();
 }
 
 // ── DELETE ──
-function deleteBrand() {
-  if (!confirm(`确定要删除「${brands.find(b => b.id === editingBrandId)?.name}」吗？此操作不可撤销。`)) return;
-  brands = brands.filter(b => b.id !== editingBrandId);
-  saveBrands(brands);
-  if (getActiveBrandId() === editingBrandId) localStorage.removeItem(ACTIVE_KEY);
+async function deleteBrand() {
+  const b = brands.find(x => String(x.id) === String(editingBrandId));
+  if (!confirm(`确定要删除「${b?.name}」吗？此操作不可撤销。`)) return;
+
+  const res = await authFetch(`/api/brands/${editingBrandId}`, { method: 'DELETE' });
+  if (!res.ok) { showToast('删除失败'); return; }
+
+  const activeId = getActiveBrandId();
+  if (String(activeId) === String(editingBrandId)) localStorage.removeItem(ACTIVE_KEY);
+
   editingBrandId = null;
   currentBrandId = null;
+
+  await loadBrandsFromServer();
   document.getElementById('brandForm').classList.remove('show');
   document.getElementById('brandView').classList.remove('show');
   if (brands.length > 0) viewBrand(brands[0].id);
@@ -957,8 +978,8 @@ function setActiveBrand(id) {
 
 // 把当前品牌数据存到 sessionStorage 供其他工具读取
 function passActiveBrand() {
-  const id = getActiveBrandId();
-  const b = brands.find(x => x.id === id);
+  const activeId = getActiveBrandId();
+  const b = brands.find(x => String(x.id) === String(activeId));
   if (b) sessionStorage.setItem('active_brand', JSON.stringify(b));
 }
 
@@ -1015,25 +1036,20 @@ function showToast(msg) {
 }
 
 // ── INIT ──
-renderSidebar();
-if (brands.length > 0) {
-  const activeId = getActiveBrandId();
-  const startId = (activeId && brands.find(b => b.id === activeId)) ? activeId : brands[0].id;
-  viewBrand(startId);
-} else {
-  document.getElementById('emptyState').style.display = 'flex';
-}
+document.getElementById('navUserName').textContent = localStorage.getItem('brand_user_name') || '';
 
-// ── 登录状态 ──
-function logout() {
-  ['brand_auth_token','brand_user_name','brand_user_role'].forEach(k => localStorage.removeItem(k));
-  window.location.replace('/login.html');
-}
-document.addEventListener('DOMContentLoaded', function() {
-  const name = localStorage.getItem('brand_user_name');
-  const el = document.getElementById('navUserName');
-  if (el && name) el.textContent = name;
-});
+(async function init() {
+  await loadBrandsFromServer();
+  renderSidebar();
+  if (brands.length > 0) {
+    const activeId = getActiveBrandId();
+    const startId = (activeId && brands.find(b => String(b.id) === String(activeId)))
+      ? activeId : brands[0].id;
+    viewBrand(startId);
+  } else {
+    document.getElementById('emptyState').style.display = 'flex';
+  }
+})();
 </script>
 </body>
 </html>

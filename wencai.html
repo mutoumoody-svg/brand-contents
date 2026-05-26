@@ -285,29 +285,32 @@ footer em { color: var(--accent); font-style: normal; }
 
 <script>
 // ── 品牌管理 ──
-const BRAND_STORAGE_KEY = 'brand_center_v1';
-const BRAND_ACTIVE_KEY  = 'brand_center_active';
+const BRAND_ACTIVE_KEY = 'brand_center_active';
 let activeBrand = null;
+let _allBrands  = [];
 
-function loadBrandsFromStorage() {
-  try { return JSON.parse(localStorage.getItem(BRAND_STORAGE_KEY)) || []; } catch { return []; }
-}
+async function initBrandBar() {
+  try {
+    const res = await fetch('/api/brands', {
+      headers: { 'Authorization': 'Bearer ' + (localStorage.getItem('brand_auth_token') || '') }
+    });
+    if (!res.ok) return;
+    _allBrands = await res.json();
+  } catch { return; }
 
-function initBrandBar() {
-  const brands = loadBrandsFromStorage();
   const select = document.getElementById('brandSelect');
-  const bar = document.getElementById('brandBar');
+  const bar    = document.getElementById('brandBar');
   while (select.options.length > 1) select.remove(1);
-  if (brands.length > 0) {
+  if (_allBrands.length > 0) {
     bar.classList.add('show');
-    brands.forEach(b => {
+    _allBrands.forEach(b => {
       const opt = document.createElement('option');
       opt.value = b.id;
       opt.textContent = b.name + (b.industry ? ` · ${b.industry}` : '');
       select.appendChild(opt);
     });
     const activeId = localStorage.getItem(BRAND_ACTIVE_KEY);
-    if (activeId && brands.find(b => b.id === activeId)) {
+    if (activeId && _allBrands.find(b => String(b.id) === String(activeId))) {
       select.value = activeId;
       onBrandChange();
     }
@@ -315,9 +318,8 @@ function initBrandBar() {
 }
 
 function onBrandChange() {
-  const brands = loadBrandsFromStorage();
   const id = document.getElementById('brandSelect').value;
-  activeBrand = brands.find(b => b.id === id) || null;
+  activeBrand = _allBrands.find(b => String(b.id) === String(id)) || null;
   document.getElementById('brandBadge').style.display = activeBrand ? 'inline' : 'none';
   if (activeBrand) {
     // 自动填入生成面板
