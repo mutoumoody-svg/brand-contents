@@ -40,8 +40,39 @@ body { font-family: var(--serif); background: var(--cream); color: var(--ink); m
 .brand-bar-clear { font-family: var(--mono); font-size: 10px; color: var(--ink-muted); background: transparent; border: none; cursor: pointer; padding: 4px 8px; }
 .brand-bar-clear:hover { color: var(--ink); }
 
-/* HEADER */
-header { border-bottom: 1px solid var(--border); padding: 1.75rem 0 1.25rem; text-align: center; background: var(--cream); }
+/* HISTORY PANEL */
+.history-toggle { display:flex; align-items:center; justify-content:space-between; padding:12px 16px; background:var(--cream-dark); border:1px solid var(--border); border-radius:2px; cursor:pointer; margin-bottom:8px; transition:background 0.15s; }
+.history-toggle:hover { background:var(--cream-mid,#e5e0d8); }
+.history-toggle-label { font-family:var(--mono); font-size:11px; letter-spacing:0.15em; text-transform:uppercase; color:var(--ink-soft); display:flex; align-items:center; gap:8px; }
+.history-count { background:var(--ink); color:var(--cream); font-family:var(--mono); font-size:10px; padding:2px 8px; border-radius:20px; }
+.history-toggle-arrow { font-family:var(--mono); font-size:12px; color:var(--ink-muted); transition:transform 0.2s; }
+.history-toggle.open .history-toggle-arrow { transform:rotate(180deg); }
+.history-panel { display:none; border:1px solid var(--border); border-radius:2px; overflow:hidden; margin-bottom:2rem; }
+.history-panel.open { display:block; }
+.history-empty { padding:2rem; text-align:center; font-family:var(--mono); font-size:11px; color:var(--ink-muted); letter-spacing:0.1em; }
+.history-item { border-bottom:1px solid var(--border); padding:1rem 1.25rem; background:white; }
+.history-item:last-child { border-bottom:none; }
+.history-item-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:8px; }
+.history-item-meta { display:flex; align-items:center; gap:8px; }
+.history-item-tag { font-family:var(--mono); font-size:9px; letter-spacing:0.1em; background:var(--tag-bg); color:var(--tag-color); padding:2px 8px; border-radius:20px; }
+.history-item-time { font-family:var(--mono); font-size:10px; color:var(--ink-muted); }
+.history-item-actions { display:flex; gap:6px; }
+.history-action-btn { font-family:var(--mono); font-size:10px; letter-spacing:0.08em; padding:4px 10px; border-radius:2px; cursor:pointer; border:1px solid var(--border-strong); background:transparent; color:var(--ink-muted); transition:all 0.15s; }
+.history-action-btn:hover { background:var(--cream-dark); color:var(--ink); }
+.history-action-btn.del:hover { border-color:#e8c4b8; color:var(--red,#c0392b); background:#fdf5f3; }
+.history-item-title { font-size:14px; font-weight:600; color:var(--ink); margin-bottom:6px; }
+.history-item-body { font-size:13px; color:var(--ink-soft); line-height:1.7; max-height:80px; overflow:hidden; position:relative; cursor:pointer; }
+.history-item-body::after { content:''; position:absolute; bottom:0; left:0; right:0; height:24px; background:linear-gradient(transparent,white); }
+.history-item-body.expanded { max-height:none; }
+.history-item-body.expanded::after { display:none; }
+.history-clear-btn { width:100%; padding:10px; font-family:var(--mono); font-size:10px; letter-spacing:0.15em; text-transform:uppercase; border:none; background:var(--cream-dark); color:var(--ink-muted); cursor:pointer; border-top:1px solid var(--border); transition:all 0.15s; }
+.history-clear-btn:hover { color:var(--red,#c0392b); background:#fdf5f3; }
+
+/* CONTINUE STYLE BUTTON */
+.continue-btn { display:inline-flex; align-items:center; gap:6px; margin-top:10px; padding:7px 14px; font-family:var(--mono); font-size:10px; letter-spacing:0.12em; text-transform:uppercase; border:1px solid var(--border-strong); border-radius:2px; background:transparent; color:var(--ink-soft); cursor:pointer; transition:all 0.18s; }
+.continue-btn:hover { background:var(--ink); color:var(--cream); border-color:var(--ink); }
+.continue-loading { display:none; text-align:center; padding:1.5rem 0; font-family:var(--mono); font-size:11px; letter-spacing:0.15em; color:var(--ink-muted); }
+.continue-loading.show { display:block; }
 .logo-line { font-family: var(--mono); font-size: 10px; letter-spacing: 0.25em; color: var(--ink-muted); text-transform: uppercase; margin-bottom: 5px; }
 header h1 { font-family: var(--display); font-size: clamp(18px, 3.5vw, 26px); font-weight: 400; font-style: italic; color: var(--ink); }
 .tagline { font-family: var(--mono); font-size: 10px; color: var(--accent); letter-spacing: 0.2em; margin-top: 4px; }
@@ -440,6 +471,21 @@ AI 会学习这段内容的语气、节奏、用词习惯，然后用同样的�
   </div>
 </main>
 
+<!-- 历史记录面板（全局，两个模式共用）-->
+<div class="container" style="max-width:760px;margin:0 auto;padding:0 24px 60px;">
+  <div class="history-toggle" id="historyToggle" onclick="toggleHistory()">
+    <span class="history-toggle-label">
+      历史记录
+      <span class="history-count" id="historyCount">0</span>
+    </span>
+    <span class="history-toggle-arrow">▾</span>
+  </div>
+  <div class="history-panel" id="historyPanel">
+    <div id="historyList"><div class="history-empty">还没有生成过文案</div></div>
+    <button class="history-clear-btn" onclick="clearHistory()">清空全部历史记录</button>
+  </div>
+</div>
+
 <footer>
   <div class="container">小红书爆文仿写器 · Powered by <em>Claude AI</em></div>
 </footer>
@@ -610,8 +656,19 @@ function resetAll() {
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
-function copyBlock(el, text) {
+function copyBlock(el) {
+  const text = el.dataset.copy || el.innerText;
   navigator.clipboard.writeText(text).then(() => {
+    el.classList.add('copied');
+    setTimeout(() => el.classList.remove('copied'), 2000);
+  }).catch(() => {
+    // 降级方案
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
     el.classList.add('copied');
     setTimeout(() => el.classList.remove('copied'), 2000);
   });
@@ -746,25 +803,7 @@ ${brandContext ? `【品牌档案（写作时严格遵守）】\n${brandContext}
     container.appendChild(divider);
 
     versions.forEach((v, i) => {
-      const fullText = `${v.title}\n\n${v.body}`;
-      const safeText = fullText.replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/\n/g,'\\n');
-      const card = document.createElement('div');
-      card.className = 'rewrite-card';
-      card.style.animationDelay = (i * 0.1) + 's';
-      card.innerHTML = `
-        <div class="card-header">
-          <span class="badge badge-purple">版本 ${i+1}</span>
-          <span class="card-subtitle">${v.style}</span>
-        </div>
-        <div style="margin-bottom:0.75rem;">
-          <div class="analysis-label">标题</div>
-          <div style="font-size:16px;font-weight:600;color:var(--ink);padding:8px 0 0 12px;border-left:2px solid var(--accent)">${v.title}</div>
-        </div>
-        <div>
-          <div class="analysis-label">正文（点击复制）</div>
-          <div class="copy-block" onclick="copyBlock(this,'${safeText}')">${v.body.replace(/\n/g,'<br>')}</div>
-        </div>`;
-      container.appendChild(card);
+      renderVersionCard(container, v, i, `产品：${product}${feature ? ' · ' + feature : ''}`);
     });
 
     const resetBtn = document.createElement('button');
@@ -1125,34 +1164,226 @@ function parseRewriteText(text) {
   return versions;
 }
 
+// ── 历史记录 ──
+const HISTORY_KEY = 'fangxie_history_v1';
+
+function loadHistory() {
+  try { return JSON.parse(localStorage.getItem(HISTORY_KEY)) || []; } catch { return []; }
+}
+
+function saveToHistory(version, context) {
+  const history = loadHistory();
+  history.unshift({
+    id: Date.now().toString(),
+    time: new Date().toLocaleString('zh-CN', { month:'numeric', day:'numeric', hour:'2-digit', minute:'2-digit' }),
+    style: version.style,
+    title: version.title,
+    body: version.body,
+    context, // 保存生成上下文，供「延续风格」使用
+  });
+  // 最多保留 50 条
+  if (history.length > 50) history.splice(50);
+  localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
+  renderHistory();
+}
+
+function renderHistory() {
+  const history = loadHistory();
+  document.getElementById('historyCount').textContent = history.length;
+  const list = document.getElementById('historyList');
+  if (history.length === 0) {
+    list.innerHTML = '<div class="history-empty">还没有生成过文案</div>';
+    return;
+  }
+  list.innerHTML = '';
+  history.forEach(item => {
+    const el = document.createElement('div');
+    el.className = 'history-item';
+    el.innerHTML = `
+      <div class="history-item-header">
+        <div class="history-item-meta">
+          <span class="history-item-tag">${item.style || '仿写版本'}</span>
+          <span class="history-item-time">${item.time}</span>
+        </div>
+        <div class="history-item-actions">
+          <button class="history-action-btn" onclick="copyHistoryItem('${item.id}')">复制</button>
+          <button class="history-action-btn del" onclick="deleteHistoryItem('${item.id}')">删除</button>
+        </div>
+      </div>
+      <div class="history-item-title">${item.title}</div>
+      <div class="history-item-body" id="hb-${item.id}" onclick="toggleHistoryBody('${item.id}')">${item.body.replace(/\n/g,'<br>')}</div>`;
+    list.appendChild(el);
+  });
+}
+
+function toggleHistory() {
+  const toggle = document.getElementById('historyToggle');
+  const panel  = document.getElementById('historyPanel');
+  toggle.classList.toggle('open');
+  panel.classList.toggle('open');
+}
+
+function toggleHistoryBody(id) {
+  document.getElementById('hb-' + id)?.classList.toggle('expanded');
+}
+
+function copyHistoryItem(id) {
+  const item = loadHistory().find(h => h.id === id);
+  if (!item) return;
+  navigator.clipboard.writeText(`${item.title}\n\n${item.body}`).then(() => {
+    const btn = document.querySelector(`[onclick="copyHistoryItem('${id}')"]`);
+    if (btn) { btn.textContent = '已复制 ✓'; setTimeout(() => btn.textContent = '复制', 1500); }
+  });
+}
+
+function deleteHistoryItem(id) {
+  const history = loadHistory().filter(h => h.id !== id);
+  localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
+  renderHistory();
+}
+
+function clearHistory() {
+  if (!confirm('确定清空所有历史记录吗？')) return;
+  localStorage.removeItem(HISTORY_KEY);
+  renderHistory();
+}
+
+// ── 渲染文案卡片（通用，带复制、延续风格、自动存历史）──
+function renderVersionCard(container, v, i, context) {
+  // 自动存入历史
+  saveToHistory(v, context);
+
+  const card = document.createElement('div');
+  card.className = 'rewrite-card';
+  card.style.animationDelay = (i * 0.1) + 's';
+
+  // 正文复制区
+  const bodyEl = document.createElement('div');
+  bodyEl.className = 'copy-block';
+  bodyEl.dataset.copy = `${v.title}\n\n${v.body}`;
+  bodyEl.innerHTML = v.body.replace(/\n/g, '<br>');
+  bodyEl.onclick = function() { copyBlock(this); };
+
+  // 延续风格按钮
+  const continueBtn = document.createElement('button');
+  continueBtn.className = 'continue-btn';
+  continueBtn.innerHTML = '↻ 延续这个风格再写3篇';
+  continueBtn.onclick = () => continueStyle(v, context, card);
+
+  // loading
+  const contLoading = document.createElement('div');
+  contLoading.className = 'continue-loading';
+  contLoading.innerHTML = '<span class="loading-text">正在延续风格生成</span>';
+
+  card.innerHTML = `
+    <div class="card-header">
+      <span class="badge badge-purple">版本 ${i + 1}</span>
+      <span class="card-subtitle">${v.style}</span>
+    </div>
+    <div style="margin-bottom:0.75rem;">
+      <div class="analysis-label">标题</div>
+      <div style="font-size:16px;font-weight:600;color:var(--ink);padding:8px 0 0 12px;border-left:2px solid var(--accent)">${v.title}</div>
+    </div>
+    <div>
+      <div class="analysis-label">正文（点击复制）</div>
+    </div>`;
+
+  card.querySelector('div:last-child').appendChild(bodyEl);
+  card.appendChild(continueBtn);
+  card.appendChild(contLoading);
+  container.appendChild(card);
+}
+
+// ── 延续风格 ──
+async function continueStyle(sourceVersion, context, afterCard) {
+  const btn = afterCard.querySelector('.continue-btn');
+  const loading = afterCard.querySelector('.continue-loading');
+  btn.disabled = true;
+  btn.style.opacity = '0.4';
+  loading.classList.add('show');
+
+  const brandContext = buildBrandContext();
+  const prompt = `你是一位顶级品牌文案专家。
+
+以下是一篇用户非常喜欢的文案，风格、节奏、用词都很到位：
+
+【参考文案】
+标题：${sourceVersion.title}
+正文：${sourceVersion.body}
+
+${brandContext ? `【品牌档案】\n${brandContext}\n` : ''}
+${context ? `【产品信息】\n${context}\n` : ''}
+
+请完整延续这篇文案的风格、语气、节奏，为同一产品再写3篇全新的文案。不能重复上面的内容，但要保持完全一致的写作风格。
+
+【输出格式】纯文本，三个版本用 ===== 分隔：
+
+【风格】延续风格版本1
+【标题】标题
+【正文】
+正文内容
+=====
+【风格】延续风格版本2
+【标题】标题
+【正文】
+正文内容
+=====
+【风格】延续风格版本3
+【标题】标题
+【正文】
+正文内容`;
+
+  try {
+    const text = await callClaude([{ role: 'user', content: prompt }]);
+    const versions = parseRewriteText(text);
+    loading.classList.remove('show');
+    btn.style.opacity = '1';
+    btn.disabled = false;
+
+    if (versions.length === 0) throw new Error('生成失败，请重试');
+
+    // 插入到当前卡片后面
+    const divider = document.createElement('div');
+    divider.className = 'divider';
+    divider.innerHTML = `<span>延续「${sourceVersion.style}」风格</span>`;
+    afterCard.after(divider);
+
+    let insertAfter = divider;
+    versions.forEach((v, i) => {
+      const newCard = document.createElement('div');
+      insertAfter.after(newCard);
+      renderVersionCard(newCard.parentElement, v, i, context);
+      // 把刚渲染的卡片移到正确位置
+      const rendered = newCard.parentElement.lastChild;
+      insertAfter.after(rendered);
+      insertAfter = rendered;
+      newCard.remove();
+    });
+
+    divider.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  } catch (err) {
+    loading.classList.remove('show');
+    btn.style.opacity = '1';
+    btn.disabled = false;
+    const errEl = document.createElement('div');
+    errEl.className = 'error-card';
+    errEl.style.marginTop = '8px';
+    errEl.innerHTML = `<div class="error-title">延续失败</div><div class="error-msg">${err.message}</div>`;
+    afterCard.appendChild(errEl);
+  }
+}
+
 function renderRewrite(versions) {
   const container = document.getElementById('rewriteContent');
   container.innerHTML = '';
-  versions.forEach((v, i) => {
-    const fullText = `${v.title}\n\n${v.body}`;
-    const card = document.createElement('div');
-    card.className = 'rewrite-card';
-    card.style.animationDelay = (i * 0.1) + 's';
-    const safeText = fullText.replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/\n/g, '\\n');
-    card.innerHTML = `
-      <div class="card-header">
-        <span class="badge badge-purple">版本 ${i + 1}</span>
-        <span class="card-subtitle">${v.style}</span>
-      </div>
-      <div style="margin-bottom:0.75rem;">
-        <div class="analysis-label">标题</div>
-        <div style="font-size:16px;font-weight:600;color:var(--ink);padding:8px 0 0 12px;border-left:2px solid var(--accent)">${v.title}</div>
-      </div>
-      <div>
-        <div class="analysis-label">正文</div>
-        <div class="copy-block" onclick="copyBlock(this, '${safeText}')">${v.body.replace(/\n/g, '<br>')}</div>
-      </div>`;
-    container.appendChild(card);
-  });
+  // 构建上下文字符串供历史记录使用
+  const context = activeBrand ? `品牌：${activeBrand.name}` : '';
+  versions.forEach((v, i) => renderVersionCard(container, v, i, context));
 }
 
 // 初始化品牌选择器
 initBrandBar();
+renderHistory();
 </script>
 </body>
 </html>
