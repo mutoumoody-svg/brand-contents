@@ -401,17 +401,15 @@ function copyLine(el, text) {
 function checkKey() { return true; }
 
 async function callClaude(prompt) {
-  const token = localStorage.getItem('brand_auth_token') || '';
-  const res = await fetch('/api/claude', {
+  const res = await fetch('https://anthorpic-proxy.mutoumoody.workers.dev/', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+    headers: { 'Content-Type': 'application/json', 'x-worker-secret': 'brand-worker-nz-2024' },
     body: JSON.stringify({
       model: 'claude-haiku-4-5-20251001',
       max_tokens: 1500,
       messages: [{ role: 'user', content: prompt }],
     }),
   });
-  if (res.status === 401) { logout(); return ''; }
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
     throw new Error(`API 错误 ${res.status}：${err.error?.message || res.statusText}`);
