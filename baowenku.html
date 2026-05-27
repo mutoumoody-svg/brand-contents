@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>爆文风格库</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@300;400;600&family=DM+Mono:wght@300;400&display=swap" rel="stylesheet" />
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --ink: #1a1814; --ink-soft: #4a4640; --ink-muted: #9a9590;
+  --cream: #f7f4ef; --cream-dark: #ede9e2;
+  --accent: #c0392b; --accent-light: #f5c6c0;
+  --gold: #b87333; --gold-pale: #f5ede0;
+  --green: #5a9e6f; --green-bg: #f0f8f3;
+  --purple: #6b5b95; --purple-bg: #f0edf8;
+  --blue: #2c5f8a; --blue-bg: #ddeef8;
+  --border: rgba(26,24,20,0.12); --border-strong: rgba(26,24,20,0.25);
+  --serif: 'Noto Serif SC', Georgia, serif;
+  --mono: 'DM Mono', monospace;
+}
+body { font-family: var(--serif); background: var(--cream); color: var(--ink); min-height: 100vh; line-height: 1.7; }
+
+/* NAV */
+.top-nav { background: var(--ink); height: 64px; display: flex; align-items: center; position: sticky; top: 0; z-index: 200; }
+.top-nav-inner { max-width: 1100px; margin: 0 auto; padding: 0 24px; display: flex; align-items: center; justify-content: space-between; width: 100%; }
+.top-nav-logo { font-family: var(--mono); font-size: 16px; letter-spacing: 0.08em; text-transform: uppercase; color: rgba(255,255,255,0.5); text-decoration: none; }
+.top-nav-links { display: flex; gap: 4px; }
+.top-nav-link { font-family: var(--mono); font-size: 14px; letter-spacing: 0.04em; text-transform: uppercase; color: rgba(255,255,255,0.5); text-decoration: none; padding: 8px 10px; border-radius: 2px; transition: all 0.15s; }
+.top-nav-link:hover { color: white; background: rgba(255,255,255,0.1); }
+.top-nav-link.active { color: white; }
+.nav-user { font-family: var(--mono); font-size: 11px; color: rgba(255,255,255,0.4); display: flex; align-items: center; gap: 8px; }
+.nav-logout { background: none; border: 1px solid rgba(255,255,255,0.2); color: rgba(255,255,255,0.5); font-family: var(--mono); font-size: 10px; letter-spacing: 0.08em; padding: 4px 10px; border-radius: 2px; cursor: pointer; transition: all 0.15s; }
+.nav-logout:hover { color: white; border-color: rgba(255,255,255,0.5); }
+
+/* PAGE HEADER */
+.page-header { background: var(--ink); padding: 48px 0 36px; border-bottom: 1px solid rgba(255,255,255,0.08); }
+.page-header-inner { max-width: 1100px; margin: 0 auto; padding: 0 24px; }
+.page-header h1 { font-family: var(--serif); font-size: 28px; font-weight: 400; color: white; letter-spacing: 0.02em; }
+.page-header p { font-family: var(--mono); font-size: 12px; color: rgba(255,255,255,0.4); letter-spacing: 0.08em; margin-top: 6px; }
+
+/* TOOLBAR */
+.toolbar { max-width: 1100px; margin: 0 auto; padding: 20px 24px; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.toolbar-left { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.filter-btn { font-family: var(--mono); font-size: 11px; letter-spacing: 0.08em; padding: 6px 14px; border-radius: 20px; border: 1px solid var(--border-strong); background: white; color: var(--ink-muted); cursor: pointer; transition: all 0.15s; }
+.filter-btn:hover, .filter-btn.active { background: var(--ink); color: white; border-color: var(--ink); }
+.stat-badge { font-family: var(--mono); font-size: 11px; color: var(--ink-muted); padding: 4px 12px; background: var(--cream-dark); border-radius: 20px; }
+.add-btn { font-family: var(--mono); font-size: 12px; letter-spacing: 0.08em; padding: 10px 20px; background: var(--accent); color: white; border: none; border-radius: 2px; cursor: pointer; transition: all 0.15s; white-space: nowrap; }
+.add-btn:hover { background: #a93226; }
+
+/* INSIGHTS BAR */
+.insights-bar { max-width: 1100px; margin: 0 auto 8px; padding: 0 24px; }
+.insights-trigger { width: 100%; background: linear-gradient(135deg, var(--purple-bg), var(--gold-pale)); border: 1px solid rgba(107,91,149,0.2); border-radius: 4px; padding: 14px 20px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; transition: all 0.2s; }
+.insights-trigger:hover { border-color: var(--purple); }
+.insights-trigger-left { display: flex; align-items: center; gap: 10px; }
+.insights-trigger-icon { font-size: 20px; }
+.insights-trigger-text { font-family: var(--serif); font-size: 15px; color: var(--purple); font-weight: 600; }
+.insights-trigger-sub { font-family: var(--mono); font-size: 11px; color: var(--ink-muted); margin-top: 2px; }
+.insights-trigger-btn { font-family: var(--mono); font-size: 11px; letter-spacing: 0.08em; padding: 8px 16px; background: var(--purple); color: white; border: none; border-radius: 2px; cursor: pointer; }
+.insights-panel { background: white; border: 1px solid rgba(107,91,149,0.2); border-top: none; border-radius: 0 0 4px 4px; padding: 20px; display: none; }
+.insights-panel.show { display: block; }
+.insights-loading { font-family: var(--mono); font-size: 12px; color: var(--ink-muted); text-align: center; padding: 20px; }
+.insight-section { margin-bottom: 20px; }
+.insight-section-title { font-family: var(--mono); font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-muted); margin-bottom: 10px; border-bottom: 1px solid var(--border); padding-bottom: 6px; }
+.insight-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; }
+.insight-chip { background: var(--purple-bg); border-radius: 4px; padding: 10px 14px; }
+.insight-chip-label { font-family: var(--mono); font-size: 10px; color: var(--purple); letter-spacing: 0.08em; margin-bottom: 4px; }
+.insight-chip-value { font-size: 13px; color: var(--ink); line-height: 1.5; }
+.insight-phrases { display: flex; flex-wrap: wrap; gap: 6px; }
+.insight-phrase { background: var(--gold-pale); border: 1px solid rgba(184,115,51,0.2); border-radius: 20px; padding: 4px 12px; font-size: 12px; color: var(--gold); }
+.insight-patterns { list-style: none; }
+.insight-patterns li { padding: 6px 0; border-bottom: 1px solid var(--border); font-size: 13px; display: flex; align-items: flex-start; gap: 8px; }
+.insight-patterns li::before { content: '→'; color: var(--accent); font-family: var(--mono); flex-shrink: 0; }
+
+/* POSTS GRID */
+.posts-grid { max-width: 1100px; margin: 0 auto; padding: 16px 24px 60px; display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px; }
+.post-card { background: white; border: 1px solid var(--border); border-radius: 4px; overflow: hidden; cursor: pointer; transition: all 0.2s; }
+.post-card:hover { border-color: var(--border-strong); box-shadow: 0 4px 16px rgba(0,0,0,0.08); transform: translateY(-1px); }
+.post-card-header { padding: 16px 16px 12px; border-bottom: 1px solid var(--border); }
+.post-card-title { font-size: 15px; font-weight: 600; color: var(--ink); line-height: 1.4; margin-bottom: 8px; }
+.post-card-meta { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.post-tag { font-family: var(--mono); font-size: 10px; letter-spacing: 0.06em; padding: 3px 8px; border-radius: 20px; background: var(--purple-bg); color: var(--purple); }
+.post-platform { font-family: var(--mono); font-size: 10px; padding: 3px 8px; border-radius: 20px; background: var(--cream-dark); color: var(--ink-muted); }
+.post-likes { font-family: var(--mono); font-size: 10px; color: var(--accent); margin-left: auto; }
+.post-card-preview { padding: 12px 16px; font-size: 13px; color: var(--ink-soft); line-height: 1.6; max-height: 80px; overflow: hidden; position: relative; }
+.post-card-preview::after { content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 30px; background: linear-gradient(transparent, white); }
+.post-card-footer { padding: 10px 16px; display: flex; align-items: center; justify-content: space-between; background: var(--cream); border-top: 1px solid var(--border); }
+.post-analysis-badge { font-family: var(--mono); font-size: 10px; letter-spacing: 0.06em; padding: 3px 10px; border-radius: 20px; }
+.post-analysis-badge.done { background: var(--green-bg); color: var(--green); }
+.post-analysis-badge.pending { background: var(--cream-dark); color: var(--ink-muted); }
+.post-card-date { font-family: var(--mono); font-size: 10px; color: var(--ink-muted); }
+
+/* EMPTY STATE */
+.empty-state { max-width: 480px; margin: 80px auto; text-align: center; padding: 0 24px; }
+.empty-state-icon { font-size: 48px; margin-bottom: 16px; }
+.empty-state-title { font-size: 18px; color: var(--ink-soft); margin-bottom: 8px; }
+.empty-state-desc { font-family: var(--mono); font-size: 12px; color: var(--ink-muted); line-height: 1.8; }
+
+/* MODAL - ADD POST */
+.overlay { position: fixed; inset: 0; background: rgba(26,24,20,0.6); z-index: 500; display: none; align-items: flex-start; justify-content: center; padding: 40px 16px; overflow-y: auto; }
+.overlay.show { display: flex; }
+.modal { background: white; border-radius: 4px; width: 100%; max-width: 680px; overflow: hidden; margin: auto; }
+.modal-header { background: var(--ink); padding: 20px 24px; display: flex; align-items: center; justify-content: space-between; }
+.modal-title { font-family: var(--serif); font-size: 18px; color: white; font-weight: 400; }
+.modal-close { background: none; border: none; color: rgba(255,255,255,0.5); font-size: 20px; cursor: pointer; padding: 4px; line-height: 1; }
+.modal-close:hover { color: white; }
+.modal-body { padding: 24px; }
+.form-group { margin-bottom: 18px; }
+.form-label { font-family: var(--mono); font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-muted); display: block; margin-bottom: 6px; }
+.form-input { width: 100%; border: 1px solid var(--border-strong); border-radius: 2px; font-family: var(--serif); font-size: 14px; color: var(--ink); padding: 10px 12px; outline: none; background: white; transition: border 0.15s; }
+.form-input:focus { border-color: var(--ink); }
+.form-textarea { width: 100%; border: 1px solid var(--border-strong); border-radius: 2px; font-family: var(--serif); font-size: 13px; color: var(--ink); padding: 10px 12px; outline: none; background: white; resize: vertical; min-height: 200px; line-height: 1.7; transition: border 0.15s; }
+.form-textarea:focus { border-color: var(--ink); }
+.form-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+.form-hint { font-family: var(--mono); font-size: 10px; color: var(--ink-muted); margin-top: 4px; }
+.modal-footer { padding: 16px 24px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 10px; }
+.btn-cancel { font-family: var(--mono); font-size: 12px; letter-spacing: 0.06em; padding: 10px 20px; background: white; border: 1px solid var(--border-strong); color: var(--ink-soft); border-radius: 2px; cursor: pointer; transition: all 0.15s; }
+.btn-cancel:hover { background: var(--cream-dark); }
+.btn-save { font-family: var(--mono); font-size: 12px; letter-spacing: 0.06em; padding: 10px 24px; background: var(--ink); color: white; border: none; border-radius: 2px; cursor: pointer; transition: all 0.15s; }
+.btn-save:hover { background: #333; }
+.btn-save:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* MODAL - VIEW POST */
+.view-overlay { position: fixed; inset: 0; background: rgba(26,24,20,0.6); z-index: 500; display: none; align-items: flex-start; justify-content: center; padding: 40px 16px; overflow-y: auto; }
+.view-overlay.show { display: flex; }
+.view-modal { background: white; border-radius: 4px; width: 100%; max-width: 820px; margin: auto; overflow: hidden; }
+.view-modal-header { background: var(--ink); padding: 20px 24px; display: flex; align-items: center; justify-content: space-between; }
+.view-modal-title { font-family: var(--serif); font-size: 18px; color: white; font-weight: 400; flex: 1; margin-right: 12px; }
+.view-modal-actions { display: flex; gap: 8px; align-items: center; }
+.btn-analyze { font-family: var(--mono); font-size: 11px; letter-spacing: 0.06em; padding: 7px 14px; background: var(--purple); color: white; border: none; border-radius: 2px; cursor: pointer; transition: all 0.15s; }
+.btn-analyze:hover { background: #5a4a80; }
+.btn-analyze:disabled { opacity: 0.5; cursor: not-allowed; }
+.btn-delete-post { font-family: var(--mono); font-size: 11px; padding: 7px 14px; background: rgba(192,57,43,0.15); color: #e74c3c; border: none; border-radius: 2px; cursor: pointer; transition: all 0.15s; }
+.btn-delete-post:hover { background: rgba(192,57,43,0.3); }
+.view-body { display: grid; grid-template-columns: 1fr 1fr; min-height: 400px; }
+.view-content-panel { padding: 24px; border-right: 1px solid var(--border); overflow-y: auto; max-height: 70vh; }
+.view-analysis-panel { padding: 24px; overflow-y: auto; max-height: 70vh; background: var(--cream); }
+.panel-label { font-family: var(--mono); font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-muted); margin-bottom: 12px; }
+.post-full-content { font-size: 14px; line-height: 1.9; color: var(--ink); white-space: pre-wrap; word-break: break-word; }
+.post-meta-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 16px; }
+
+/* ANALYSIS */
+.analysis-loading { text-align: center; padding: 40px 20px; }
+.analysis-loading-text { font-family: var(--mono); font-size: 12px; color: var(--ink-muted); margin-top: 10px; }
+.analysis-spinner { width: 24px; height: 24px; border: 2px solid var(--border); border-top-color: var(--purple); border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.analysis-empty { text-align: center; padding: 40px 20px; }
+.analysis-empty-text { font-family: var(--mono); font-size: 12px; color: var(--ink-muted); line-height: 1.8; }
+.analysis-block { margin-bottom: 16px; }
+.analysis-block-label { font-family: var(--mono); font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-muted); margin-bottom: 6px; }
+.analysis-block-value { font-size: 13px; color: var(--ink); line-height: 1.6; background: white; border-radius: 4px; padding: 8px 12px; border: 1px solid var(--border); }
+.analysis-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+.analysis-tag { font-size: 12px; padding: 4px 10px; border-radius: 20px; background: var(--purple-bg); color: var(--purple); border: 1px solid rgba(107,91,149,0.2); }
+.analysis-tag.emotion { background: var(--gold-pale); color: var(--gold); border-color: rgba(184,115,51,0.2); }
+.analysis-tag.pattern { background: var(--green-bg); color: var(--green); border-color: rgba(90,158,111,0.2); }
+.analysis-viral-reason { background: linear-gradient(135deg, #fff8e6, #fdf5f3); border: 1px solid rgba(184,115,51,0.2); border-radius: 4px; padding: 12px 14px; font-size: 13px; color: var(--ink-soft); line-height: 1.7; font-style: italic; }
+</style>
+</head>
+<body>
+
+<nav class="top-nav">
+  <div class="top-nav-inner">
+    <a class="top-nav-logo" href="brand.html">Brand Center</a>
+    <div class="top-nav-links">
+      <a class="top-nav-link" href="brand.html">品牌管理</a>
+      <a class="top-nav-link" href="index.html">文案生成</a>
+      <a class="top-nav-link" href="fangxie.html">爆文仿写</a>
+      <a class="top-nav-link" href="fenxi.html">文案分析</a>
+      <a class="top-nav-link active" href="baowenku.html">爆文库</a>
+      <a class="top-nav-link" href="admin.html" id="adminNavLink" style="display:none">用户管理</a>
+    </div>
+    <div class="nav-user">
+      <span id="navUserName"></span>
+      <button class="nav-logout" onclick="logout()">退出</button>
+    </div>
+  </div>
+</nav>
+
+<header class="page-header">
+  <div class="page-header-inner">
+    <h1>爆文风格库</h1>
+    <p>收藏小红书爆款文案 · AI 自动解析结构规律 · 持续学习迭代风格</p>
+  </div>
+</header>
+
+<div class="toolbar">
+  <div class="toolbar-left">
+    <button class="filter-btn active" onclick="filterPosts('all',this)">全部</button>
+    <button class="filter-btn" onclick="filterPosts('情绪共鸣型',this)">情绪共鸣型</button>
+    <button class="filter-btn" onclick="filterPosts('干货攻略型',this)">干货攻略型</button>
+    <button class="filter-btn" onclick="filterPosts('故事叙事型',this)">故事叙事型</button>
+    <button class="filter-btn" onclick="filterPosts('种草安利型',this)">种草安利型</button>
+    <button class="filter-btn" onclick="filterPosts('悬念反转型',this)">悬念反转型</button>
+    <span class="stat-badge" id="statBadge">0 篇</span>
+  </div>
+  <button class="add-btn" onclick="openAddModal()">＋ 添加爆文</button>
+</div>
+
+<div class="insights-bar">
+  <div class="insights-trigger" onclick="toggleInsights()">
+    <div class="insights-trigger-left">
+      <span class="insights-trigger-icon">🧠</span>
+      <div>
+        <div class="insights-trigger-text">综合学习洞察</div>
+        <div class="insights-trigger-sub">基于库中所有爆文，提炼小红书爆款共性规律</div>
+      </div>
+    </div>
+    <button class="insights-trigger-btn" onclick="event.stopPropagation(); generateInsights()">重新分析</button>
+  </div>
+  <div class="insights-panel" id="insightsPanel">
+    <div class="insights-loading" id="insightsLoading" style="display:none">正在分析所有爆文规律，请稍候…</div>
+    <div id="insightsContent"></div>
+  </div>
+</div>
+
+<div class="posts-grid" id="postsGrid"></div>
+
+<div class="empty-state" id="emptyState" style="display:none">
+  <div class="empty-state-icon">📚</div>
+  <div class="empty-state-title">还没有收藏的爆文</div>
+  <div class="empty-state-desc">把你在小红书看到的爆款文案粘贴进来<br>AI 会自动分析它的钩子、结构、情绪触发点<br>帮助系统学习爆文写作规律</div>
+</div>
+
+<!-- ADD MODAL -->
+<div class="overlay" id="addOverlay">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">添加爆文</div>
+      <button class="modal-close" onclick="closeAddModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">标题 / 备注名称</label>
+        <input class="form-input" id="addTitle" placeholder="给这篇爆文起个名字方便识别" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">爆文内容 <span style="color:var(--accent)">*</span></label>
+        <textarea class="form-textarea" id="addContent" placeholder="粘贴完整的小红书爆文内容（包括标题和正文）&#10;&#10;越完整越好，AI 会分析标题钩子、正文结构、emoji 用法、CTA 方式等。"></textarea>
+      </div>
+      <div class="form-row">
+        <div class="form-group" style="margin:0">
+          <label class="form-label">平台</label>
+          <select class="form-input" id="addPlatform">
+            <option value="小红书">小红书</option>
+            <option value="抖音">抖音</option>
+            <option value="微信">微信</option>
+            <option value="微博">微博</option>
+          </select>
+        </div>
+        <div class="form-group" style="margin:0">
+          <label class="form-label">点赞数（估算）</label>
+          <input class="form-input" id="addLikes" type="number" placeholder="如 5000" />
+        </div>
+        <div class="form-group" style="margin:0">
+          <label class="form-label">风格标签</label>
+          <input class="form-input" id="addTags" placeholder="情绪共鸣型, 种草安利型" />
+          <div class="form-hint">多个标签用逗号分隔</div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeAddModal()">取消</button>
+      <button class="btn-save" id="addSaveBtn" onclick="savePost()">保存并分析 →</button>
+    </div>
+  </div>
+</div>
+
+<!-- VIEW MODAL -->
+<div class="view-overlay" id="viewOverlay">
+  <div class="view-modal">
+    <div class="view-modal-header">
+      <div class="view-modal-title" id="viewTitle"></div>
+      <div class="view-modal-actions">
+        <button class="btn-analyze" id="analyzeBtn" onclick="analyzeCurrentPost()">✦ 重新分析</button>
+        <button class="btn-delete-post" onclick="deleteCurrentPost()">删除</button>
+        <button class="modal-close" onclick="closeViewModal()" style="margin-left:4px">✕</button>
+      </div>
+    </div>
+    <div class="view-body">
+      <div class="view-content-panel">
+        <div class="panel-label">原文内容</div>
+        <div class="post-meta-chips" id="viewMeta"></div>
+        <div class="post-full-content" id="viewContent"></div>
+      </div>
+      <div class="view-analysis-panel">
+        <div class="panel-label">AI 结构分析</div>
+        <div id="viewAnalysis"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── Auth ──
+const TOKEN = localStorage.getItem('brand_auth_token');
+const UNAME = localStorage.getItem('brand_user_name');
+const UROLE = localStorage.getItem('brand_user_role');
+if (!TOKEN) { location.href = 'login.html'; }
+document.getElementById('navUserName').textContent = UNAME || '';
+if (UROLE === 'admin') document.getElementById('adminNavLink').style.display = '';
+function logout() { ['brand_auth_token','brand_user_name','brand_user_role'].forEach(k => localStorage.removeItem(k)); location.href = 'login.html'; }
+
+// ── State ──
+let allPosts = [];
+let currentPostId = null;
+let currentFilter = 'all';
+
+// ── Init ──
+loadPosts();
+
+async function loadPosts() {
+  try {
+    const res = await fetch('/api/viral-posts', { headers: { Authorization: 'Bearer ' + TOKEN } });
+    allPosts = await res.json();
+    renderPosts();
+  } catch(e) {
+    console.error(e);
+  }
+}
+
+function renderPosts() {
+  const grid = document.getElementById('postsGrid');
+  const empty = document.getElementById('emptyState');
+  let filtered = currentFilter === 'all' ? allPosts
+    : allPosts.filter(p => (p.tags || []).includes(currentFilter) ||
+        (p.analysis?.style_label || '').includes(currentFilter));
+
+  document.getElementById('statBadge').textContent = filtered.length + ' 篇';
+
+  if (filtered.length === 0) {
+    grid.innerHTML = '';
+    empty.style.display = '';
+    return;
+  }
+  empty.style.display = 'none';
+  grid.innerHTML = filtered.map(p => postCardHtml(p)).join('');
+}
+
+function postCardHtml(p) {
+  const tags = [...(p.tags || []), ...(p.analysis?.style_label ? [p.analysis.style_label] : [])];
+  const uniqueTags = [...new Set(tags)];
+  const tagsHtml = uniqueTags.slice(0,3).map(t => `<span class="post-tag">${t}</span>`).join('');
+  const preview = (p.content || '').slice(0, 120);
+  const date = new Date(p.created_at).toLocaleDateString('zh-CN', { month:'numeric', day:'numeric' });
+  const hasDone = !!p.analysis;
+  return `
+  <div class="post-card" onclick="openViewModal(${p.id})">
+    <div class="post-card-header">
+      <div class="post-card-title">${escHtml(p.title || p.content.slice(0,40) + '…')}</div>
+      <div class="post-card-meta">
+        <span class="post-platform">${p.platform || '小红书'}</span>
+        ${tagsHtml}
+        ${p.likes ? `<span class="post-likes">♥ ${Number(p.likes).toLocaleString()}</span>` : ''}
+      </div>
+    </div>
+    <div class="post-card-preview">${escHtml(preview)}</div>
+    <div class="post-card-footer">
+      <span class="post-analysis-badge ${hasDone ? 'done' : 'pending'}">${hasDone ? '✓ 已分析' : '待分析'}</span>
+      <span class="post-card-date">${date}</span>
+    </div>
+  </div>`;
+}
+
+function filterPosts(tag, btn) {
+  currentFilter = tag;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderPosts();
+}
+
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ── ADD MODAL ──
+function openAddModal() { document.getElementById('addOverlay').classList.add('show'); document.getElementById('addContent').focus(); }
+function closeAddModal() { document.getElementById('addOverlay').classList.remove('show'); }
+
+async function savePost() {
+  const content = document.getElementById('addContent').value.trim();
+  if (!content) { alert('请粘贴爆文内容'); return; }
+  const title    = document.getElementById('addTitle').value.trim();
+  const platform = document.getElementById('addPlatform').value;
+  const likes    = parseInt(document.getElementById('addLikes').value) || 0;
+  const tagsRaw  = document.getElementById('addTags').value;
+  const tags     = tagsRaw.split(/[,，]+/).map(t => t.trim()).filter(Boolean);
+
+  const btn = document.getElementById('addSaveBtn');
+  btn.disabled = true; btn.textContent = '保存中…';
+
+  try {
+    // 1. 先保存
+    const res = await fetch('/api/viral-posts', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + TOKEN },
+      body: JSON.stringify({ title, content, platform, tags, likes }),
+    });
+    const { id } = await res.json();
+
+    btn.textContent = 'AI 分析中…';
+
+    // 2. 立即 AI 分析
+    const analysis = await analyzePost(content);
+
+    // 3. 保存分析结果
+    await fetch('/api/viral-posts/' + id, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + TOKEN },
+      body: JSON.stringify({ title, tags, likes, analysis }),
+    });
+
+    closeAddModal();
+    // 清空表单
+    ['addTitle','addContent','addTags','addLikes'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('addPlatform').value = '小红书';
+
+    await loadPosts();
+  } catch(e) {
+    alert('保存失败：' + e.message);
+  } finally {
+    btn.disabled = false; btn.textContent = '保存并分析 →';
+  }
+}
+
+// ── VIEW MODAL ──
+function openViewModal(id) {
+  const post = allPosts.find(p => p.id === id);
+  if (!post) return;
+  currentPostId = id;
+
+  document.getElementById('viewTitle').textContent = post.title || post.content.slice(0,50) + '…';
+
+  // meta chips
+  const tags = [...(post.tags||[])];
+  const metaHtml = `
+    <span class="post-platform">${post.platform||'小红书'}</span>
+    ${tags.map(t=>`<span class="post-tag">${escHtml(t)}</span>`).join('')}
+    ${post.likes ? `<span class="post-likes" style="background:var(--accent-light);color:var(--accent);padding:3px 8px;border-radius:20px;font-size:10px;">♥ ${Number(post.likes).toLocaleString()}</span>` : ''}
+  `;
+  document.getElementById('viewMeta').innerHTML = metaHtml;
+  document.getElementById('viewContent').textContent = post.content;
+
+  renderAnalysis(post.analysis);
+  document.getElementById('viewOverlay').classList.add('show');
+}
+
+function closeViewModal() {
+  document.getElementById('viewOverlay').classList.remove('show');
+  currentPostId = null;
+}
+
+function renderAnalysis(a) {
+  const el = document.getElementById('viewAnalysis');
+  if (!a) {
+    el.innerHTML = `<div class="analysis-empty"><div style="font-size:32px;margin-bottom:12px">✦</div><div class="analysis-empty-text">点击「重新分析」<br>AI 将解析这篇爆文的钩子、结构、情绪触发点和可复用的写作模式</div></div>`;
+    return;
+  }
+  el.innerHTML = `
+    ${a.hook ? `<div class="analysis-block"><div class="analysis-block-label">开头钩子</div><div class="analysis-block-value">${escHtml(a.hook)}</div></div>` : ''}
+    ${a.structure ? `<div class="analysis-block"><div class="analysis-block-label">内容结构</div><div class="analysis-block-value">${escHtml(a.structure)}</div></div>` : ''}
+    ${a.style_label ? `<div class="analysis-block"><div class="analysis-block-label">风格类型</div><div class="analysis-block-value"><span class="analysis-tag">${escHtml(a.style_label)}</span></div></div>` : ''}
+    ${a.emotional_triggers?.length ? `<div class="analysis-block"><div class="analysis-block-label">情绪触发点</div><div class="analysis-tags">${a.emotional_triggers.map(t=>`<span class="analysis-tag emotion">${escHtml(t)}</span>`).join('')}</div></div>` : ''}
+    ${a.key_phrases?.length ? `<div class="analysis-block"><div class="analysis-block-label">金句 / 高频词</div><div class="analysis-tags">${a.key_phrases.map(t=>`<span class="analysis-tag pattern">${escHtml(t)}</span>`).join('')}</div></div>` : ''}
+    ${a.cta ? `<div class="analysis-block"><div class="analysis-block-label">行动引导（CTA）</div><div class="analysis-block-value">${escHtml(a.cta)}</div></div>` : ''}
+    ${a.emoji_style ? `<div class="analysis-block"><div class="analysis-block-label">Emoji 用法</div><div class="analysis-block-value">${escHtml(a.emoji_style)}</div></div>` : ''}
+    ${a.why_viral ? `<div class="analysis-block"><div class="analysis-block-label">爆文原因</div><div class="analysis-viral-reason">${escHtml(a.why_viral)}</div></div>` : ''}
+    ${a.copyable_patterns?.length ? `<div class="analysis-block"><div class="analysis-block-label">可复用写作模式</div>${a.copyable_patterns.map(p=>`<div class="analysis-block-value" style="margin-bottom:6px;font-size:12px">→ ${escHtml(p)}</div>`).join('')}</div>` : ''}
+  `;
+}
+
+async function analyzeCurrentPost() {
+  const post = allPosts.find(p => p.id === currentPostId);
+  if (!post) return;
+  const btn = document.getElementById('analyzeBtn');
+  btn.disabled = true; btn.textContent = '分析中…';
+  document.getElementById('viewAnalysis').innerHTML = `<div class="analysis-loading"><div class="analysis-spinner"></div><div class="analysis-loading-text">AI 正在解析爆文结构…</div></div>`;
+  try {
+    const analysis = await analyzePost(post.content);
+    await fetch('/api/viral-posts/' + currentPostId, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + TOKEN },
+      body: JSON.stringify({ title: post.title, tags: post.tags, likes: post.likes, analysis }),
+    });
+    const idx = allPosts.findIndex(p => p.id === currentPostId);
+    if (idx !== -1) allPosts[idx].analysis = analysis;
+    renderAnalysis(analysis);
+    renderPosts();
+  } catch(e) {
+    document.getElementById('viewAnalysis').innerHTML = `<div class="analysis-empty"><div class="analysis-empty-text">分析失败：${escHtml(e.message)}</div></div>`;
+  } finally {
+    btn.disabled = false; btn.textContent = '✦ 重新分析';
+  }
+}
+
+async function deleteCurrentPost() {
+  if (!confirm('确定删除这篇爆文吗？')) return;
+  await fetch('/api/viral-posts/' + currentPostId, {
+    method: 'DELETE',
+    headers: { Authorization: 'Bearer ' + TOKEN },
+  });
+  closeViewModal();
+  await loadPosts();
+}
+
+// ── AI 分析单篇 ──
+async function analyzePost(content) {
+  const prompt = `你是小红书内容策略专家。请深度分析以下爆款文案的写作规律，严格只返回JSON：
+{
+  "hook": "开头钩子的类型和具体写法（30字内）",
+  "structure": "全文结构节奏，用箭头连接，如：痛点共鸣→场景描述→产品出场→使用体验→社交证明→互动引导",
+  "style_label": "风格标签，只选一个：情绪共鸣型/干货攻略型/故事叙事型/种草安利型/悬念反转型/知识科普型",
+  "emotional_triggers": ["情绪触发点1", "情绪触发点2", "情绪触发点3"],
+  "key_phrases": ["可直接借鉴的金句或高频词1", "金句2", "金句3", "金句4"],
+  "cta": "行动引导方式（20字内）",
+  "emoji_style": "emoji使用风格和密度（20字内）",
+  "why_viral": "这篇能爆的核心原因，1-2句话（50字内）",
+  "copyable_patterns": ["可复用写作模式1（具体可操作）", "模式2", "模式3"]
+}
+
+爆文内容：
+${content.slice(0, 3000)}`;
+
+  const res = await fetch('https://anthorpic-proxy.mutoumoody.workers.dev/', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'x-worker-secret': 'brand-worker-nz-2024' },
+    body: JSON.stringify({
+      model: 'claude-haiku-4-5-20251001',
+      max_tokens: 1200,
+      messages: [{ role: 'user', content: prompt }],
+    }),
+  });
+  if (!res.ok) { const e = await res.json().catch(()=>{}); throw new Error(e?.error?.message || '分析请求失败'); }
+  const data = await res.json();
+  const raw = (data.content || []).map(c => c.text || '').join('');
+  return safeParseJson(raw);
+}
+
+// ── 综合洞察 ──
+let insightsOpen = false;
+function toggleInsights() {
+  insightsOpen = !insightsOpen;
+  document.getElementById('insightsPanel').classList.toggle('show', insightsOpen);
+}
+
+async function generateInsights() {
+  if (allPosts.length === 0) { alert('请先添加一些爆文再生成洞察'); return; }
+  insightsOpen = true;
+  document.getElementById('insightsPanel').classList.add('show');
+  document.getElementById('insightsLoading').style.display = '';
+  document.getElementById('insightsContent').innerHTML = '';
+
+  const analyzed = allPosts.filter(p => p.analysis);
+  if (analyzed.length === 0) { document.getElementById('insightsLoading').style.display = 'none'; document.getElementById('insightsContent').innerHTML = '<p style="font-family:var(--mono);font-size:12px;color:var(--ink-muted);padding:10px">请先对爆文进行分析，再生成综合洞察。</p>'; return; }
+
+  // 汇总已有分析数据
+  const summaryData = analyzed.map(p => ({
+    hook: p.analysis.hook,
+    structure: p.analysis.structure,
+    style: p.analysis.style_label,
+    triggers: p.analysis.emotional_triggers,
+    phrases: p.analysis.key_phrases,
+    why: p.analysis.why_viral,
+    patterns: p.analysis.copyable_patterns,
+  }));
+
+  const prompt = `你是小红书内容策略专家。以下是${analyzed.length}篇小红书爆文的结构分析数据：
+
+${JSON.stringify(summaryData, null, 2)}
+
+请基于这些数据，提炼出这个账号/品类的小红书爆文共性规律，只返回JSON：
+{
+  "top_hooks": ["最有效的开头钩子模式1", "模式2", "模式3"],
+  "common_structure": "最常见的内容结构节奏（用箭头连接）",
+  "dominant_styles": ["主要风格类型1", "风格类型2"],
+  "core_emotions": ["核心情绪驱动1", "情绪驱动2", "情绪驱动3"],
+  "power_phrases": ["高频金句或词汇1", "词汇2", "词汇3", "词汇4", "词汇5"],
+  "cta_patterns": ["最有效的互动引导方式1", "方式2"],
+  "writing_rules": ["写作规律1（具体可操作）", "规律2", "规律3", "规律4", "规律5"],
+  "style_summary": "对这批爆文整体风格的一句话总结（40字内）"
+}`;
+
+  try {
+    const res = await fetch('https://anthorpic-proxy.mutoumoody.workers.dev/', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-worker-secret': 'brand-worker-nz-2024' },
+      body: JSON.stringify({ model: 'claude-haiku-4-5-20251001', max_tokens: 1500, messages: [{ role: 'user', content: prompt }] }),
+    });
+    const data = await res.json();
+    const raw = (data.content || []).map(c => c.text || '').join('');
+    const ins = safeParseJson(raw);
+    renderInsights(ins, analyzed.length);
+  } catch(e) {
+    document.getElementById('insightsContent').innerHTML = `<p style="font-family:var(--mono);font-size:12px;color:var(--accent);padding:10px">洞察生成失败：${escHtml(e.message)}</p>`;
+  } finally {
+    document.getElementById('insightsLoading').style.display = 'none';
+  }
+}
+
+function renderInsights(ins, count) {
+  const el = document.getElementById('insightsContent');
+  el.innerHTML = `
+    <div style="margin-bottom:16px;padding:10px 14px;background:var(--green-bg);border-radius:4px;font-size:13px;color:var(--green);font-style:italic">
+      基于 ${count} 篇已分析爆文 · ${ins.style_summary || ''}
+    </div>
+    <div class="insight-section">
+      <div class="insight-section-title">最有效的开头钩子</div>
+      <div class="insight-grid">
+        ${(ins.top_hooks||[]).map(h=>`<div class="insight-chip"><div class="insight-chip-label">HOOK</div><div class="insight-chip-value">${escHtml(h)}</div></div>`).join('')}
+      </div>
+    </div>
+    <div class="insight-section">
+      <div class="insight-section-title">最常见内容结构</div>
+      <div class="insight-chip" style="max-width:100%"><div class="insight-chip-value" style="font-family:var(--mono);font-size:12px;color:var(--purple)">${escHtml(ins.common_structure||'')}</div></div>
+    </div>
+    <div class="insight-section">
+      <div class="insight-section-title">核心情绪驱动 · 高频金句</div>
+      <div class="insight-phrases">
+        ${(ins.core_emotions||[]).map(e=>`<span class="insight-phrase" style="background:var(--accent-light);color:var(--accent)">${escHtml(e)}</span>`).join('')}
+        ${(ins.power_phrases||[]).map(p=>`<span class="insight-phrase">${escHtml(p)}</span>`).join('')}
+      </div>
+    </div>
+    <div class="insight-section">
+      <div class="insight-section-title">可复用写作规律</div>
+      <ul class="insight-patterns">
+        ${(ins.writing_rules||[]).map(r=>`<li>${escHtml(r)}</li>`).join('')}
+      </ul>
+    </div>
+    <div class="insight-section">
+      <div class="insight-section-title">最有效互动引导（CTA）</div>
+      <div class="insight-phrases">
+        ${(ins.cta_patterns||[]).map(c=>`<span class="insight-phrase" style="background:var(--blue-bg);color:var(--blue)">${escHtml(c)}</span>`).join('')}
+      </div>
+    </div>
+  `;
+}
+
+// ── JSON 解析 ──
+function safeParseJson(raw) {
+  const f = raw.indexOf('{'), l = raw.lastIndexOf('}');
+  if (f === -1) throw new Error('未找到 JSON 内容');
+  if (l !== -1) {
+    const s0 = raw.slice(f, l + 1);
+    try { return JSON.parse(s0); } catch(_) {}
+    const s1 = _fixCtrl(s0);
+    try { return JSON.parse(s1); } catch(_) {}
+    const s2 = s1.replace(/,(\s*[}\]])/g, '$1');
+    try { return JSON.parse(s2); } catch(_) {}
+    const s3 = _fixQuotes(s2);
+    try { return JSON.parse(s3); } catch(_) {}
+  }
+  try { return JSON.parse(_autoClose(_fixQuotes(_fixCtrl(raw.slice(f)).replace(/,(\s*[}\]])/g,'$1')))); } catch(_) {}
+  throw new Error('JSON 解析失败，请重试');
+}
+function _fixCtrl(str) {
+  let inStr=false,esc=false,out='';
+  for(let i=0;i<str.length;i++){const c=str[i];if(esc){out+=c;esc=false;continue}if(c==='\\'){out+=c;esc=true;continue}if(c==='"'){inStr=!inStr;out+=c;continue}if(inStr){const code=c.charCodeAt(0);if(c==='\n'){out+='\\n';continue}else if(c==='\r'){out+='\\r';continue}else if(c==='\t'){out+='\\t';continue}else if(code<32){continue}}out+=c}return out;
+}
+function _fixQuotes(str) {
+  let result='',i=0;while(i<str.length){const c=str[i];if(c!=='"'){result+=c;i++;continue}result+='"';i++;while(i<str.length){const sc=str[i];if(sc==='\\'){result+=sc+(str[i+1]||'');i+=2;continue}if(sc==='"'){const rest=str.slice(i+1).replace(/^[\s\n\r\t]*/,'');if(!rest.length||/^[,:\}\]]/.test(rest)){result+='"';i++;break}else{result+='\\"';i++}continue}result+=sc;i++}}return result;
+}
+function _autoClose(str) {
+  let stack=[],inStr=false,esc=false;
+  for(let i=0;i<str.length;i++){const c=str[i];if(esc){esc=false;continue}if(c==='\\'){esc=true;continue}if(c==='"'){inStr=!inStr;continue}if(inStr)continue;if(c==='{')stack.push('}');else if(c==='[')stack.push(']');else if((c==='}'||c===']')&&stack.length)stack.pop()}
+  let trimmed=str.trimEnd().replace(/,\s*$/,'');let tail=inStr?'"':'';while(stack.length)tail+=stack.pop();return trimmed+tail;
+}
+</script>
+</body>
+</html>

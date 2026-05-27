@@ -332,6 +332,59 @@ app.delete('/api/brands/:id/analyses/:aid', authenticateToken, (req, res) => {
 });
 
 // ══════════════════════════════════════════
+//  爆文风格库
+// ══════════════════════════════════════════
+db.exec(`
+  CREATE TABLE IF NOT EXISTS viral_posts (
+    id         INTEGER PRIMARY KEY AUTOINCREMENT,
+    title      TEXT    DEFAULT '',
+    content    TEXT    NOT NULL,
+    platform   TEXT    DEFAULT '小红书',
+    tags       TEXT    DEFAULT '[]',
+    likes      INTEGER DEFAULT 0,
+    analysis   TEXT    DEFAULT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  )
+`);
+
+app.get('/api/viral-posts', authenticateToken, (req, res) => {
+  const rows = db.prepare('SELECT * FROM viral_posts ORDER BY created_at DESC').all();
+  res.json(rows.map(r => ({
+    ...r,
+    tags:     JSON.parse(r.tags     || '[]'),
+    analysis: r.analysis ? JSON.parse(r.analysis) : null,
+  })));
+});
+
+app.post('/api/viral-posts', authenticateToken, (req, res) => {
+  const { title, content, platform, tags, likes, analysis } = req.body || {};
+  if (!content) return res.status(400).json({ error: '内容不能为空' });
+  const result = db.prepare(
+    'INSERT INTO viral_posts (title, content, platform, tags, likes, analysis) VALUES (?,?,?,?,?,?)'
+  ).run(
+    title || '', content,
+    platform || '小红书',
+    JSON.stringify(tags || []),
+    likes || 0,
+    analysis ? JSON.stringify(analysis) : null
+  );
+  res.json({ id: result.lastInsertRowid });
+});
+
+app.put('/api/viral-posts/:id', authenticateToken, (req, res) => {
+  const { title, tags, likes, analysis } = req.body || {};
+  db.prepare('UPDATE viral_posts SET title=?, tags=?, likes=?, analysis=? WHERE id=?')
+    .run(title || '', JSON.stringify(tags || []), likes || 0,
+         analysis ? JSON.stringify(analysis) : null, req.params.id);
+  res.json({ ok: true });
+});
+
+app.delete('/api/viral-posts/:id', authenticateToken, (req, res) => {
+  db.prepare('DELETE FROM viral_posts WHERE id=?').run(req.params.id);
+  res.json({ ok: true });
+});
+
+// ══════════════════════════════════════════
 //  文件解析 → 品牌信息提取
 // ══════════════════════════════════════════
 
