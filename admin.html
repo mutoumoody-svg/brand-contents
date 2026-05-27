@@ -20,11 +20,11 @@
   --display: 'Playfair Display', serif;
 }
 body { font-family: var(--serif); background: var(--cream); color: var(--ink); min-height: 100vh; }
-.top-nav { background: var(--ink); height: 56px; display: flex; align-items: center; position: sticky; top: 0; z-index: 200; }
+.top-nav { background: var(--ink); height: 64px; display: flex; align-items: center; position: sticky; top: 0; z-index: 200; }
 .top-nav-inner { max-width: 900px; margin: 0 auto; padding: 0 24px; display: flex; align-items: center; justify-content: space-between; width: 100%; }
-.top-nav-logo { font-family: var(--mono); font-size: 14px; letter-spacing: 0.2em; text-transform: uppercase; color: rgba(255,255,255,0.5); text-decoration: none; }
+.top-nav-logo { font-family: var(--mono); font-size: 20px; letter-spacing: 0.15em; text-transform: uppercase; color: rgba(255,255,255,0.5); text-decoration: none; }
 .top-nav-right { display: flex; align-items: center; gap: 4px; }
-.top-nav-link { font-family: var(--mono); font-size: 14px; letter-spacing: 0.08em; text-transform: uppercase; color: rgba(255,255,255,0.5); text-decoration: none; padding: 6px 12px; border-radius: 2px; transition: all 0.15s; background: transparent; border: none; cursor: pointer; }
+.top-nav-link { font-family: var(--mono); font-size: 20px; letter-spacing: 0.06em; text-transform: uppercase; color: rgba(255,255,255,0.5); text-decoration: none; padding: 8px 14px; border-radius: 2px; transition: all 0.15s; background: transparent; border: none; cursor: pointer; }
 .top-nav-link:hover { color: white; background: rgba(255,255,255,0.1); }
 .top-nav-link.active { color: white; }
 .container { max-width: 900px; margin: 0 auto; padding: 2rem 24px 4rem; }
@@ -65,7 +65,7 @@ h2 { font-family: var(--display); font-size: 22px; font-weight: 400; font-style:
       <a class="top-nav-link" href="/brand.html">品牌管理</a>
       <a class="top-nav-link" href="/index.html">文案生成</a>
       <a class="top-nav-link active" href="/admin.html">用户管理</a>
-      <span id="navUserName" style="font-family:var(--mono);font-size:14px;color:rgba(255,255,255,0.35);letter-spacing:0.08em;padding:0 6px;"></span>
+      <span id="navUserName" style="font-family:var(--mono);font-size:20px;color:rgba(255,255,255,0.35);letter-spacing:0.05em;padding:0 8px;"></span>
       <button class="top-nav-link" onclick="logout()">退出</button>
     </div>
   </div>
