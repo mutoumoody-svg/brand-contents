@@ -411,6 +411,25 @@ function copyLine(el, text) {
 
 function checkKey() { return true; }
 
+function sanitizeJson(str) {
+  let inStr = false, esc = false, out = '';
+  for (let i = 0; i < str.length; i++) {
+    const c = str[i];
+    if (esc)        { out += c; esc = false; continue; }
+    if (c === '\\') { out += c; esc = true;  continue; }
+    if (c === '"')  { inStr = !inStr; out += c; continue; }
+    if (inStr) {
+      const code = c.charCodeAt(0);
+      if      (c === '\n') { out += '\\n'; continue; }
+      else if (c === '\r') { out += '\\r'; continue; }
+      else if (c === '\t') { out += '\\t'; continue; }
+      else if (code < 32)  { continue; }
+    }
+    out += c;
+  }
+  return out;
+}
+
 async function callClaude(prompt) {
   const res = await fetch('/api/claude', {
     method: 'POST',
@@ -477,7 +496,7 @@ ${brandContext ? '重要：严格遵守品牌档案中的调性风格，必须�
   try {
     const text   = await callClaude(prompt);
     const clean  = text.replace(/```json|```/g, '').trim();
-    const parsed = JSON.parse(clean);
+    const parsed = JSON.parse(sanitizeJson(clean));
 
     document.getElementById('g-loading').classList.remove('show');
     const container = document.getElementById('g-results');
@@ -560,7 +579,7 @@ ${levelList}
   try {
     const text   = await callClaude(prompt);
     const clean  = text.replace(/```json|```/g, '').trim();
-    const parsed = JSON.parse(clean);
+    const parsed = JSON.parse(sanitizeJson(clean));
 
     document.getElementById('o-loading').classList.remove('show');
     const container = document.getElementById('o-results');

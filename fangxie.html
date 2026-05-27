@@ -1036,16 +1036,35 @@ async function callClaude(messages) {
   return data.content.map(i => i.text || '').join('');
 }
 
+// ── JSON 清理：修复字符串值里未转义的控制字符 ──
+function sanitizeJson(str) {
+  let inStr = false, esc = false, out = '';
+  for (let i = 0; i < str.length; i++) {
+    const c = str[i];
+    if (esc)           { out += c; esc = false; continue; }
+    if (c === '\\')    { out += c; esc = true;  continue; }
+    if (c === '"')     { inStr = !inStr; out += c; continue; }
+    if (inStr) {
+      const code = c.charCodeAt(0);
+      if      (c === '\n') { out += '\\n'; continue; }
+      else if (c === '\r') { out += '\\r'; continue; }
+      else if (c === '\t') { out += '\\t'; continue; }
+      else if (code < 32)  { continue; }
+    }
+    out += c;
+  }
+  return out;
+}
+
 // 强力 JSON 提取：从 AI 返回的任意文字中精准抠出 JSON
 function extractJSON(text) {
   let t = text.replace(/```json/gi, '').replace(/```/g, '').trim();
-  // 找到第一个 { 和最后一个 }，截取中间部分
   const first = t.indexOf('{');
   const last = t.lastIndexOf('}');
   if (first === -1 || last === -1 || last < first) {
     throw new Error('AI 返回的内容里没有找到有效的 JSON 数据，请重试');
   }
-  t = t.slice(first, last + 1);
+  t = sanitizeJson(t.slice(first, last + 1));
   return JSON.parse(t);
 }
 
