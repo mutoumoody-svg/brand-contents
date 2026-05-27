@@ -1072,11 +1072,11 @@ async function handleImportFile(e) {
 文档：
 ${data.text}`;
 
-    const aiRes = await fetch('/api/claude', {
+    const aiRes = await fetch('https://anthorpic-proxy.mutoumoody.workers.dev/', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': 'Bearer ' + (localStorage.getItem('brand_auth_token') || ''),
+        'x-worker-secret': 'brand-worker-nz-2024',
       },
       body: JSON.stringify({
         model: 'claude-haiku-4-5-20251001',
@@ -1760,11 +1760,11 @@ quotes 必须是评论中的真实原话，不要创作。
 ${text.slice(0, 5000)}`;
 
   try {
-    const res = await fetch('/api/claude', {
+    const res = await fetch('https://anthorpic-proxy.mutoumoody.workers.dev/', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': 'Bearer ' + (localStorage.getItem('brand_auth_token') || ''),
+        'x-worker-secret': 'brand-worker-nz-2024',
       },
       body: JSON.stringify({
         model: 'claude-haiku-4-5-20251001',
