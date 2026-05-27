@@ -295,6 +295,43 @@ app.delete('/api/brands/:id', authenticateToken, (req, res) => {
 });
 
 // ══════════════════════════════════════════
+//  消费者评论分析报告
+// ══════════════════════════════════════════
+db.exec(`
+  CREATE TABLE IF NOT EXISTS brand_analyses (
+    id           INTEGER PRIMARY KEY AUTOINCREMENT,
+    brand_id     INTEGER NOT NULL,
+    review_count INTEGER DEFAULT 0,
+    report       TEXT    NOT NULL,
+    created_at   DATETIME DEFAULT CURRENT_TIMESTAMP
+  )
+`);
+
+// 获取某品牌的历史分析列表
+app.get('/api/brands/:id/analyses', authenticateToken, (req, res) => {
+  const rows = db.prepare(
+    'SELECT id, review_count, created_at, report FROM brand_analyses WHERE brand_id=? ORDER BY created_at DESC LIMIT 20'
+  ).all(req.params.id);
+  res.json(rows.map(r => ({ ...r, report: JSON.parse(r.report || '{}') })));
+});
+
+// 保存分析报告
+app.post('/api/brands/:id/analyses', authenticateToken, (req, res) => {
+  const { report, review_count } = req.body || {};
+  if (!report) return res.status(400).json({ error: '报告不能为空' });
+  const result = db.prepare(
+    'INSERT INTO brand_analyses (brand_id, review_count, report) VALUES (?,?,?)'
+  ).run(req.params.id, review_count || 0, JSON.stringify(report));
+  res.json({ id: result.lastInsertRowid });
+});
+
+// 删除分析报告
+app.delete('/api/brands/:id/analyses/:aid', authenticateToken, (req, res) => {
+  db.prepare('DELETE FROM brand_analyses WHERE id=? AND brand_id=?').run(req.params.aid, req.params.id);
+  res.json({ ok: true });
+});
+
+// ══════════════════════════════════════════
 //  文件解析 → 品牌信息提取
 // ══════════════════════════════════════════
 
