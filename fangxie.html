@@ -216,6 +216,7 @@ footer em { color: var(--gold); font-style: normal; }
       <a class="top-nav-link" href="index.html">文案生成</a>
       <a class="top-nav-link active" href="fangxie.html">爆文仿写</a>
       <a class="top-nav-link" href="fenxi.html">文案分析</a>
+      <a class="top-nav-link" href="admin.html" id="adminNavLink" style="display:none">用户管理</a>
     </div>
     <div style="display:flex;align-items:center;gap:4px;">
       <span id="navUserName" style="font-family:var(--mono);font-size:20px;color:rgba(255,255,255,0.35);letter-spacing:0.05em;padding:0 8px;"></span>
@@ -1687,6 +1688,10 @@ document.addEventListener('DOMContentLoaded', function() {
   const name = localStorage.getItem('brand_user_name');
   const el = document.getElementById('navUserName');
   if (el && name) el.textContent = name;
+  if (localStorage.getItem('brand_user_role') === 'admin') {
+    const adminLink = document.getElementById('adminNavLink');
+    if (adminLink) adminLink.style.display = '';
+  }
 });
 
 // 初始化品牌选择器
