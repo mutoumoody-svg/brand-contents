@@ -401,20 +401,22 @@ app.post('/api/brands/parse-file', authenticateToken, (req, res, next) => {
 // ══════════════════════════════════════════
 app.post('/api/claude', authenticateToken, async (req, res) => {
   if (!API_KEY) {
-    return res.status(500).json({ error: { message: '服务器未配置 ANTHROPIC_API_KEY' } });
+    return res.status(500).json({ error: { message: '服务器未配置 ANTHROPIC_API_KEY，请在 VPS 上设置环境变量后重启服务' } });
   }
   try {
-    const response = await fetch('https://anthorpic-proxy.mutoumoody.workers.dev/', {
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'x-api-key': API_KEY,
+        'anthropic-version': '2023-06-01',
       },
       body: JSON.stringify(req.body),
     });
     const data = await response.json();
     res.status(response.status).json(data);
   } catch (err) {
-    res.status(500).json({ error: { message: '中转失败：' + err.message } });
+    res.status(500).json({ error: { message: 'API 调用失败：' + err.message } });
   }
 });
 

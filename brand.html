@@ -1072,9 +1072,12 @@ async function handleImportFile(e) {
 文档：
 ${data.text}`;
 
-    const aiRes = await fetch('https://anthorpic-proxy.mutoumoody.workers.dev/', {
+    const aiRes = await fetch('/api/claude', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'x-worker-secret': 'brand-worker-nz-2024' },
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + (localStorage.getItem('brand_auth_token') || ''),
+      },
       body: JSON.stringify({
         model: 'claude-haiku-4-5-20251001',
         max_tokens: 1200,
@@ -1083,7 +1086,7 @@ ${data.text}`;
     });
     if (!aiRes.ok) {
       const e = await aiRes.json().catch(() => ({}));
-      throw new Error(`AI 错误 ${aiRes.status}：${e.error?.message || aiRes.statusText}`);
+      throw new Error(e.error?.message || `AI 错误 (${aiRes.status})`);
     }
     const aiData = await aiRes.json();
     const aiText = (aiData.content || []).map(c => c.text || '').join('');
@@ -1690,16 +1693,22 @@ quotes 必须是评论中的真实原话，不要创作。
 ${text.slice(0, 5000)}`;
 
   try {
-    const res = await fetch('https://anthorpic-proxy.mutoumoody.workers.dev/', {
+    const res = await fetch('/api/claude', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'x-worker-secret': 'brand-worker-nz-2024' },
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + (localStorage.getItem('brand_auth_token') || ''),
+      },
       body: JSON.stringify({
         model: 'claude-haiku-4-5-20251001',
         max_tokens: 2000,
         messages: [{ role: 'user', content: prompt }],
       }),
     });
-    if (!res.ok) throw new Error(`AI 服务错误 (${res.status})`);
+    if (!res.ok) {
+      const e = await res.json().catch(() => ({}));
+      throw new Error(e.error?.message || `AI 服务错误 (${res.status})`);
+    }
     const data = await res.json();
     const raw = (data.content || []).map(c => c.text || '').join('');
     const f = raw.indexOf('{'), l = raw.lastIndexOf('}');
