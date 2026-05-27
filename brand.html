@@ -508,6 +508,20 @@ header {
 
         <div class="form-card-body">
 
+          <!-- ══ 文件导入 ══ -->
+          <div id="importZoneWrap" style="margin-bottom:24px;padding-bottom:24px;border-bottom:1px solid var(--border);">
+            <div style="font-family:var(--mono);font-size:11px;letter-spacing:0.18em;text-transform:uppercase;color:var(--ink-muted);margin-bottom:10px;">从文件自动提取品牌信息</div>
+            <div id="importZone" onclick="document.getElementById('importFileInput').click()" style="border:1.5px dashed var(--border-strong);border-radius:4px;padding:1.25rem 1.5rem;cursor:pointer;transition:all 0.2s;display:flex;align-items:center;gap:14px;background:transparent;" onmouseover="this.style.borderColor='var(--accent)';this.style.background='var(--accent-pale)'" onmouseout="this.style.borderColor='var(--border-strong)';this.style.background='transparent'">
+              <span style="font-size:1.6rem;flex-shrink:0;">📄</span>
+              <div>
+                <div style="font-family:var(--mono);font-size:12px;color:var(--ink-soft);letter-spacing:0.06em;">点击上传文件，自动识别并填充品牌字段</div>
+                <div style="font-family:var(--mono);font-size:11px;color:var(--ink-muted);margin-top:4px;">支持 PDF · Word(.docx) · PPT(.pptx) · TXT · 最大 20MB</div>
+              </div>
+            </div>
+            <input type="file" id="importFileInput" accept=".pdf,.docx,.pptx,.txt" style="display:none" onchange="handleImportFile(event)" />
+            <div id="importStatus" style="display:none;margin-top:10px;padding:10px 14px;border-radius:2px;font-family:var(--mono);font-size:12px;letter-spacing:0.06em;"></div>
+          </div>
+
           <!-- ══ 第一步 ══ -->
           <div id="formStep1">
 
@@ -748,6 +762,103 @@ function authFetch(url, opts = {}) {
 function logout() {
   ['brand_auth_token','brand_user_name','brand_user_role'].forEach(k => localStorage.removeItem(k));
   window.location.replace('/login.html');
+}
+
+// ══ 文件导入解析 ══
+async function handleImportFile(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  const status = document.getElementById('importStatus');
+  const zone   = document.getElementById('importZone');
+
+  // 显示加载状态
+  status.style.display = 'block';
+  status.style.background = '#edf4fa';
+  status.style.color = '#2c5f8a';
+  status.style.border = '1px solid #b8d4e8';
+  status.textContent = '⏳ 正在解析文件，请稍候...';
+  zone.style.opacity = '0.5';
+  zone.style.pointerEvents = 'none';
+
+  const formData = new FormData();
+  formData.append('file', file);
+
+  try {
+    const res = await fetch('/api/brands/parse-file', {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + (localStorage.getItem('brand_auth_token') || '') },
+      body: formData,
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || '解析失败');
+
+    const b = data.brand;
+    // 填充基本信息（第一步）
+    if (b.name)     document.getElementById('f-name').value     = b.name;
+    if (b.slogan)   document.getElementById('f-slogan').value   = b.slogan;
+    if (b.industry) {
+      const sel = document.getElementById('f-industry');
+      for (let i = 0; i < sel.options.length; i++) {
+        if (sel.options[i].text.includes(b.industry) || b.industry.includes(sel.options[i].text)) {
+          sel.selectedIndex = i; break;
+        }
+      }
+    }
+    if (b.price) {
+      const sel = document.getElementById('f-price');
+      if (sel) {
+        for (let i = 0; i < sel.options.length; i++) {
+          if (sel.options[i].text.includes(b.price) || b.price.includes(sel.options[i].text)) {
+            sel.selectedIndex = i; break;
+          }
+        }
+      }
+    }
+    if (b.audience) document.getElementById('f-audience').value = b.audience;
+    // 调性 tones
+    if (b.tones?.length) {
+      document.querySelectorAll('.tone-btn').forEach(btn => {
+        btn.classList.toggle('active', b.tones.includes(btn.dataset.val));
+      });
+    }
+    // 关键词
+    if (b.keywords?.length) {
+      const kw = document.getElementById('f-keywords');
+      if (kw) kw.value = b.keywords.join('、');
+    }
+    // 禁词
+    if (b.forbidden?.length) {
+      const fb = document.getElementById('f-forbidden');
+      if (fb) fb.value = b.forbidden.join('、');
+    }
+    // 填充深度内容（第二步）
+    if (b.value)    { const el = document.getElementById('f-value');    if (el) el.value = b.value; }
+    if (b.story)    { const el = document.getElementById('f-story');    if (el) el.value = b.story; }
+    if (b.sample)   { const el = document.getElementById('f-sample');   if (el) el.value = b.sample; }
+    if (b.concern)  { const el = document.getElementById('f-concern');  if (el) el.value = b.concern; }
+    if (b.afterbuy) { const el = document.getElementById('f-afterbuy'); if (el) el.value = b.afterbuy; }
+    if (b.trigger)  { const el = document.getElementById('f-trigger');  if (el) el.value = b.trigger; }
+
+    // 成功提示
+    const filled = [b.name, b.slogan, b.audience, b.value, b.story].filter(Boolean).length;
+    status.style.background = '#f0f8f3';
+    status.style.color = '#5a9e6f';
+    status.style.border = '1px solid #b8d4d8';
+    status.textContent = `✓ 已从「${file.name}」提取品牌信息，共填充 ${filled} 个核心字段，请检查并补充完整`;
+
+    // 清空 input 以便再次上传
+    e.target.value = '';
+  } catch (err) {
+    status.style.background = '#fdf5f3';
+    status.style.color = '#c0392b';
+    status.style.border = '1px solid #e8c4b8';
+    status.textContent = '✗ ' + err.message;
+    e.target.value = '';
+  } finally {
+    zone.style.opacity = '';
+    zone.style.pointerEvents = '';
+  }
 }
 
 // ── 当前品牌偏好（per-user，存 localStorage）──

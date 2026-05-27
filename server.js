@@ -4,6 +4,10 @@ const fs        = require('fs');
 const bcrypt    = require('bcrypt');
 const jwt       = require('jsonwebtoken');
 const Database  = require('better-sqlite3');
+const multer    = require('multer');
+const pdfParse  = require('pdf-parse');
+const mammoth   = require('mammoth');
+const JSZip     = require('jszip');
 
 const app        = express();
 const PORT       = process.env.PORT       || 3000;
@@ -27,6 +31,12 @@ db.exec(`
 `);
 
 app.use(express.json({ limit: '10mb' }));
+
+// ── 文件上传（内存存储，最大 20MB）──
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 20 * 1024 * 1024 },
+});
 
 // ── Auth 中间件 ──
 function authenticateToken(req, res, next) {
@@ -280,6 +290,112 @@ app.put('/api/brands/:id', authenticateToken, (req, res) => {
 app.delete('/api/brands/:id', authenticateToken, (req, res) => {
   db.prepare('DELETE FROM brands WHERE id=?').run(req.params.id);
   res.json({ ok: true });
+});
+
+// ══════════════════════════════════════════
+//  文件解析 → 品牌信息提取
+// ══════════════════════════════════════════
+
+// 从 PPTX buffer 中提取纯文字
+async function extractPptxText(buffer) {
+  const zip = await JSZip.loadAsync(buffer);
+  const slideFiles = Object.keys(zip.files)
+    .filter(name => /^ppt\/slides\/slide\d+\.xml$/.test(name))
+    .sort();
+  const texts = [];
+  for (const name of slideFiles) {
+    const xml = await zip.files[name].async('string');
+    // 提取所有 <a:t> 标签内的文字
+    const matches = xml.match(/<a:t[^>]*>([^<]+)<\/a:t>/g) || [];
+    const slideText = matches.map(m => m.replace(/<[^>]+>/g, '')).join(' ');
+    if (slideText.trim()) texts.push(slideText.trim());
+  }
+  return texts.join('\n');
+}
+
+app.post('/api/brands/parse-file', authenticateToken, upload.single('file'), async (req, res) => {
+  if (!req.file) return res.status(400).json({ error: '请上传文件' });
+
+  const { originalname, mimetype, buffer } = req.file;
+  const ext = path.extname(originalname).toLowerCase();
+  let rawText = '';
+
+  try {
+    if (ext === '.pdf' || mimetype === 'application/pdf') {
+      const data = await pdfParse(buffer);
+      rawText = data.text;
+
+    } else if (ext === '.docx' || mimetype.includes('wordprocessingml')) {
+      const result = await mammoth.extractRawText({ buffer });
+      rawText = result.value;
+
+    } else if (ext === '.pptx' || mimetype.includes('presentationml')) {
+      rawText = await extractPptxText(buffer);
+
+    } else if (ext === '.txt' || mimetype.startsWith('text/')) {
+      rawText = buffer.toString('utf-8');
+
+    } else {
+      return res.status(400).json({ error: `暂不支持 ${ext} 格式，请上传 PDF / Word / PPT / TXT` });
+    }
+  } catch (err) {
+    return res.status(500).json({ error: '文件解析失败：' + err.message });
+  }
+
+  if (!rawText.trim()) {
+    return res.status(400).json({ error: '文件内容为空或无法提取文字' });
+  }
+
+  // 截断超长文本，避免 token 超限
+  const trimmedText = rawText.slice(0, 12000);
+
+  const prompt = `你是一位专业的品牌档案分析师。请从以下文档内容中提取品牌相关信息，以标准JSON格式返回，字段说明如下：
+
+- name: 品牌名称（字符串）
+- slogan: 品牌口号或Slogan（字符串，没有则留空）
+- industry: 所属行业（字符串，如：美妆/护肤、生活方式/家居、食品饮料、服装配饰等）
+- price: 价格定位（字符串，如：高端、中高端、中端、平价，没有明确则留空）
+- audience: 目标人群画像（字符串，尽量详细描述年龄、职业、生活方式等）
+- tones: 品牌调性词数组（如 ["温暖","精致","亲切"]，最多6个）
+- keywords: 品牌核心关键词数组（最多8个）
+- forbidden: 品牌禁忌词或禁止提及的内容数组（没有则空数组）
+- value: 品牌价值观或核心理念（字符串）
+- story: 品牌故事或背景（字符串）
+- sample: 文档中最有代表性的品牌文案片段（字符串，直接摘录原文）
+- concern: 目标消费者购买前最大顾虑（字符串）
+- afterbuy: 消费者购买后最常提到的体验或感受（字符串）
+- trigger: 触发消费者购买决策的场景或理由（字符串）
+
+要求：
+1. 只返回纯JSON对象，不要有任何其他文字或代码块标记
+2. 没有找到某字段信息时用空字符串或空数组，不要猜测
+3. 字符串字段控制在合理长度内（不超过200字）
+
+文档内容：
+${trimmedText}`;
+
+  try {
+    const apiRes = await fetch('https://anthorpic-proxy.mutoumoody.workers.dev/', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-worker-secret': 'brand-worker-nz-2024' },
+      body: JSON.stringify({
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: 2000,
+        messages: [{ role: 'user', content: prompt }],
+      }),
+    });
+    const aiData = await apiRes.json();
+    const text = (aiData.content || []).map(c => c.text || '').join('');
+
+    // 提取 JSON
+    const first = text.indexOf('{');
+    const last  = text.lastIndexOf('}');
+    if (first === -1 || last === -1) throw new Error('AI 未返回有效 JSON');
+    const brand = JSON.parse(text.slice(first, last + 1));
+    res.json({ brand, chars: rawText.length });
+  } catch (err) {
+    res.status(500).json({ error: 'AI 解析失败：' + err.message });
+  }
 });
 
 // ══════════════════════════════════════════
