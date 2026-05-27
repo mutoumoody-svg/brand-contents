@@ -1384,20 +1384,39 @@ ${brandContext ? `【品牌档案（请严格遵守品牌调性、关键词和�
 
 // 解析分隔符格式的仿写结果
 function parseRewriteText(text) {
-  const blocks = text.split('=====').map(b => b.trim()).filter(b => b);
+  console.log('[仿写原始输出]', text.slice(0, 300));
+  // 支持 ====、=====、====== 等各种分隔符
+  const blocks = text.split(/={3,}/).map(b => b.trim()).filter(b => b);
   const versions = [];
   blocks.forEach(block => {
-    const styleMatch = block.match(/【风格】\s*(.+)/);
-    const titleMatch = block.match(/【标题】\s*(.+)/);
-    const bodyMatch = block.match(/【正文】\s*([\s\S]+)/);
+    const styleMatch = block.match(/[【\[]风格[】\]]\s*(.+)/);
+    const titleMatch = block.match(/[【\[]标题[】\]]\s*(.+)/);
+    const bodyMatch  = block.match(/[【\[]正文[】\]]\s*([\s\S]+)/);
     if (titleMatch && bodyMatch) {
       versions.push({
         style: styleMatch ? styleMatch[1].trim() : '仿写版本',
         title: titleMatch[1].trim(),
-        body: bodyMatch[1].trim(),
+        body:  bodyMatch[1].trim(),
       });
     }
   });
+  // 如果用分隔符解析失败，尝试直接按【风格】标记分割
+  if (versions.length === 0) {
+    const altBlocks = text.split(/(?=【风格】)/).map(b => b.trim()).filter(b => b);
+    altBlocks.forEach(block => {
+      const styleMatch = block.match(/【风格】\s*(.+)/);
+      const titleMatch = block.match(/【标题】\s*(.+)/);
+      const bodyMatch  = block.match(/【正文】\s*([\s\S]+)/);
+      if (titleMatch && bodyMatch) {
+        versions.push({
+          style: styleMatch ? styleMatch[1].trim() : '仿写版本',
+          title: titleMatch[1].trim(),
+          body:  bodyMatch[1].trim(),
+        });
+      }
+    });
+  }
+  console.log('[仿写解析结果]', versions.length, '个版本');
   return versions;
 }
 
