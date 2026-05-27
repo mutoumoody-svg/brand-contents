@@ -790,6 +790,11 @@ async function handleImportFile(e) {
       headers: { 'Authorization': 'Bearer ' + (localStorage.getItem('brand_auth_token') || '') },
       body: formData,
     });
+    // 先检查是否为 JSON 响应，避免 HTML 错误页导致崩溃
+    const contentType = res.headers.get('content-type') || '';
+    if (!contentType.includes('application/json')) {
+      throw new Error(`服务器异常（HTTP ${res.status}），请在 VPS 上运行 npm install 后重启服务`);
+    }
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || '解析失败');
 

@@ -4,10 +4,12 @@ const fs        = require('fs');
 const bcrypt    = require('bcrypt');
 const jwt       = require('jsonwebtoken');
 const Database  = require('better-sqlite3');
-const multer    = require('multer');
-const pdfParse  = require('pdf-parse');
-const mammoth   = require('mammoth');
-const JSZip     = require('jszip');
+// 文件解析包（懒加载，缺包时不影响主服务启动）
+let multer, pdfParse, mammoth, JSZip;
+try { multer   = require('multer');    } catch(e) {}
+try { pdfParse = require('pdf-parse'); } catch(e) {}
+try { mammoth  = require('mammoth');   } catch(e) {}
+try { JSZip    = require('jszip');     } catch(e) {}
 
 const app        = express();
 const PORT       = process.env.PORT       || 3000;
@@ -32,11 +34,11 @@ db.exec(`
 
 app.use(express.json({ limit: '10mb' }));
 
-// ── 文件上传（内存存储，最大 20MB）──
-const upload = multer({
-  storage: multer.memoryStorage(),
-  limits: { fileSize: 20 * 1024 * 1024 },
-});
+// upload 中间件（multer 加载后才初始化）
+function getUpload() {
+  if (!multer) return null;
+  return multer({ storage: multer.memoryStorage(), limits: { fileSize: 20 * 1024 * 1024 } });
+}
 
 // ── Auth 中间件 ──
 function authenticateToken(req, res, next) {
@@ -313,7 +315,11 @@ async function extractPptxText(buffer) {
   return texts.join('\n');
 }
 
-app.post('/api/brands/parse-file', authenticateToken, upload.single('file'), async (req, res) => {
+app.post('/api/brands/parse-file', authenticateToken, (req, res, next) => {
+  const upload = getUpload();
+  if (!upload) return res.status(500).json({ error: '服务器缺少文件解析模块，请先运行 npm install' });
+  upload.single('file')(req, res, next);
+}, async (req, res) => {
   if (!req.file) return res.status(400).json({ error: '请上传文件' });
 
   const { originalname, mimetype, buffer } = req.file;
