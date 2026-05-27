@@ -411,24 +411,25 @@ function copyLine(el, text) {
 
 function checkKey() { return true; }
 
-function sanitizeJson(str) {
-  let inStr = false, esc = false, out = '';
-  for (let i = 0; i < str.length; i++) {
-    const c = str[i];
-    if (esc)        { out += c; esc = false; continue; }
-    if (c === '\\') { out += c; esc = true;  continue; }
-    if (c === '"')  { inStr = !inStr; out += c; continue; }
-    if (inStr) {
-      const code = c.charCodeAt(0);
-      if      (c === '\n') { out += '\\n'; continue; }
-      else if (c === '\r') { out += '\\r'; continue; }
-      else if (c === '\t') { out += '\\t'; continue; }
-      else if (code < 32)  { continue; }
-    }
-    out += c;
-  }
-  return out;
+function safeParseJson(raw) {
+  const f = raw.indexOf('{'), l = raw.lastIndexOf('}');
+  if (f === -1 || l === -1) throw new Error('未找到 JSON 内容');
+  const s0 = raw.slice(f, l + 1);
+  try { return JSON.parse(s0); } catch(_) {}
+  const s1 = _fixCtrl(s0);
+  try { return JSON.parse(s1); } catch(_) {}
+  const s2 = s1.replace(/,(\s*[}\]])/g, '$1');
+  try { return JSON.parse(s2); } catch(_) {}
+  try { return JSON.parse(_fixQuotes(s2)); } catch(e) { throw new Error('JSON 解析失败，请重试'); }
 }
+function _fixCtrl(str) {
+  let inStr=false,esc=false,out='';
+  for(let i=0;i<str.length;i++){const c=str[i];if(esc){out+=c;esc=false;continue}if(c==='\\'){out+=c;esc=true;continue}if(c==='"'){inStr=!inStr;out+=c;continue}if(inStr){const code=c.charCodeAt(0);if(c==='\n'){out+='\\n';continue}else if(c==='\r'){out+='\\r';continue}else if(c==='\t'){out+='\\t';continue}else if(code<32){continue}}out+=c}return out;
+}
+function _fixQuotes(str) {
+  let result='',i=0;while(i<str.length){const c=str[i];if(c!=='"'){result+=c;i++;continue}result+='"';i++;while(i<str.length){const sc=str[i];if(sc==='\\'){result+=sc+(str[i+1]||'');i+=2;continue}if(sc==='"'){const rest=str.slice(i+1).replace(/^[\s\n\r\t]*/,'');if(!rest.length||/^[,:\}\]]/.test(rest)){result+='"';i++;break}else{result+='\\"';i++}continue}result+=sc;i++}}return result;
+}
+function sanitizeJson(str) { return _fixCtrl(str); }
 
 async function callClaude(prompt) {
   const res = await fetch('/api/claude', {
@@ -496,7 +497,7 @@ ${brandContext ? '重要：严格遵守品牌档案中的调性风格，必须�
   try {
     const text   = await callClaude(prompt);
     const clean  = text.replace(/```json|```/g, '').trim();
-    const parsed = JSON.parse(sanitizeJson(clean));
+    const parsed = safeParseJson(clean);
 
     document.getElementById('g-loading').classList.remove('show');
     const container = document.getElementById('g-results');
@@ -579,7 +580,7 @@ ${levelList}
   try {
     const text   = await callClaude(prompt);
     const clean  = text.replace(/```json|```/g, '').trim();
-    const parsed = JSON.parse(sanitizeJson(clean));
+    const parsed = safeParseJson(clean);
 
     document.getElementById('o-loading').classList.remove('show');
     const container = document.getElementById('o-results');

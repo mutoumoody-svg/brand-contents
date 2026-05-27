@@ -1036,14 +1036,28 @@ async function callClaude(messages) {
   return data.content.map(i => i.text || '').join('');
 }
 
-// ── JSON 清理：修复字符串值里未转义的控制字符 ──
-function sanitizeJson(str) {
+// ── 多级 JSON 修复解析 ──
+function safeParseJson(raw) {
+  const f = raw.indexOf('{'), l = raw.lastIndexOf('}');
+  if (f === -1 || l === -1) throw new Error('AI 返回的内容里没有找到有效的 JSON 数据，请重试');
+  const s0 = raw.slice(f, l + 1);
+  try { return JSON.parse(s0); } catch(_) {}
+  const s1 = _fixCtrl(s0);
+  try { return JSON.parse(s1); } catch(_) {}
+  const s2 = s1.replace(/,(\s*[}\]])/g, '$1');
+  try { return JSON.parse(s2); } catch(_) {}
+  const s3 = _fixQuotes(s2);
+  try { return JSON.parse(s3); } catch(e) {
+    throw new Error('AI 返回的内容无法解析，请重试');
+  }
+}
+function _fixCtrl(str) {
   let inStr = false, esc = false, out = '';
   for (let i = 0; i < str.length; i++) {
     const c = str[i];
-    if (esc)           { out += c; esc = false; continue; }
-    if (c === '\\')    { out += c; esc = true;  continue; }
-    if (c === '"')     { inStr = !inStr; out += c; continue; }
+    if (esc)        { out += c; esc = false; continue; }
+    if (c === '\\') { out += c; esc = true;  continue; }
+    if (c === '"')  { inStr = !inStr; out += c; continue; }
     if (inStr) {
       const code = c.charCodeAt(0);
       if      (c === '\n') { out += '\\n'; continue; }
@@ -1055,17 +1069,33 @@ function sanitizeJson(str) {
   }
   return out;
 }
-
-// 强力 JSON 提取：从 AI 返回的任意文字中精准抠出 JSON
-function extractJSON(text) {
-  let t = text.replace(/```json/gi, '').replace(/```/g, '').trim();
-  const first = t.indexOf('{');
-  const last = t.lastIndexOf('}');
-  if (first === -1 || last === -1 || last < first) {
-    throw new Error('AI 返回的内容里没有找到有效的 JSON 数据，请重试');
+function _fixQuotes(str) {
+  let result = '', i = 0;
+  while (i < str.length) {
+    const c = str[i];
+    if (c !== '"') { result += c; i++; continue; }
+    result += '"'; i++;
+    while (i < str.length) {
+      const sc = str[i];
+      if (sc === '\\') { result += sc + (str[i+1]||''); i += 2; continue; }
+      if (sc === '"') {
+        const rest = str.slice(i + 1).replace(/^[\s\n\r\t]*/, '');
+        if (!rest.length || /^[,:\}\]]/.test(rest)) {
+          result += '"'; i++; break;
+        } else {
+          result += '\\"'; i++;
+        }
+        continue;
+      }
+      result += sc; i++;
+    }
   }
-  t = sanitizeJson(t.slice(first, last + 1));
-  return JSON.parse(t);
+  return result;
+}
+
+// 强力 JSON 提取（向后兼容）
+function extractJSON(text) {
+  return safeParseJson(text.replace(/```json/gi, '').replace(/```/g, '').trim());
 }
 
 // ===== STEP 1 → 2: ANALYZE =====

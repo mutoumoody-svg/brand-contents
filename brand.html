@@ -1096,7 +1096,7 @@ ${data.text}`;
     if (first === -1 || last === -1) throw new Error('AI 返回内容无法解析，请重试');
     let b;
     try {
-      b = JSON.parse(sanitizeJson(aiText.slice(first, last + 1)));
+      b = safeParseJson(aiText);
     } catch(parseErr) {
       throw new Error('JSON 解析失败：' + parseErr.message + '\n原始：' + aiText.slice(0, 150));
     }
@@ -1602,25 +1602,72 @@ if (localStorage.getItem('brand_user_role') === 'admin') {
   }
 })();
 
-// ── JSON 清理：修复 Claude 返回的字符串值里未转义的控制字符 ──
-function sanitizeJson(str) {
+// ── 多级 JSON 修复解析 ──
+function safeParseJson(raw) {
+  const f = raw.indexOf('{'), l = raw.lastIndexOf('}');
+  if (f === -1 || l === -1) throw new Error('未找到 JSON 内容，请重试');
+  const s0 = raw.slice(f, l + 1);
+  // 第1级：直接解析
+  try { return JSON.parse(s0); } catch(_) {}
+  // 第2级：清理控制字符
+  const s1 = _fixCtrl(s0);
+  try { return JSON.parse(s1); } catch(_) {}
+  // 第3级：去掉尾部逗号
+  const s2 = s1.replace(/,(\s*[}\]])/g, '$1');
+  try { return JSON.parse(s2); } catch(_) {}
+  // 第4级：修复字符串内的未转义 "
+  const s3 = _fixQuotes(s2);
+  try { return JSON.parse(s3); } catch(e) {
+    throw new Error('JSON 解析失败，请重试。若持续出现，请减少评论中的英文引号。');
+  }
+}
+// 第2级：控制字符
+function _fixCtrl(str) {
   let inStr = false, esc = false, out = '';
   for (let i = 0; i < str.length; i++) {
     const c = str[i];
-    if (esc)           { out += c; esc = false; continue; }
-    if (c === '\\')    { out += c; esc = true;  continue; }
-    if (c === '"')     { inStr = !inStr; out += c; continue; }
+    if (esc)        { out += c; esc = false; continue; }
+    if (c === '\\') { out += c; esc = true;  continue; }
+    if (c === '"')  { inStr = !inStr; out += c; continue; }
     if (inStr) {
       const code = c.charCodeAt(0);
       if      (c === '\n') { out += '\\n'; continue; }
       else if (c === '\r') { out += '\\r'; continue; }
       else if (c === '\t') { out += '\\t'; continue; }
-      else if (code < 32)  { continue; }   // 丢弃其他控制字符
+      else if (code < 32)  { continue; }
     }
     out += c;
   }
   return out;
 }
+// 第4级：修复字符串内裸 " (通过前向检查判断是否是真正的闭合引号)
+function _fixQuotes(str) {
+  let result = '', i = 0;
+  while (i < str.length) {
+    const c = str[i];
+    if (c !== '"') { result += c; i++; continue; }
+    // 进入字符串
+    result += '"'; i++;
+    while (i < str.length) {
+      const sc = str[i];
+      if (sc === '\\') { result += sc + (str[i+1]||''); i += 2; continue; }
+      if (sc === '"') {
+        // 看右侧（跳过空白）是否是合法的 JSON 分隔符
+        const rest = str.slice(i + 1).replace(/^[\s\n\r\t]*/, '');
+        if (!rest.length || /^[,:\}\]]/.test(rest)) {
+          result += '"'; i++; break; // 合法闭合
+        } else {
+          result += '\\"'; i++;      // 内嵌引号，转义
+        }
+        continue;
+      }
+      result += sc; i++;
+    }
+  }
+  return result;
+}
+// 向后兼容旧调用
+function sanitizeJson(str) { return _fixCtrl(str); }
 
 // ══════════════════════════════════════════
 //  消费者评论分析系统
@@ -1733,7 +1780,7 @@ ${text.slice(0, 5000)}`;
     const raw = (data.content || []).map(c => c.text || '').join('');
     const f = raw.indexOf('{'), l = raw.lastIndexOf('}');
     if (f === -1 || l === -1) throw new Error('AI 返回格式异常，请重试');
-    _currentReport = JSON.parse(sanitizeJson(raw.slice(f, l + 1)));
+    _currentReport = safeParseJson(raw);
 
     document.getElementById('reportContent').innerHTML = renderReport(_currentReport);
     clearInterval(timer);
