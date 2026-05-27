@@ -22,11 +22,11 @@
 body { font-family: var(--serif); background: var(--cream); color: var(--ink); min-height: 100vh; line-height: 1.7; }
 
 /* TOP NAV */
-.top-nav { background: var(--ink); height: 44px; display: flex; align-items: center; position: sticky; top: 0; z-index: 200; }
+.top-nav { background: var(--ink); height: 56px; display: flex; align-items: center; position: sticky; top: 0; z-index: 200; }
 .top-nav-inner { max-width: 720px; margin: 0 auto; padding: 0 24px; display: flex; align-items: center; justify-content: space-between; width: 100%; }
-.top-nav-logo { font-family: var(--mono); font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase; color: rgba(255,255,255,0.5); text-decoration: none; }
+.top-nav-logo { font-family: var(--mono); font-size: 14px; letter-spacing: 0.2em; text-transform: uppercase; color: rgba(255,255,255,0.5); text-decoration: none; }
 .top-nav-links { display: flex; gap: 4px; }
-.top-nav-link { font-family: var(--mono); font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(255,255,255,0.5); text-decoration: none; padding: 5px 10px; border-radius: 2px; transition: all 0.15s; }
+.top-nav-link { font-family: var(--mono); font-size: 14px; letter-spacing: 0.08em; text-transform: uppercase; color: rgba(255,255,255,0.5); text-decoration: none; padding: 6px 12px; border-radius: 2px; transition: all 0.15s; }
 .top-nav-link:hover { color: white; background: rgba(255,255,255,0.1); }
 .top-nav-link.active { color: white; }
 
@@ -157,8 +157,8 @@ footer em { color: var(--accent); font-style: normal; }
       <a class="top-nav-link" href="fangxie.html">爆文仿写</a>
     </div>
     <div style="display:flex;align-items:center;gap:4px;">
-      <span id="navUserName" style="font-family:var(--mono);font-size:10px;color:rgba(255,255,255,0.35);letter-spacing:0.1em;padding:0 4px;"></span>
-      <button onclick="logout()" style="font-family:var(--mono);font-size:10px;letter-spacing:0.12em;text-transform:uppercase;color:rgba(255,255,255,0.5);background:transparent;border:none;cursor:pointer;padding:5px 10px;border-radius:2px;transition:all 0.15s;" onmouseover="this.style.color='white';this.style.background='rgba(255,255,255,0.1)'" onmouseout="this.style.color='rgba(255,255,255,0.5)';this.style.background='transparent'">退出</button>
+      <span id="navUserName" style="font-family:var(--mono);font-size:14px;color:rgba(255,255,255,0.35);letter-spacing:0.08em;padding:0 6px;"></span>
+      <button onclick="logout()" style="font-family:var(--mono);font-size:14px;letter-spacing:0.08em;text-transform:uppercase;color:rgba(255,255,255,0.5);background:transparent;border:none;cursor:pointer;padding:6px 12px;border-radius:2px;transition:all 0.15s;" onmouseover="this.style.color='white';this.style.background='rgba(255,255,255,0.1)'" onmouseout="this.style.color='rgba(255,255,255,0.5)';this.style.background='transparent'">退出</button>
     </div>
   </div>
 </nav>
