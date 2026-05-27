@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>文案分析 · Brand Center</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@300;400;600&family=DM+Mono:wght@300;400&family=Playfair+Display:ital,wght@0,400;1,400&display=swap" rel="stylesheet" />
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --ink: #1a1814; --ink-soft: #4a4640; --ink-muted: #9a9590;
+  --cream: #f7f4ef; --cream-dark: #ede9e2;
+  --accent: #2c5f8a; --accent-pale: #edf4fa;
+  --gold: #b87333; --gold-pale: #f5ede0;
+  --border: rgba(26,24,20,0.12); --border-strong: rgba(26,24,20,0.25);
+  --green: #5a9e6f; --green-bg: #f0f8f3;
+  --red: #c0392b; --red-bg: #fdf5f3; --red-border: #e8c4b8;
+  --purple: #6b5b95; --purple-bg: #f0edf8;
+  --serif: 'Noto Serif SC', Georgia, serif;
+  --mono: 'DM Mono', monospace;
+  --display: 'Playfair Display', serif;
+}
+body { font-family: var(--serif); background: var(--cream); color: var(--ink); min-height: 100vh; line-height: 1.7; }
+
+/* TOP NAV */
+.top-nav { background: var(--ink); height: 64px; display: flex; align-items: center; position: sticky; top: 0; z-index: 200; }
+.top-nav-inner { max-width: 760px; margin: 0 auto; padding: 0 24px; display: flex; align-items: center; justify-content: space-between; width: 100%; }
+.top-nav-logo { font-family: var(--mono); font-size: 20px; letter-spacing: 0.15em; text-transform: uppercase; color: rgba(255,255,255,0.5); text-decoration: none; }
+.top-nav-links { display: flex; gap: 4px; }
+.top-nav-link { font-family: var(--mono); font-size: 20px; letter-spacing: 0.06em; text-transform: uppercase; color: rgba(255,255,255,0.5); text-decoration: none; padding: 8px 14px; border-radius: 2px; transition: all 0.15s; }
+.top-nav-link:hover { color: white; background: rgba(255,255,255,0.1); }
+.top-nav-link.active { color: white; }
+
+/* BRAND BAR */
+.brand-bar { background: #edf4fa; border-bottom: 1px solid #b8d4e8; padding: 10px 0; display: none; }
+.brand-bar.show { display: block; }
+.brand-bar-inner { max-width: 760px; margin: 0 auto; padding: 0 24px; display: flex; align-items: center; gap: 12px; }
+.brand-bar-label { font-family: var(--mono); font-size: 20px; letter-spacing: 0.15em; text-transform: uppercase; color: var(--ink-muted); white-space: nowrap; }
+.brand-bar-select { flex: 1; background: white; border: 1px solid var(--border-strong); border-radius: 2px; font-family: var(--serif); font-size: 20px; color: var(--ink); padding: 6px 10px; outline: none; cursor: pointer; }
+.brand-bar-badge { font-family: var(--mono); font-size: 20px; color: #2c5f8a; background: #ddeef8; padding: 3px 10px; border-radius: 20px; white-space: nowrap; }
+.brand-bar-clear { font-family: var(--mono); font-size: 20px; color: var(--ink-muted); background: transparent; border: none; cursor: pointer; padding: 4px 8px; }
+.brand-bar-clear:hover { color: var(--ink); }
+
+/* LAYOUT */
+.container { max-width: 760px; margin: 0 auto; padding: 0 24px; }
+main { padding: 2.5rem 0 6rem; }
+
+/* DIVIDER */
+.divider { display: flex; align-items: center; gap: 14px; margin: 2rem 0 1.5rem; }
+.divider::before, .divider::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+.divider span { font-family: var(--mono); font-size: 20px; letter-spacing: 0.2em; color: var(--ink-muted); text-transform: uppercase; white-space: nowrap; }
+
+/* INPUT TOGGLE */
+.input-toggle { display: flex; gap: 0; margin-bottom: 1.5rem; border: 1px solid var(--border-strong); border-radius: 2px; overflow: hidden; width: fit-content; }
+.toggle-btn { padding: 10px 24px; font-family: var(--mono); font-size: 20px; letter-spacing: 0.12em; text-transform: uppercase; cursor: pointer; background: transparent; border: none; color: var(--ink-muted); transition: all 0.18s; }
+.toggle-btn:first-child { border-right: 1px solid var(--border-strong); }
+.toggle-btn.active { background: var(--ink); color: var(--cream); }
+
+/* FIELD */
+.field label { display: block; font-family: var(--mono); font-size: 20px; letter-spacing: 0.15em; color: var(--ink-muted); text-transform: uppercase; margin-bottom: 10px; }
+.field textarea { width: 100%; background: transparent; border: none; border-bottom: 1px solid var(--border-strong); font-family: var(--serif); font-size: 15px; color: var(--ink); padding: 8px 0 10px; outline: none; resize: vertical; min-height: 200px; line-height: 1.8; transition: border-color 0.2s; }
+.field textarea::placeholder { color: var(--ink-muted); font-style: italic; }
+.field textarea:focus { border-bottom-color: var(--accent); }
+
+/* IMAGE UPLOAD */
+.upload-zone { border: 1.5px dashed var(--border-strong); border-radius: 4px; padding: 3rem 1.5rem; text-align: center; cursor: pointer; transition: all 0.2s; background: transparent; position: relative; }
+.upload-zone:hover { border-color: var(--accent); background: var(--accent-pale); }
+.upload-zone.has-image { border-style: solid; border-color: var(--green); background: var(--green-bg); }
+.upload-icon { font-size: 2.5rem; margin-bottom: 1rem; display: block; }
+.upload-text { font-family: var(--mono); font-size: 20px; letter-spacing: 0.1em; color: var(--ink-muted); }
+.upload-hint { font-family: var(--mono); font-size: 14px; color: var(--ink-muted); margin-top: 8px; opacity: 0.7; }
+#imageInput { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+.preview-img { max-width: 100%; max-height: 320px; border-radius: 4px; display: none; margin: 0 auto; }
+.preview-img.show { display: block; }
+.remove-img { font-family: var(--mono); font-size: 14px; color: var(--red); cursor: pointer; margin-top: 12px; display: none; letter-spacing: 0.1em; text-align: center; }
+.remove-img.show { display: block; }
+
+/* ACTION BUTTON */
+.action-btn { width: 100%; padding: 16px; background: var(--ink); color: var(--cream); border: none; font-family: var(--mono); font-size: 20px; letter-spacing: 0.2em; text-transform: uppercase; cursor: pointer; transition: background 0.2s; border-radius: 2px; margin-top: 1.5rem; }
+.action-btn:hover { background: #3a3630; }
+.action-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+.action-btn.secondary { background: transparent; color: var(--ink); border: 1px solid var(--border-strong); }
+.action-btn.secondary:hover { background: var(--cream-dark); }
+
+/* LOADING */
+.loading { display: none; text-align: center; padding: 3rem 0; }
+.loading.show { display: block; }
+.loading-text { font-family: var(--mono); font-size: 20px; letter-spacing: 0.15em; color: var(--ink-muted); }
+.loading-text::after { content: '.'; animation: ldots 1.4s infinite; }
+@keyframes ldots { 0%{content:'.'} 33%{content:'..'} 66%{content:'...'} }
+
+/* SCORE BANNER */
+.score-banner { display: none; background: var(--ink); color: var(--cream); border-radius: 2px; padding: 1.5rem 2rem; margin-bottom: 1.5rem; animation: fadeUp 0.3s ease both; }
+.score-banner.show { display: flex; align-items: center; gap: 2rem; }
+.score-num { font-family: var(--display); font-size: 56px; font-style: italic; line-height: 1; flex-shrink: 0; }
+.score-right { flex: 1; }
+.score-label { font-family: var(--mono); font-size: 20px; letter-spacing: 0.2em; text-transform: uppercase; color: rgba(255,255,255,0.5); margin-bottom: 6px; }
+.score-verdict { font-size: 18px; color: rgba(255,255,255,0.85); line-height: 1.5; }
+.score-bars { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+.score-bar-item { flex: 1; min-width: 100px; }
+.score-bar-label { font-family: var(--mono); font-size: 11px; color: rgba(255,255,255,0.4); letter-spacing: 0.1em; margin-bottom: 4px; }
+.score-bar-track { height: 3px; background: rgba(255,255,255,0.15); border-radius: 2px; overflow: hidden; }
+.score-bar-fill { height: 100%; border-radius: 2px; transition: width 0.6s ease; }
+
+/* ANALYSIS CARD */
+@keyframes fadeUp { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+.analysis-card { background: white; border: 1px solid var(--border); border-radius: 2px; padding: 1.5rem; margin-bottom: 1rem; animation: fadeUp 0.3s ease both; }
+.card-header { display: flex; align-items: center; gap: 10px; margin-bottom: 1rem; padding-bottom: 0.875rem; border-bottom: 1px solid var(--border); }
+.badge { font-family: var(--mono); font-size: 14px; letter-spacing: 0.08em; padding: 4px 14px; border-radius: 20px; white-space: nowrap; }
+.badge-blue   { background: var(--accent-pale); color: var(--accent); }
+.badge-gold   { background: #fff8e6; color: #9a6500; }
+.badge-red    { background: var(--red-bg); color: var(--red); }
+.badge-purple { background: var(--purple-bg); color: var(--purple); }
+.badge-green  { background: var(--green-bg); color: var(--green); }
+.card-subtitle { font-family: var(--mono); font-size: 14px; color: var(--ink-muted); }
+
+.analysis-item { margin-bottom: 1rem; }
+.analysis-item:last-child { margin-bottom: 0; }
+.analysis-label { font-family: var(--mono); font-size: 14px; letter-spacing: 0.12em; color: var(--ink-muted); text-transform: uppercase; margin-bottom: 6px; }
+.analysis-value { font-size: 14px; color: var(--ink-soft); line-height: 1.75; padding-left: 14px; border-left: 2px solid var(--border-strong); }
+.analysis-value.good  { border-left-color: var(--green); }
+.analysis-value.warn  { border-left-color: var(--gold); }
+.analysis-value.issue { border-left-color: var(--red); }
+
+.formula-box { background: var(--cream-dark); border-radius: 2px; padding: 0.875rem 1.25rem; margin-top: 0.5rem; }
+.formula-text { font-family: var(--mono); font-size: 13px; color: var(--ink); letter-spacing: 0.04em; line-height: 1.8; }
+
+/* DIAG ITEMS */
+.diag-row { display: flex; gap: 10px; font-size: 14px; color: var(--ink-soft); line-height: 1.7; margin-bottom: 8px; }
+.diag-row:last-child { margin-bottom: 0; }
+.diag-arrow { flex-shrink: 0; font-weight: bold; }
+
+/* SUGGEST ITEMS */
+.suggest-item { display: flex; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--border); align-items: flex-start; }
+.suggest-item:last-child { border-bottom: none; }
+.suggest-num { font-family: var(--mono); font-size: 11px; color: var(--ink-muted); flex-shrink: 0; padding-top: 2px; }
+.suggest-text { font-size: 14px; color: var(--ink-soft); line-height: 1.7; }
+
+/* ERROR */
+.error-card { border: 1px solid var(--red-border); background: var(--red-bg); border-radius: 2px; padding: 1.25rem 1.5rem; }
+.error-title { font-family: var(--mono); font-size: 13px; letter-spacing: 0.15em; color: var(--red); margin-bottom: 6px; text-transform: uppercase; }
+.error-msg { font-size: 14px; color: var(--ink-soft); line-height: 1.6; }
+
+footer { text-align: center; border-top: 1px solid var(--border); padding: 2rem 0; font-family: var(--mono); font-size: 14px; letter-spacing: 0.12em; color: var(--ink-muted); }
+footer em { color: var(--gold); font-style: normal; }
+
+@media (max-width: 540px) {
+  .score-banner.show { flex-direction: column; gap: 1rem; }
+  .score-num { font-size: 42px; }
+}
+</style>
+</head>
+<body>
+<script>(function(){ if(!localStorage.getItem('brand_auth_token')) window.location.replace('/login.html'); })()</script>
+
+<nav class="top-nav">
+  <div class="top-nav-inner">
+    <a class="top-nav-logo" href="brand.html">Brand Center</a>
+    <div class="top-nav-links">
+      <a class="top-nav-link" href="brand.html">品牌管理</a>
+      <a class="top-nav-link" href="index.html">文案生成</a>
+      <a class="top-nav-link" href="fangxie.html">爆文仿写</a>
+      <a class="top-nav-link active" href="fenxi.html">文案分析</a>
+    </div>
+    <div style="display:flex;align-items:center;gap:4px;">
+      <span id="navUserName" style="font-family:var(--mono);font-size:20px;color:rgba(255,255,255,0.35);letter-spacing:0.05em;padding:0 8px;"></span>
+      <button onclick="logout()" style="font-family:var(--mono);font-size:20px;letter-spacing:0.06em;text-transform:uppercase;color:rgba(255,255,255,0.5);background:transparent;border:none;cursor:pointer;padding:8px 14px;border-radius:2px;transition:all 0.15s;" onmouseover="this.style.color='white';this.style.background='rgba(255,255,255,0.1)'" onmouseout="this.style.color='rgba(255,255,255,0.5)';this.style.background='transparent'">退出</button>
+    </div>
+  </div>
+</nav>
+
+<div class="brand-bar" id="brandBar">
+  <div class="brand-bar-inner">
+    <span class="brand-bar-label">当前品牌</span>
+    <select class="brand-bar-select" id="brandSelect" onchange="onBrandChange()">
+      <option value="">— 不使用品牌（纯结构分析）—</option>
+    </select>
+    <span class="brand-bar-badge" id="brandBadge" style="display:none">品牌视角已开启</span>
+    <button class="brand-bar-clear" onclick="clearBrand()">清除</button>
+  </div>
+</div>
+
+<main>
+  <div class="container">
+
+    <div style="padding: 2rem 0 1.5rem;">
+      <div style="font-family:var(--mono);font-size:14px;letter-spacing:0.25em;color:var(--ink-muted);text-transform:uppercase;margin-bottom:8px;">Copy Analysis Studio</div>
+      <h1 style="font-family:var(--display);font-size:clamp(20px,4vw,30px);font-weight:400;font-style:italic;color:var(--ink);margin-bottom:8px;">文案深度分析</h1>
+      <div style="font-family:var(--mono);font-size:14px;color:var(--ink-muted);letter-spacing:0.15em;">结构拆解 · 三角色诊断 · 爆款评分 · 优化建议</div>
+    </div>
+
+    <div class="divider"><span>输入文案内容</span></div>
+
+    <!-- 输入方式切换 -->
+    <div class="input-toggle">
+      <button class="toggle-btn active" id="tab-text" onclick="switchInput('text')">文字粘贴</button>
+      <button class="toggle-btn" id="tab-image" onclick="switchInput('image')">截图上传</button>
+    </div>
+
+    <!-- 文字输入 -->
+    <div id="panel-text">
+      <div class="field">
+        <label>文案内容（标题 + 正文）</label>
+        <textarea id="inputText" placeholder="把需要分析的文案、文章、帖子内容粘贴进来...
+
+可以是小红书笔记、公众号文章、产品详情页、广告语、品牌故事等任何形式的文案。"></textarea>
+      </div>
+    </div>
+
+    <!-- 截图上传 -->
+    <div id="panel-image" style="display:none;">
+      <div class="upload-zone" id="uploadZone" onclick="document.getElementById('imageInput').click()">
+        <input type="file" id="imageInput" accept="image/*" onchange="handleImage(event)" />
+        <span class="upload-icon">📷</span>
+        <div class="upload-text">点击上传截图，或拖拽图片到此处</div>
+        <div class="upload-hint">支持 JPG / PNG / WEBP · 截图需包含完整的文案内容</div>
+        <img class="preview-img" id="previewImg" />
+      </div>
+      <div class="remove-img show" id="removeBtn" onclick="removeImage()" style="display:none;">✕ 重新上传</div>
+    </div>
+
+    <button class="action-btn" id="analyzeBtn" onclick="doAnalyze()">开始深度分析 →</button>
+
+    <div class="loading" id="loading">
+      <div class="loading-text">正在深度分析文案结构与潜力</div>
+    </div>
+
+    <!-- 结果区域 -->
+    <div id="results" style="display:none; margin-top: 0.5rem;">
+
+      <!-- 综合评分 -->
+      <div class="score-banner" id="scoreBanner">
+        <div class="score-num" id="scoreNum">—</div>
+        <div class="score-right">
+          <div class="score-label">综合评分 / 100</div>
+          <div class="score-verdict" id="scoreVerdict">—</div>
+          <div class="score-bars" id="scoreBars"></div>
+        </div>
+      </div>
+
+      <!-- 分析卡片 -->
+      <div id="analysisCards"></div>
+
+      <button class="action-btn secondary" style="margin-top: 1rem;" onclick="resetPage()">↩ 分析另一篇文案</button>
+    </div>
+
+  </div>
+</main>
+
+<footer>
+  <div class="container">文案深度分析 · Powered by <em>Claude AI</em></div>
+</footer>
+
+<script>
+document.getElementById('navUserName').textContent = localStorage.getItem('brand_user_name') || '';
+
+function logout() {
+  ['brand_auth_token','brand_user_name','brand_user_role'].forEach(k => localStorage.removeItem(k));
+  window.location.replace('/login.html');
+}
+
+// ── 品牌管理 ──
+const BRAND_ACTIVE_KEY = 'brand_center_active';
+let activeBrand = null;
+let _allBrands  = [];
+
+async function initBrandBar() {
+  try {
+    const res = await fetch('/api/brands', {
+      headers: { 'Authorization': 'Bearer ' + (localStorage.getItem('brand_auth_token') || '') }
+    });
+    if (!res.ok) return;
+    _allBrands = await res.json();
+  } catch { return; }
+
+  const select = document.getElementById('brandSelect');
+  const bar    = document.getElementById('brandBar');
+  while (select.options.length > 1) select.remove(1);
+
+  if (_allBrands.length > 0) {
+    bar.classList.add('show');
+    _allBrands.forEach(b => {
+      const opt = document.createElement('option');
+      opt.value = b.id;
+      opt.textContent = b.name + (b.industry ? ` · ${b.industry}` : '');
+      select.appendChild(opt);
+    });
+    const activeId = localStorage.getItem(BRAND_ACTIVE_KEY);
+    if (activeId && _allBrands.find(b => String(b.id) === String(activeId))) {
+      select.value = activeId;
+      onBrandChange();
+    }
+  }
+}
+
+function onBrandChange() {
+  const id = document.getElementById('brandSelect').value;
+  activeBrand = _allBrands.find(b => String(b.id) === String(id)) || null;
+  const badge = document.getElementById('brandBadge');
+  badge.style.display = activeBrand ? 'inline' : 'none';
+  if (activeBrand) localStorage.setItem(BRAND_ACTIVE_KEY, String(activeBrand.id));
+}
+
+function clearBrand() {
+  document.getElementById('brandSelect').value = '';
+  document.getElementById('brandBadge').style.display = 'none';
+  activeBrand = null;
+  localStorage.removeItem(BRAND_ACTIVE_KEY);
+}
+
+function buildBrandContext() {
+  if (!activeBrand) return '';
+  const b = activeBrand;
+  const parts = [`【品牌名称】${b.name}`];
+  if (b.slogan)          parts.push(`【品牌Slogan】${b.slogan}`);
+  if (b.industry)        parts.push(`【行业】${b.industry}`);
+  if (b.price)           parts.push(`【价格定位】${b.price}`);
+  if (b.audience)        parts.push(`【目标人群】${b.audience}`);
+  if (b.tones?.length)   parts.push(`【品牌调性】${b.tones.join('、')}`);
+  if (b.keywords?.length) parts.push(`【核心关键词】${b.keywords.join('、')}`);
+  if (b.forbidden?.length) parts.push(`【禁止使用的词】${b.forbidden.join('、')}`);
+  if (b.value)           parts.push(`【品牌价值观】${b.value}`);
+  if (b.concern)         parts.push(`【消费者最大顾虑】${b.concern}`);
+  if (b.trigger)         parts.push(`【触发购买的场景】${b.trigger}`);
+  return parts.join('\n');
+}
+
+// ── 输入模式 ──
+let inputMode = 'text';
+let currentImageBase64 = null;
+
+function switchInput(mode) {
+  inputMode = mode;
+  document.getElementById('panel-text').style.display  = mode === 'text'  ? 'block' : 'none';
+  document.getElementById('panel-image').style.display = mode === 'image' ? 'block' : 'none';
+  document.getElementById('tab-text').classList.toggle('active',  mode === 'text');
+  document.getElementById('tab-image').classList.toggle('active', mode === 'image');
+}
+
+function handleImage(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (ev) => {
+    currentImageBase64 = ev.target.result.split(',')[1];
+    document.getElementById('previewImg').src = ev.target.result;
+    document.getElementById('previewImg').classList.add('show');
+    document.getElementById('removeBtn').style.display = 'block';
+    document.getElementById('uploadZone').classList.add('has-image');
+  };
+  reader.readAsDataURL(file);
+}
+
+function removeImage() {
+  currentImageBase64 = null;
+  document.getElementById('previewImg').classList.remove('show');
+  document.getElementById('removeBtn').style.display = 'none';
+  document.getElementById('uploadZone').classList.remove('has-image');
+  document.getElementById('imageInput').value = '';
+}
+
+function resetPage() {
+  document.getElementById('inputText').value = '';
+  removeImage();
+  document.getElementById('results').style.display = 'none';
+  document.getElementById('analysisCards').innerHTML = '';
+  document.getElementById('scoreBanner').classList.remove('show');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// ── Claude API ──
+async function callClaude(messages) {
+  const res = await fetch('https://anthorpic-proxy.mutoumoody.workers.dev/', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'x-worker-secret': 'brand-worker-nz-2024' },
+    body: JSON.stringify({ model: 'claude-haiku-4-5-20251001', max_tokens: 4000, messages }),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(`API 错误 ${res.status}：${err.error?.message || res.statusText}`);
+  }
+  const data = await res.json();
+  return data.content.map(i => i.text || '').join('');
+}
+
+// ── 核心分析 ──
+async function doAnalyze() {
+  if (inputMode === 'text' && !document.getElementById('inputText').value.trim()) {
+    alert('请先粘贴要分析的文案内容'); return;
+  }
+  if (inputMode === 'image' && !currentImageBase64) {
+    alert('请先上传截图'); return;
+  }
+
+  const btn = document.getElementById('analyzeBtn');
+  btn.disabled = true;
+  document.getElementById('loading').classList.add('show');
+  document.getElementById('results').style.display = 'none';
+  document.getElementById('analysisCards').innerHTML = '';
+  document.getElementById('scoreBanner').classList.remove('show');
+
+  const brandContext = buildBrandContext();
+  const inputText = inputMode === 'text' ? document.getElementById('inputText').value.trim() : '';
+
+  const prompt = `你是一位同时拥有品牌经理、产品经理和消费者心理三重视角的顶级文案专家，擅长深度拆解文案结构、潜力与问题。
+
+${brandContext ? `【品牌档案参考】\n${brandContext}\n\n` : ''}${inputText ? `【待分析文案】\n${inputText}\n\n` : '【待分析内容】请分析图片中的文案内容。\n\n'}请按以下格式严格输出分析报告，用【标记】分隔每个部分，不要用JSON，不要用代码块：
+
+【综合评分】
+分数：（0-100的整数）
+评语：（一句话核心评价，15-25字）
+标题吸引力：（0-10）
+开头留存率：（0-10）
+内容说服力：（0-10）
+情感共鸣度：（0-10）
+传播潜力：（0-10）
+
+【结构分析】
+标题类型：（如：悬念型/数字型/对比型/痛点型/利益型/故事型）
+标题亮点：（标题为什么有效或无效，1-2句）
+开头结构：（如：场景代入/痛点共鸣/故事引入/结论前置/疑问钩子）
+开头评价：（开头留住读者的能力，1-2句）
+正文逻辑：（如：问题-解决-结果/故事线/对比法/清单式/情绪递进）
+正文亮点：（正文最有力的地方，1-2句）
+结尾类型：（如：行动号召/情感共鸣/互动引导/福利驱动）
+结尾评价：（结尾的转化或传播能力，1-2句）
+整体公式：（用一句话总结这篇文案的核心套路）
+
+【品牌经理诊断】
+问题1：（从品牌一致性角度发现的具体问题）
+问题2：（品牌信息传递是否准确到位）
+问题3：（选填，品牌调性是否匹配目标人群）
+
+【产品经理诊断】
+问题1：（核心卖点是否清晰可感知）
+问题2：（用户价值是否被有效传递）
+问题3：（选填，是否存在信息缺失或冗余）
+
+【消费者诊断】
+问题1：（从读者角度：这篇内容和我有什么关系？）
+问题2：（看完之后我想做什么？有没有触发行动）
+问题3：（选填，参与感和传播欲是否被激发）
+
+【优化建议】
+建议1：（最重要的改进方向，具体可操作）
+建议2：（第二优先改进点）
+建议3：（第三改进方向）
+建议4：（选填）
+建议5：（选填）`;
+
+  const messages = inputMode === 'image'
+    ? [{ role: 'user', content: [
+        { type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: currentImageBase64 } },
+        { type: 'text', text: prompt }
+      ]}]
+    : [{ role: 'user', content: prompt }];
+
+  try {
+    const text = await callClaude(messages);
+    renderResults(text);
+  } catch (err) {
+    document.getElementById('loading').classList.remove('show');
+    document.getElementById('results').style.display = 'block';
+    document.getElementById('analysisCards').innerHTML = `
+      <div class="error-card">
+        <div class="error-title">分析失败</div>
+        <div class="error-msg">${err.message}</div>
+      </div>`;
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+function grab(text, label) {
+  const m = text.match(new RegExp('【' + label + '】([\\s\\S]*?)(?=【|$)'));
+  return m ? m[1].trim() : '';
+}
+function grabLine(block, key) {
+  const m = block.match(new RegExp(key + '[：:]\\s*(.+)'));
+  return m ? m[1].trim() : '';
+}
+function grabLines(block, prefix) {
+  const results = [];
+  const re = new RegExp(prefix + '\\d+[：:]\\s*(.+)', 'g');
+  let m;
+  while ((m = re.exec(block)) !== null) {
+    const v = m[1].trim();
+    if (v && v !== '（选填）' && !v.startsWith('（选填')) results.push(v);
+  }
+  return results;
+}
+
+function renderResults(text) {
+  document.getElementById('loading').classList.remove('show');
+  document.getElementById('results').style.display = 'block';
+
+  // ── 综合评分 ──
+  const scoreBlock = grab(text, '综合评分');
+  const score    = parseInt(grabLine(scoreBlock, '分数')) || 0;
+  const verdict  = grabLine(scoreBlock, '评语') || '—';
+  const dims = [
+    { key: '标题吸引力', color: '#b87333' },
+    { key: '开头留存率', color: '#c0392b' },
+    { key: '内容说服力', color: '#6b5b95' },
+    { key: '情感共鸣度', color: '#2c5f8a' },
+    { key: '传播潜力',   color: '#5a9e6f' },
+  ];
+
+  document.getElementById('scoreNum').textContent = score;
+  document.getElementById('scoreVerdict').textContent = verdict;
+
+  const barsEl = document.getElementById('scoreBars');
+  barsEl.innerHTML = '';
+  dims.forEach(d => {
+    const val = parseFloat(grabLine(scoreBlock, d.key)) || 0;
+    const pct = Math.min(val / 10 * 100, 100);
+    barsEl.innerHTML += `
+      <div class="score-bar-item">
+        <div class="score-bar-label">${d.key}</div>
+        <div class="score-bar-track">
+          <div class="score-bar-fill" style="width:${pct}%;background:${d.color};"></div>
+        </div>
+      </div>`;
+  });
+  document.getElementById('scoreBanner').classList.add('show');
+
+  const container = document.getElementById('analysisCards');
+  container.innerHTML = '';
+  let delay = 0;
+
+  // ── 结构分析 ──
+  const structBlock = grab(text, '结构分析');
+  if (structBlock) {
+    const card = document.createElement('div');
+    card.className = 'analysis-card';
+    card.style.animationDelay = (delay += 0.06) + 's';
+
+    const formula = grabLine(structBlock, '整体公式');
+    const rows = [
+      { label: '标题 · ' + (grabLine(structBlock, '标题类型') || '—'), value: grabLine(structBlock, '标题亮点') },
+      { label: '开头 · ' + (grabLine(structBlock, '开头结构') || '—'), value: grabLine(structBlock, '开头评价') },
+      { label: '正文 · ' + (grabLine(structBlock, '正文逻辑') || '—'), value: grabLine(structBlock, '正文亮点') },
+      { label: '结尾 · ' + (grabLine(structBlock, '结尾类型') || '—'), value: grabLine(structBlock, '结尾评价') },
+    ].filter(r => r.value);
+
+    card.innerHTML = `
+      <div class="card-header">
+        <span class="badge badge-gold">结构分析</span>
+        ${formula ? `<span class="card-subtitle" style="flex:1;">${formula}</span>` : ''}
+      </div>
+      ${rows.map(r => `
+        <div class="analysis-item">
+          <div class="analysis-label">${r.label}</div>
+          <div class="analysis-value">${r.value}</div>
+        </div>`).join('')}`;
+    container.appendChild(card);
+  }
+
+  // ── 三角色诊断 ──
+  const roles = [
+    { key: '品牌经理诊断', badge: 'badge-blue',   color: '#2c5f8a', prefix: '问题' },
+    { key: '产品经理诊断', badge: 'badge-purple',  color: '#6b5b95', prefix: '问题' },
+    { key: '消费者诊断',   badge: 'badge-red',     color: '#c0392b', prefix: '问题' },
+  ];
+
+  const diagDiv = document.createElement('div');
+  diagDiv.style.cssText = 'display:flex;align-items:center;gap:14px;margin:2rem 0 1.5rem;';
+  diagDiv.innerHTML = '<div style="flex:1;height:1px;background:var(--border)"></div><span style="font-family:var(--mono);font-size:20px;letter-spacing:0.2em;color:var(--ink-muted);text-transform:uppercase;white-space:nowrap;">三角色诊断</span><div style="flex:1;height:1px;background:var(--border)"></div>';
+  container.appendChild(diagDiv);
+
+  roles.forEach(r => {
+    const block = grab(text, r.key);
+    if (!block) return;
+    const issues = grabLines(block, '问题');
+    if (!issues.length) return;
+    const card = document.createElement('div');
+    card.className = 'analysis-card';
+    card.style.animationDelay = (delay += 0.08) + 's';
+    card.innerHTML = `
+      <div class="card-header">
+        <span class="badge ${r.badge}">${r.key}</span>
+      </div>
+      ${issues.map(issue => `<div class="diag-row"><span class="diag-arrow" style="color:${r.color};">→</span><span>${issue}</span></div>`).join('')}`;
+    container.appendChild(card);
+  });
+
+  // ── 优化建议 ──
+  const suggestBlock = grab(text, '优化建议');
+  if (suggestBlock) {
+    const items = grabLines(suggestBlock, '建议');
+    if (items.length) {
+      const sugDiv = document.createElement('div');
+      sugDiv.style.cssText = 'display:flex;align-items:center;gap:14px;margin:2rem 0 1.5rem;';
+      sugDiv.innerHTML = '<div style="flex:1;height:1px;background:var(--border)"></div><span style="font-family:var(--mono);font-size:20px;letter-spacing:0.2em;color:var(--ink-muted);text-transform:uppercase;white-space:nowrap;">优化建议</span><div style="flex:1;height:1px;background:var(--border)"></div>';
+      container.appendChild(sugDiv);
+
+      const card = document.createElement('div');
+      card.className = 'analysis-card';
+      card.style.animationDelay = (delay += 0.08) + 's';
+      card.innerHTML = items.map((item, i) => `
+        <div class="suggest-item">
+          <div class="suggest-num">0${i + 1}</div>
+          <div class="suggest-text">${item}</div>
+        </div>`).join('');
+      container.appendChild(card);
+    }
+  }
+}
+
+initBrandBar();
+</script>
+</body>
+</html>
