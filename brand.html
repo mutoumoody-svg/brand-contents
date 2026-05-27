@@ -386,6 +386,81 @@ header {
   .app { grid-template-columns: 1fr; }
   .field-grid, .field-grid-3, .preview-grid { grid-template-columns: 1fr; }
 }
+
+/* ── 消费者声音区块 ── */
+.voice-section {
+  background: white; border: 1px solid var(--border);
+  border-radius: 2px; padding: 20px; margin-top: 16px;
+}
+.voice-section-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 14px; padding-bottom: 12px; border-bottom: 1px solid var(--border);
+}
+.voice-section-title {
+  font-family: var(--mono); font-size: 10px; letter-spacing: 0.18em;
+  text-transform: uppercase; color: var(--ink-muted);
+}
+.voice-analyze-btn {
+  padding: 7px 16px; background: var(--ink); color: var(--cream);
+  border: none; border-radius: 2px; font-family: var(--mono);
+  font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase;
+  cursor: pointer; transition: background 0.15s;
+}
+.voice-analyze-btn:hover { background: var(--accent); }
+.voice-fields-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.voice-mini-block {}
+.voice-mini-label {
+  font-family: var(--mono); font-size: 9px; letter-spacing: 0.12em;
+  text-transform: uppercase; color: var(--ink-muted); margin-bottom: 5px;
+}
+.voice-mini-text { font-size: 13px; color: var(--ink-soft); line-height: 1.65; }
+
+/* ── 弹窗覆盖层 ── */
+.voice-overlay {
+  position: fixed; inset: 0; z-index: 600;
+  background: rgba(26,24,20,0.5); backdrop-filter: blur(2px);
+  display: flex; align-items: flex-start; justify-content: center;
+  padding: 48px 24px; overflow-y: auto;
+}
+.voice-modal {
+  background: white; border-radius: 2px; width: 100%; max-width: 660px;
+  box-shadow: 0 8px 40px rgba(26,24,20,0.18); position: relative;
+}
+.voice-modal-hd {
+  padding: 20px 28px; border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.voice-modal-title {
+  font-family: var(--display); font-size: 20px; font-style: italic; color: var(--ink);
+}
+.voice-modal-close {
+  width: 32px; height: 32px; border: 1px solid var(--border-strong);
+  border-radius: 2px; background: transparent; cursor: pointer;
+  font-size: 18px; line-height: 1; color: var(--ink-muted);
+  display: flex; align-items: center; justify-content: center; transition: all 0.15s;
+}
+.voice-modal-close:hover { background: var(--cream-dark); color: var(--ink); }
+.voice-modal-bd { padding: 28px; }
+.voice-step { display: none; }
+.voice-step.on { display: block; }
+
+/* 分析结果卡片 */
+.vi-card {
+  background: var(--cream); border: 1px solid var(--border);
+  border-radius: 2px; padding: 14px 18px; margin-bottom: 10px;
+}
+.vi-card-label {
+  font-family: var(--mono); font-size: 9px; letter-spacing: 0.15em;
+  text-transform: uppercase; color: var(--ink-muted); margin-bottom: 7px;
+}
+.vi-card-text { font-size: 14px; color: var(--ink-soft); line-height: 1.7; }
+.vi-pills { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.vi-pill {
+  padding: 3px 12px; border-radius: 20px;
+  font-family: var(--mono); font-size: 11px; border: 1px solid;
+}
+.vi-pill.good { background: #f0f8f3; color: #5a9e6f; border-color: #c8e6d0; }
+.vi-pill.bad  { background: #fdf5f3; color: #c0392b; border-color: #e8c4b8; }
 </style>
 </head>
 <body>
@@ -485,6 +560,20 @@ header {
       <div class="preview-actions">
         <button class="btn-primary" onclick="editBrand()">编辑品牌 →</button>
         <button class="btn-secondary" onclick="setActiveBrand(currentBrandId)">设为当前品牌</button>
+      </div>
+
+      <!-- 消费者声音区块 -->
+      <div class="voice-section">
+        <div class="voice-section-header">
+          <div class="voice-section-title">消费者声音 · Consumer Voice</div>
+          <button class="voice-analyze-btn" onclick="openVoiceModal()">📊 分析评论</button>
+        </div>
+        <div id="voiceEmpty" style="font-size:13px;color:var(--ink-muted);font-style:italic;line-height:1.7;">
+          还没有消费者洞察数据。粘贴淘宝、小红书、微信等真实评论，<br>AI 会自动提炼买前顾虑、购买触发、口碑用语等关键信息。
+        </div>
+        <div id="voiceDataView" style="display:none">
+          <div class="voice-fields-grid" id="voiceFieldsGrid"></div>
+        </div>
       </div>
     </div>
 
@@ -748,6 +837,53 @@ header {
   </main>
 </div>
 
+<!-- ══ 消费者评论分析弹窗 ══ -->
+<div id="voiceOverlay" class="voice-overlay" style="display:none" onclick="if(event.target===this)closeVoiceModal()">
+  <div class="voice-modal">
+    <div class="voice-modal-hd">
+      <div class="voice-modal-title">消费者评论分析</div>
+      <button class="voice-modal-close" onclick="closeVoiceModal()">×</button>
+    </div>
+    <div class="voice-modal-bd">
+
+      <!-- Step 1: 输入 -->
+      <div class="voice-step on" id="vstep1">
+        <div style="font-size:13px;color:var(--ink-soft);line-height:1.8;margin-bottom:18px;padding:12px 16px;background:var(--cream);border-radius:2px;">
+          把消费者评论粘贴进来，AI 会分析买前顾虑、购买触发、口碑用语、分享动机，<br>
+          自动填入品牌档案的「消费者洞察」7 个字段。<br>
+          <span style="font-family:var(--mono);font-size:10px;color:var(--ink-muted);">支持淘宝 / 京东 / 小红书 / 微信 / 任意格式，可一次粘贴多条</span>
+        </div>
+        <div class="field" style="margin-bottom:20px;">
+          <label>消费者评论内容</label>
+          <textarea id="voiceInput" style="min-height:220px;resize:vertical;width:100%;background:var(--cream);border:1px solid var(--border-strong);border-radius:2px;font-family:var(--serif);font-size:13px;color:var(--ink);padding:10px 14px;outline:none;line-height:1.7;" placeholder="★★★★★ 杯子真的很好看，保温效果超棒，带去公司被同事问了好几次哪里买的。
+
+★★★☆ 价格有点贵，但收到之后觉得确实值。包装也很精致，送礼很适合。
+
+一直纠结要不要买，太贵了，后来咬牙下单真的没后悔，喝水都感觉更好了..."></textarea>
+        </div>
+        <div style="display:flex;align-items:center;gap:14px;">
+          <button class="btn-primary" id="vAnalyzeBtn" onclick="analyzeReviews()">开始分析 →</button>
+          <div id="vStatus" style="font-family:var(--mono);font-size:11px;color:var(--ink-muted);letter-spacing:0.06em;"></div>
+        </div>
+      </div>
+
+      <!-- Step 2: 结果 -->
+      <div class="voice-step" id="vstep2">
+        <div style="font-family:var(--mono);font-size:10px;letter-spacing:0.1em;color:var(--green);background:var(--green-bg);padding:10px 16px;border-radius:2px;margin-bottom:18px;">
+          ✓ 分析完成 · 确认后将更新品牌档案的消费者洞察字段
+        </div>
+        <div id="vResults"></div>
+        <div style="display:flex;gap:10px;margin-top:20px;padding-top:20px;border-top:1px solid var(--border);">
+          <button class="btn-primary" onclick="applyVoiceInsights()">✓ 应用到品牌档案</button>
+          <button class="btn-secondary" onclick="showVStep(1)">← 重新输入</button>
+          <button class="btn-secondary" onclick="closeVoiceModal()">取消</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -1002,6 +1138,27 @@ function viewBrand(id) {
   showOrHide('pvValueWrap', 'pvValue', b.value);
   showOrHide('pvStoryWrap', 'pvStory', b.story);
   showOrHide('pvSampleWrap', 'pvSample', b.sample);
+
+  // 消费者声音区块
+  const voiceFields = [
+    { label: '买前最大顾虑', val: b.concern },
+    { label: '买后最常说的话', val: b.afterbuy },
+    { label: '消费者私下描述', val: b.consumerVoice },
+    { label: '购买触发场景', val: b.trigger },
+    { label: '分享动机', val: b.share },
+  ].filter(f => f.val);
+  if (voiceFields.length) {
+    document.getElementById('voiceEmpty').style.display = 'none';
+    document.getElementById('voiceDataView').style.display = 'block';
+    document.getElementById('voiceFieldsGrid').innerHTML = voiceFields.map(f => `
+      <div class="voice-mini-block">
+        <div class="voice-mini-label">${f.label}</div>
+        <div class="voice-mini-text">${f.val}</div>
+      </div>`).join('');
+  } else {
+    document.getElementById('voiceEmpty').style.display = '';
+    document.getElementById('voiceDataView').style.display = 'none';
+  }
 
   renderSidebar();
 }
@@ -1313,6 +1470,133 @@ if (localStorage.getItem('brand_user_role') === 'admin') {
     document.getElementById('emptyState').style.display = 'flex';
   }
 })();
+
+// ══════════════════════════════════════════
+//  消费者评论分析
+// ══════════════════════════════════════════
+let _voiceInsights = null;
+
+function openVoiceModal() {
+  _voiceInsights = null;
+  document.getElementById('voiceInput').value = '';
+  document.getElementById('vStatus').textContent = '';
+  const btn = document.getElementById('vAnalyzeBtn');
+  btn.disabled = false; btn.textContent = '开始分析 →';
+  showVStep(1);
+  document.getElementById('voiceOverlay').style.display = 'flex';
+}
+
+function closeVoiceModal() {
+  document.getElementById('voiceOverlay').style.display = 'none';
+}
+
+function showVStep(n) {
+  document.getElementById('vstep1').classList.toggle('on', n === 1);
+  document.getElementById('vstep2').classList.toggle('on', n === 2);
+}
+
+async function analyzeReviews() {
+  const text = document.getElementById('voiceInput').value.trim();
+  if (!text) { alert('请先粘贴消费者评论'); return; }
+
+  const btn = document.getElementById('vAnalyzeBtn');
+  const status = document.getElementById('vStatus');
+  btn.disabled = true; btn.textContent = '分析中…';
+  status.textContent = '🤖 AI 正在分析消费者心理…';
+
+  const b = brands.find(x => String(x.id) === String(currentBrandId));
+  const brandName = b?.name || '';
+
+  const prompt = `你是消费者洞察专家。分析以下${brandName ? `「${brandName}」品牌的` : ''}消费者评论，提炼关键洞察。
+
+只返回JSON，格式如下，每个字段用消费者自己的语言，不要品牌化措辞：
+{
+  "concern": "买前最大顾虑（80字内，口语化）",
+  "afterbuy": "买后最常说的话/感受（80字内，真实语言）",
+  "consumer_voice": "消费者私下怎么描述这个产品（80字内，口语化）",
+  "trigger": "什么场景/原因触发了购买（80字内）",
+  "share": "为什么会分享或推荐（60字内）",
+  "top_praises": ["好评高频词1","好评高频词2","好评高频词3","好评高频词4","好评高频词5"],
+  "top_concerns": ["顾虑高频词1","顾虑高频词2","顾虑高频词3"],
+  "summary": "一句话总结消费者对这个产品的整体印象（40字内）"
+}
+
+消费者评论：
+${text.slice(0, 4500)}`;
+
+  try {
+    const res = await fetch('https://anthorpic-proxy.mutoumoody.workers.dev/', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-worker-secret': 'brand-worker-nz-2024' },
+      body: JSON.stringify({
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: 1000,
+        messages: [{ role: 'user', content: prompt }],
+      }),
+    });
+    if (!res.ok) throw new Error(`AI 服务错误 (${res.status})`);
+    const data = await res.json();
+    const raw = (data.content || []).map(c => c.text || '').join('');
+    const f = raw.indexOf('{'), l = raw.lastIndexOf('}');
+    if (f === -1 || l === -1) throw new Error('AI 返回格式异常，请重试');
+    _voiceInsights = JSON.parse(raw.slice(f, l + 1));
+
+    // 渲染结果
+    document.getElementById('vResults').innerHTML = `
+      ${_voiceInsights.summary ? `<div style="background:var(--ink);color:var(--cream);padding:14px 20px;border-radius:2px;margin-bottom:14px;font-size:14px;line-height:1.7;font-style:italic;">"${_voiceInsights.summary}"</div>` : ''}
+      ${viCard('买前最大顾虑', _voiceInsights.concern)}
+      ${viCard('买后最常说的话', _voiceInsights.afterbuy)}
+      ${viCard('消费者私下如何描述', _voiceInsights.consumer_voice)}
+      ${viCard('购买触发场景', _voiceInsights.trigger)}
+      ${viCard('分享 / 推荐动机', _voiceInsights.share)}
+      ${(_voiceInsights.top_praises||[]).length ? `
+        <div class="vi-card">
+          <div class="vi-card-label">好评高频词</div>
+          <div class="vi-pills">${(_voiceInsights.top_praises||[]).map(p=>`<span class="vi-pill good">${p}</span>`).join('')}</div>
+        </div>` : ''}
+      ${(_voiceInsights.top_concerns||[]).length ? `
+        <div class="vi-card">
+          <div class="vi-card-label">顾虑高频词</div>
+          <div class="vi-pills">${(_voiceInsights.top_concerns||[]).map(p=>`<span class="vi-pill bad">${p}</span>`).join('')}</div>
+        </div>` : ''}
+    `;
+    showVStep(2);
+  } catch(err) {
+    status.textContent = '✗ ' + err.message;
+    btn.disabled = false; btn.textContent = '重新分析 →';
+  }
+}
+
+function viCard(label, text) {
+  if (!text) return '';
+  return `<div class="vi-card"><div class="vi-card-label">${label}</div><div class="vi-card-text">${text}</div></div>`;
+}
+
+async function applyVoiceInsights() {
+  if (!_voiceInsights || !currentBrandId) return;
+  const b = brands.find(x => String(x.id) === String(currentBrandId));
+  if (!b) return;
+
+  const updated = {
+    ...b,
+    concern:       _voiceInsights.concern       || b.concern,
+    afterbuy:      _voiceInsights.afterbuy      || b.afterbuy,
+    consumerVoice: _voiceInsights.consumer_voice|| b.consumerVoice,
+    trigger:       _voiceInsights.trigger       || b.trigger,
+    share:         _voiceInsights.share         || b.share,
+  };
+
+  const res = await authFetch(`/api/brands/${currentBrandId}`, {
+    method: 'PUT',
+    body: JSON.stringify(updated),
+  });
+  if (!res.ok) { showToast('保存失败，请重试'); return; }
+
+  await loadBrandsFromServer();
+  viewBrand(currentBrandId);
+  closeVoiceModal();
+  showToast('消费者洞察已更新 ✓');
+}
 </script>
 </body>
 </html>
