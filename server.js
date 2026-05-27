@@ -403,20 +403,21 @@ app.post('/api/claude', authenticateToken, async (req, res) => {
   if (!API_KEY) {
     return res.status(500).json({ error: { message: '服务器未配置 ANTHROPIC_API_KEY，请在 VPS 上设置环境变量后重启服务' } });
   }
+  // CLAUDE_PROXY_URL 可在环境变量里设置自定义域名，默认用 workers.dev
+  const PROXY_URL = process.env.CLAUDE_PROXY_URL || 'https://anthorpic-proxy.mutoumoody.workers.dev/';
   try {
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
+    const response = await fetch(PROXY_URL, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'x-api-key': API_KEY,
-        'anthropic-version': '2023-06-01',
+        'x-worker-secret': 'brand-worker-nz-2024',
       },
       body: JSON.stringify(req.body),
     });
     const data = await response.json();
     res.status(response.status).json(data);
   } catch (err) {
-    res.status(500).json({ error: { message: 'API 调用失败：' + err.message } });
+    res.status(500).json({ error: { message: 'API 请求失败：' + err.message } });
   }
 });
 
