@@ -352,8 +352,8 @@ app.post('/api/brands/parse-file', authenticateToken, (req, res, next) => {
     return res.status(400).json({ error: '文件内容为空或无法提取文字' });
   }
 
-  // 截断超长文本，避免 token 超限
-  const trimmedText = rawText.slice(0, 12000);
+  // 截断超长文本，避免 token 超限（6000字符约 4000 token）
+  const trimmedText = rawText.slice(0, 6000);
 
   const prompt = `你是一位专业的品牌档案分析师。请从以下文档内容中提取品牌相关信息，以标准JSON格式返回，字段说明如下：
 
@@ -381,26 +381,42 @@ app.post('/api/brands/parse-file', authenticateToken, (req, res, next) => {
 ${trimmedText}`;
 
   try {
-    const apiRes = await fetch('https://anthorpic-proxy.mutoumoody.workers.dev/', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'x-worker-secret': 'brand-worker-nz-2024' },
-      body: JSON.stringify({
-        model: 'claude-haiku-4-5-20251001',
-        max_tokens: 2000,
-        messages: [{ role: 'user', content: prompt }],
-      }),
-    });
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 50000); // 50秒超时
+
+    let apiRes;
+    try {
+      apiRes = await fetch('https://anthorpic-proxy.mutoumoody.workers.dev/', {
+        method: 'POST',
+        signal: controller.signal,
+        headers: { 'Content-Type': 'application/json', 'x-worker-secret': 'brand-worker-nz-2024' },
+        body: JSON.stringify({
+          model: 'claude-haiku-4-5-20251001',
+          max_tokens: 2000,
+          messages: [{ role: 'user', content: prompt }],
+        }),
+      });
+    } finally {
+      clearTimeout(timeout);
+    }
+
+    if (!apiRes.ok) {
+      const errData = await apiRes.json().catch(() => ({}));
+      throw new Error(`Worker 返回 ${apiRes.status}：${errData.error?.message || apiRes.statusText}`);
+    }
+
     const aiData = await apiRes.json();
     const text = (aiData.content || []).map(c => c.text || '').join('');
 
     // 提取 JSON
     const first = text.indexOf('{');
     const last  = text.lastIndexOf('}');
-    if (first === -1 || last === -1) throw new Error('AI 未返回有效 JSON');
+    if (first === -1 || last === -1) throw new Error('AI 未返回有效 JSON，原始回复：' + text.slice(0, 200));
     const brand = JSON.parse(text.slice(first, last + 1));
     res.json({ brand, chars: rawText.length });
   } catch (err) {
-    res.status(500).json({ error: 'AI 解析失败：' + err.message });
+    const msg = err.name === 'AbortError' ? 'AI 请求超时（50秒），请重试或换小一点的文件' : err.message;
+    res.status(500).json({ error: 'AI 解析失败：' + msg });
   }
 });
 
