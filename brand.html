@@ -772,14 +772,21 @@ async function handleImportFile(e) {
   const status = document.getElementById('importStatus');
   const zone   = document.getElementById('importZone');
 
-  // 显示加载状态
+  // 显示加载状态（带进度步骤）
   status.style.display = 'block';
   status.style.background = '#edf4fa';
   status.style.color = '#2c5f8a';
   status.style.border = '1px solid #b8d4e8';
-  status.textContent = '⏳ 正在解析文件，请稍候...';
   zone.style.opacity = '0.5';
   zone.style.pointerEvents = 'none';
+
+  const steps = ['📄 读取文件内容...', '✂️ 提取文字...', '🤖 AI 分析品牌信息...', '📝 整理字段中...'];
+  let stepIdx = 0;
+  status.textContent = steps[0];
+  const stepTimer = setInterval(() => {
+    stepIdx = Math.min(stepIdx + 1, steps.length - 1);
+    status.textContent = steps[stepIdx];
+  }, 3000);
 
   const formData = new FormData();
   formData.append('file', file);
@@ -861,6 +868,7 @@ async function handleImportFile(e) {
     status.textContent = '✗ ' + err.message;
     e.target.value = '';
   } finally {
+    clearInterval(stepTimer);
     zone.style.opacity = '';
     zone.style.pointerEvents = '';
   }

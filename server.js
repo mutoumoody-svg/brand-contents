@@ -355,29 +355,12 @@ app.post('/api/brands/parse-file', authenticateToken, (req, res, next) => {
   // 截断超长文本，避免 token 超限（6000字符约 4000 token）
   const trimmedText = rawText.slice(0, 6000);
 
-  const prompt = `你是一位专业的品牌档案分析师。请从以下文档内容中提取品牌相关信息，以标准JSON格式返回，字段说明如下：
+  const prompt = `从以下文档提取品牌信息，只返回JSON，无其他文字：
+{"name":"","slogan":"","industry":"","price":"","audience":"","tones":[],"keywords":[],"forbidden":[],"value":"","story":"","sample":"","concern":"","afterbuy":"","trigger":""}
 
-- name: 品牌名称（字符串）
-- slogan: 品牌口号或Slogan（字符串，没有则留空）
-- industry: 所属行业（字符串，如：美妆/护肤、生活方式/家居、食品饮料、服装配饰等）
-- price: 价格定位（字符串，如：高端、中高端、中端、平价，没有明确则留空）
-- audience: 目标人群画像（字符串，尽量详细描述年龄、职业、生活方式等）
-- tones: 品牌调性词数组（如 ["温暖","精致","亲切"]，最多6个）
-- keywords: 品牌核心关键词数组（最多8个）
-- forbidden: 品牌禁忌词或禁止提及的内容数组（没有则空数组）
-- value: 品牌价值观或核心理念（字符串）
-- story: 品牌故事或背景（字符串）
-- sample: 文档中最有代表性的品牌文案片段（字符串，直接摘录原文）
-- concern: 目标消费者购买前最大顾虑（字符串）
-- afterbuy: 消费者购买后最常提到的体验或感受（字符串）
-- trigger: 触发消费者购买决策的场景或理由（字符串）
+规则：找不到的字段留空；tones最多6个；keywords最多8个；字符串不超过150字。
 
-要求：
-1. 只返回纯JSON对象，不要有任何其他文字或代码块标记
-2. 没有找到某字段信息时用空字符串或空数组，不要猜测
-3. 字符串字段控制在合理长度内（不超过200字）
-
-文档内容：
+文档：
 ${trimmedText}`;
 
   try {
@@ -392,7 +375,7 @@ ${trimmedText}`;
         headers: { 'Content-Type': 'application/json', 'x-worker-secret': 'brand-worker-nz-2024' },
         body: JSON.stringify({
           model: 'claude-haiku-4-5-20251001',
-          max_tokens: 2000,
+          max_tokens: 1200,
           messages: [{ role: 'user', content: prompt }],
         }),
       });
