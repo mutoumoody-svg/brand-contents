@@ -792,20 +792,48 @@ async function handleImportFile(e) {
   formData.append('file', file);
 
   try {
+    // Step 1: 服务器提取文字
+    status.textContent = steps[0];
     const res = await fetch('/api/brands/parse-file', {
       method: 'POST',
       headers: { 'Authorization': 'Bearer ' + (localStorage.getItem('brand_auth_token') || '') },
       body: formData,
     });
-    // 先检查是否为 JSON 响应，避免 HTML 错误页导致崩溃
     const contentType = res.headers.get('content-type') || '';
     if (!contentType.includes('application/json')) {
-      throw new Error(`服务器异常（HTTP ${res.status}），请在 VPS 上运行 npm install 后重启服务`);
+      throw new Error(`服务器异常（HTTP ${res.status}），请确认 npm install 已运行`);
     }
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || '解析失败');
 
-    const b = data.brand;
+    // Step 2: 浏览器直接调 Claude Worker 分析
+    stepIdx = 2;
+    status.textContent = steps[2];
+
+    const prompt = `从以下文档提取品牌信息，只返回JSON，无其他文字：
+{"name":"","slogan":"","industry":"","price":"","audience":"","tones":[],"keywords":[],"forbidden":[],"value":"","story":"","sample":"","concern":"","afterbuy":"","trigger":""}
+规则：找不到留空；tones最多6个；keywords最多8个；字符串不超过150字。
+文档：
+${data.text}`;
+
+    const aiRes = await fetch('https://anthorpic-proxy.mutoumoody.workers.dev/', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-worker-secret': 'brand-worker-nz-2024' },
+      body: JSON.stringify({
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: 1200,
+        messages: [{ role: 'user', content: prompt }],
+      }),
+    });
+    if (!aiRes.ok) {
+      const e = await aiRes.json().catch(() => ({}));
+      throw new Error(`AI 错误 ${aiRes.status}：${e.error?.message || aiRes.statusText}`);
+    }
+    const aiData = await aiRes.json();
+    const aiText = (aiData.content || []).map(c => c.text || '').join('');
+    const first = aiText.indexOf('{'), last = aiText.lastIndexOf('}');
+    if (first === -1 || last === -1) throw new Error('AI 未返回有效 JSON');
+    const b = JSON.parse(aiText.slice(first, last + 1));
     // 填充基本信息（第一步）
     if (b.name)     document.getElementById('f-name').value     = b.name;
     if (b.slogan)   document.getElementById('f-slogan').value   = b.slogan;

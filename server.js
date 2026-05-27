@@ -355,52 +355,8 @@ app.post('/api/brands/parse-file', authenticateToken, (req, res, next) => {
   // 截断超长文本，避免 token 超限（6000字符约 4000 token）
   const trimmedText = rawText.slice(0, 6000);
 
-  const prompt = `从以下文档提取品牌信息，只返回JSON，无其他文字：
-{"name":"","slogan":"","industry":"","price":"","audience":"","tones":[],"keywords":[],"forbidden":[],"value":"","story":"","sample":"","concern":"","afterbuy":"","trigger":""}
-
-规则：找不到的字段留空；tones最多6个；keywords最多8个；字符串不超过150字。
-
-文档：
-${trimmedText}`;
-
-  try {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 50000); // 50秒超时
-
-    let apiRes;
-    try {
-      apiRes = await fetch('https://anthorpic-proxy.mutoumoody.workers.dev/', {
-        method: 'POST',
-        signal: controller.signal,
-        headers: { 'Content-Type': 'application/json', 'x-worker-secret': 'brand-worker-nz-2024' },
-        body: JSON.stringify({
-          model: 'claude-haiku-4-5-20251001',
-          max_tokens: 1200,
-          messages: [{ role: 'user', content: prompt }],
-        }),
-      });
-    } finally {
-      clearTimeout(timeout);
-    }
-
-    if (!apiRes.ok) {
-      const errData = await apiRes.json().catch(() => ({}));
-      throw new Error(`Worker 返回 ${apiRes.status}：${errData.error?.message || apiRes.statusText}`);
-    }
-
-    const aiData = await apiRes.json();
-    const text = (aiData.content || []).map(c => c.text || '').join('');
-
-    // 提取 JSON
-    const first = text.indexOf('{');
-    const last  = text.lastIndexOf('}');
-    if (first === -1 || last === -1) throw new Error('AI 未返回有效 JSON，原始回复：' + text.slice(0, 200));
-    const brand = JSON.parse(text.slice(first, last + 1));
-    res.json({ brand, chars: rawText.length });
-  } catch (err) {
-    const msg = err.name === 'AbortError' ? 'AI 请求超时（50秒），请重试或换小一点的文件' : err.message;
-    res.status(500).json({ error: 'AI 解析失败：' + msg });
-  }
+  // 服务器只负责提取文字，Claude 分析交给浏览器端完成（绕过 VPS 网络限制）
+  res.json({ text: trimmedText, chars: rawText.length });
 });
 
 // ══════════════════════════════════════════
