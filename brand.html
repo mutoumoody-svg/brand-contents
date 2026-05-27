@@ -831,12 +831,25 @@ ${data.text}`;
     }
     const aiData = await aiRes.json();
     const aiText = (aiData.content || []).map(c => c.text || '').join('');
+
+    // 找 JSON 对象
     const first = aiText.indexOf('{'), last = aiText.lastIndexOf('}');
-    if (first === -1 || last === -1) throw new Error('AI 未返回有效 JSON');
-    const b = JSON.parse(aiText.slice(first, last + 1));
+    if (first === -1 || last === -1) throw new Error('AI 返回内容无法解析，请重试');
+    let b;
+    try {
+      b = JSON.parse(aiText.slice(first, last + 1));
+    } catch(parseErr) {
+      throw new Error('JSON 解析失败：' + parseErr.message + '\n原始：' + aiText.slice(0, 150));
+    }
+    if (!b || typeof b !== 'object' || Array.isArray(b)) {
+      throw new Error('AI 返回格式异常，请重试');
+    }
+    // 安全赋值辅助函数
+    const setField = (id, val) => { try { const el = document.getElementById(id); if (el && val) el.value = val; } catch(e) {} };
+
     // 填充基本信息（第一步）
-    if (b.name)     document.getElementById('f-name').value     = b.name;
-    if (b.slogan)   document.getElementById('f-slogan').value   = b.slogan;
+    setField('f-name',   b.name);
+    setField('f-slogan', b.slogan);
     if (b.industry) {
       const sel = document.getElementById('f-industry');
       for (let i = 0; i < sel.options.length; i++) {
@@ -855,7 +868,7 @@ ${data.text}`;
         }
       }
     }
-    if (b.audience) document.getElementById('f-audience').value = b.audience;
+    setField('f-audience', b.audience);
     // 调性 tones
     if (b.tones?.length) {
       document.querySelectorAll('.tone-btn').forEach(btn => {
@@ -873,12 +886,12 @@ ${data.text}`;
       if (fb) fb.value = b.forbidden.join('、');
     }
     // 填充深度内容（第二步）
-    if (b.value)    { const el = document.getElementById('f-value');    if (el) el.value = b.value; }
-    if (b.story)    { const el = document.getElementById('f-story');    if (el) el.value = b.story; }
-    if (b.sample)   { const el = document.getElementById('f-sample');   if (el) el.value = b.sample; }
-    if (b.concern)  { const el = document.getElementById('f-concern');  if (el) el.value = b.concern; }
-    if (b.afterbuy) { const el = document.getElementById('f-afterbuy'); if (el) el.value = b.afterbuy; }
-    if (b.trigger)  { const el = document.getElementById('f-trigger');  if (el) el.value = b.trigger; }
+    setField('f-value',    b.value);
+    setField('f-story',    b.story);
+    setField('f-sample',   b.sample);
+    setField('f-concern',  b.concern);
+    setField('f-afterbuy', b.afterbuy);
+    setField('f-trigger',  b.trigger);
 
     // 成功提示
     const filled = [b.name, b.slogan, b.audience, b.value, b.story].filter(Boolean).length;
