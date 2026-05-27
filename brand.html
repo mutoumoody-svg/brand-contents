@@ -1605,21 +1605,65 @@ if (localStorage.getItem('brand_user_role') === 'admin') {
 // ── 多级 JSON 修复解析 ──
 function safeParseJson(raw) {
   const f = raw.indexOf('{'), l = raw.lastIndexOf('}');
-  if (f === -1 || l === -1) throw new Error('未找到 JSON 内容，请重试');
-  const s0 = raw.slice(f, l + 1);
-  // 第1级：直接解析
-  try { return JSON.parse(s0); } catch(_) {}
-  // 第2级：清理控制字符
-  const s1 = _fixCtrl(s0);
-  try { return JSON.parse(s1); } catch(_) {}
-  // 第3级：去掉尾部逗号
-  const s2 = s1.replace(/,(\s*[}\]])/g, '$1');
-  try { return JSON.parse(s2); } catch(_) {}
-  // 第4级：修复字符串内的未转义 "
-  const s3 = _fixQuotes(s2);
-  try { return JSON.parse(s3); } catch(e) {
-    throw new Error('JSON 解析失败，请重试。若持续出现，请减少评论中的英文引号。');
+  if (f === -1) throw new Error('未找到 JSON 内容，请重试');
+  // 第1级：直接解析（到最后一个 }）
+  if (l !== -1) {
+    const s0 = raw.slice(f, l + 1);
+    try { return JSON.parse(s0); } catch(_) {}
+    // 第2级：清理控制字符
+    const s1 = _fixCtrl(s0);
+    try { return JSON.parse(s1); } catch(_) {}
+    // 第3级：去掉尾部逗号
+    const s2 = s1.replace(/,(\s*[}\]])/g, '$1');
+    try { return JSON.parse(s2); } catch(_) {}
+    // 第4级：修复字符串内的未转义 "
+    const s3 = _fixQuotes(s2);
+    try { return JSON.parse(s3); } catch(_) {}
   }
+  // 第5级：截断修复 — JSON 因 token 限制被截断，尝试自动补全括号
+  try {
+    const full = raw.slice(f);                          // 从 { 到字符串末尾（不限于最后一个 }）
+    const s4   = _fixCtrl(full).replace(/,(\s*[}\]])/g, '$1');
+    const s5   = _fixQuotes(s4);
+    // 先找最后一个括号完整闭合的位置（最安全）
+    let stack = [], lastBalanced = -1, inS = false, esc = false;
+    for (let i = 0; i < s5.length; i++) {
+      const c = s5[i];
+      if (esc) { esc = false; continue; }
+      if (c === '\\') { esc = true; continue; }
+      if (c === '"') { inS = !inS; continue; }
+      if (inS) continue;
+      if (c === '{' || c === '[') stack.push(c);
+      else if ((c === '}' || c === ']') && stack.length) {
+        stack.pop();
+        if (!stack.length) lastBalanced = i;
+      }
+    }
+    if (lastBalanced > 0) {
+      try { return JSON.parse(s5.slice(0, lastBalanced + 1)); } catch(_) {}
+    }
+    // 最后手段：自动补全剩余括号
+    return JSON.parse(_autoClose(s5));
+  } catch(_) {}
+  throw new Error('JSON 解析失败，请重试。若持续出现，请减少评论中的英文引号。');
+}
+// 第5级辅助：自动补全未关闭的字符串/括号
+function _autoClose(str) {
+  let stack = [], inStr = false, esc = false;
+  for (let i = 0; i < str.length; i++) {
+    const c = str[i];
+    if (esc) { esc = false; continue; }
+    if (c === '\\') { esc = true; continue; }
+    if (c === '"') { inStr = !inStr; continue; }
+    if (inStr) continue;
+    if      (c === '{') stack.push('}');
+    else if (c === '[') stack.push(']');
+    else if ((c === '}' || c === ']') && stack.length) stack.pop();
+  }
+  let trimmed = str.trimEnd().replace(/,\s*$/, '');  // 去尾部逗号
+  let tail = inStr ? '"' : '';
+  while (stack.length) tail += stack.pop();
+  return trimmed + tail;
 }
 // 第2级：控制字符
 function _fixCtrl(str) {
@@ -1714,7 +1758,8 @@ async function doAnalyzeReviews() {
 
   const prompt = `你是消费者洞察专家和品牌文案策略师。请深度分析「${brandName}」的消费者评论，生成一份完整的洞察报告。
 
-只返回JSON，不含任何其他文字：
+只返回JSON，不含任何其他文字。
+【重要】所有字符串值内部禁止使用英文双引号(")，如需引用原话请用「」代替，例如：she said「good」而非 she said "good"。
 {
   "total_reviews": 估计评论条数（整数）,
   "core_insight": "最核心的消费者洞察，一句话，有力量，揭示产品背后的真实需求（40字内）",
@@ -1754,7 +1799,7 @@ async function doAnalyzeReviews() {
 }
 
 要求：themes 给出4-6个，pain_points 给出2-3个，love_points 给出2-3个，copy_angles 给出3-5个。
-quotes 必须是评论中的真实原话，不要创作。
+quotes 必须是评论中的真实原话，不要创作，引号一律用「」。
 
 消费者评论：
 ${text.slice(0, 5000)}`;
@@ -1768,7 +1813,7 @@ ${text.slice(0, 5000)}`;
       },
       body: JSON.stringify({
         model: 'claude-haiku-4-5-20251001',
-        max_tokens: 2000,
+        max_tokens: 3500,
         messages: [{ role: 'user', content: prompt }],
       }),
     });
