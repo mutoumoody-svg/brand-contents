@@ -194,6 +194,18 @@ main { padding: 2.5rem 0 6rem; }
 .error-title { font-family: var(--mono); font-size: 10px; letter-spacing: 0.15em; color: var(--accent); margin-bottom: 6px; text-transform: uppercase; }
 .error-msg { font-size: 14px; color: var(--ink-soft); line-height: 1.6; }
 
+/* CARD SAVE ROW */
+.card-save-row { display:flex; align-items:center; justify-content:space-between; margin-top:12px; padding-top:10px; border-top:1px solid var(--border); gap:8px; flex-wrap:wrap; }
+.card-save-badge { font-family:var(--mono); font-size:10px; letter-spacing:0.08em; padding:3px 10px; border-radius:20px; white-space:nowrap; }
+.card-save-badge.saving { background:#f5f5f0; color:var(--ink-muted); }
+.card-save-badge.saved  { background:var(--green-bg); color:var(--green); border:1px solid #b8dfc6; }
+.card-save-badge.error  { background:#fdf5f3; color:var(--accent); border:1px solid #e8c4b8; }
+.card-save-badge.deleted{ background:#f5f5f0; color:var(--ink-muted); border:1px solid var(--border); }
+.card-save-actions { display:flex; gap:6px; }
+.card-save-btn { font-family:var(--mono); font-size:10px; letter-spacing:0.08em; padding:4px 12px; border-radius:2px; cursor:pointer; border:1px solid var(--border-strong); background:transparent; color:var(--ink-muted); transition:all 0.15s; }
+.card-save-btn:hover { background:var(--cream-dark); color:var(--ink); }
+.card-save-btn.del-btn:hover { border-color:#e8c4b8; color:var(--accent); background:#fdf5f3; }
+
 /* FOOTER */
 footer { text-align: center; border-top: 1px solid var(--border); padding: 2rem 0; font-family: var(--mono); font-size: 10px; letter-spacing: 0.12em; color: var(--ink-muted); }
 footer em { color: var(--gold); font-style: normal; }
@@ -1464,36 +1476,26 @@ async function saveToHistory(version, context) {
       }),
     });
     if (!res.ok) {
-      const errText = await res.text();
-      console.error('[保存失败] 状态码:', res.status, errText);
-      showToast('⚠️ 文案保存失败（' + res.status + '），请检查登录状态', 'error');
-      return;
+      console.error('[保存失败] 状态码:', res.status);
+      return null;
     }
-    console.log('[保存成功]', version.style, version.title);
-    showToast('✓ 已保存到历史记录', 'ok');
+    const data = await res.json();
+    console.log('[保存成功]', version.style, version.title, 'id:', data.id);
     loadAndRenderHistory();
+    return data.id;
   } catch(e) {
     console.error('[保存异常]', e.message);
-    showToast('⚠️ 保存失败：' + e.message, 'error');
+    return null;
   }
 }
 
-function showToast(msg, type) {
-  let t = document.getElementById('_saveToast');
-  if (!t) {
-    t = document.createElement('div');
-    t.id = '_saveToast';
-    t.style.cssText = 'position:fixed;bottom:24px;right:24px;z-index:9999;padding:10px 18px;border-radius:4px;font-family:var(--mono);font-size:12px;letter-spacing:0.08em;opacity:0;transition:opacity 0.25s;pointer-events:none;';
-    document.body.appendChild(t);
-  }
-  t.textContent = msg;
-  t.style.background = type === 'error' ? '#fdf5f3' : '#f0f8f3';
-  t.style.color      = type === 'error' ? '#c0392b'  : '#5a9e6f';
-  t.style.border     = type === 'error' ? '1px solid #e8c4b8' : '1px solid #b8dfc6';
-  t.style.opacity    = '1';
-  clearTimeout(t._timer);
-  t._timer = setTimeout(() => { t.style.opacity = '0'; }, 2500);
+async function deleteHistoryItemSilent(id) {
+  try {
+    await fetch(`/api/content/${id}`, { method: 'DELETE', headers: getAuthHeader() });
+    loadAndRenderHistory();
+  } catch {}
 }
+
 
 function renderHistory() {
   const history = historyCache;
@@ -1653,9 +1655,6 @@ async function clearHistory() {
 
 // ── 渲染文案卡片（通用，带复制、延续风格、自动存历史）──
 function renderVersionCard(container, v, i, context) {
-  // 自动存入历史
-  saveToHistory(v, context);
-
   const card = document.createElement('div');
   card.className = 'rewrite-card';
   card.style.animationDelay = (i * 0.1) + 's';
@@ -1678,6 +1677,26 @@ function renderVersionCard(container, v, i, context) {
   contLoading.className = 'continue-loading';
   contLoading.innerHTML = '<span class="loading-text">正在延续风格生成</span>';
 
+  // 保存状态行
+  const saveRow = document.createElement('div');
+  saveRow.className = 'card-save-row';
+  const saveBadge = document.createElement('span');
+  saveBadge.className = 'card-save-badge saving';
+  saveBadge.textContent = '保存中...';
+  const saveActions = document.createElement('div');
+  saveActions.className = 'card-save-actions';
+  saveActions.style.display = 'none';
+  const resaveBtn = document.createElement('button');
+  resaveBtn.className = 'card-save-btn';
+  resaveBtn.textContent = '↻ 重新保存';
+  const delBtn = document.createElement('button');
+  delBtn.className = 'card-save-btn del-btn';
+  delBtn.textContent = '✕ 删除此条';
+  saveActions.appendChild(resaveBtn);
+  saveActions.appendChild(delBtn);
+  saveRow.appendChild(saveBadge);
+  saveRow.appendChild(saveActions);
+
   card.innerHTML = `
     <div class="card-header">
       <span class="badge badge-purple">版本 ${i + 1}</span>
@@ -1694,7 +1713,85 @@ function renderVersionCard(container, v, i, context) {
   card.querySelector('div:last-child').appendChild(bodyEl);
   card.appendChild(continueBtn);
   card.appendChild(contLoading);
+  card.appendChild(saveRow);
   container.appendChild(card);
+
+  // 自动保存，完成后更新卡片状态
+  saveToHistory(v, context).then(savedId => {
+    if (savedId) {
+      card.dataset.savedId = savedId;
+      saveBadge.className = 'card-save-badge saved';
+      saveBadge.textContent = '✓ 已保存';
+      saveActions.style.display = 'flex';
+      resaveBtn.onclick = async () => {
+        saveBadge.className = 'card-save-badge saving';
+        saveBadge.textContent = '保存中...';
+        saveActions.style.display = 'none';
+        const oldId = card.dataset.savedId;
+        if (oldId) await deleteHistoryItemSilent(Number(oldId));
+        const newId = await saveToHistory(v, context);
+        if (newId) {
+          card.dataset.savedId = newId;
+          saveBadge.className = 'card-save-badge saved';
+          saveBadge.textContent = '✓ 已重新保存';
+          saveActions.style.display = 'flex';
+        } else {
+          saveBadge.className = 'card-save-badge error';
+          saveBadge.textContent = '⚠ 保存失败';
+          saveActions.style.display = 'flex';
+          resaveBtn.textContent = '重试';
+        }
+      };
+      delBtn.onclick = async () => {
+        if (!confirm('删除这条文案记录？')) return;
+        await deleteHistoryItemSilent(Number(card.dataset.savedId));
+        saveBadge.className = 'card-save-badge deleted';
+        saveBadge.textContent = '已删除';
+        saveActions.style.display = 'none';
+        // 显示一个"撤销"提示或重新保存按钮
+        const readdBtn = document.createElement('button');
+        readdBtn.className = 'card-save-btn';
+        readdBtn.textContent = '↩ 重新保存';
+        readdBtn.onclick = async () => {
+          saveRow.removeChild(readdBtn);
+          saveBadge.className = 'card-save-badge saving';
+          saveBadge.textContent = '保存中...';
+          const newId = await saveToHistory(v, context);
+          if (newId) {
+            card.dataset.savedId = newId;
+            saveBadge.className = 'card-save-badge saved';
+            saveBadge.textContent = '✓ 已保存';
+            saveActions.style.display = 'flex';
+          }
+        };
+        saveRow.appendChild(readdBtn);
+      };
+    } else {
+      saveBadge.className = 'card-save-badge error';
+      saveBadge.textContent = '⚠ 保存失败';
+      resaveBtn.textContent = '重试';
+      saveActions.style.display = 'flex';
+      resaveBtn.onclick = async () => {
+        saveBadge.className = 'card-save-badge saving';
+        saveBadge.textContent = '保存中...';
+        saveActions.style.display = 'none';
+        const newId = await saveToHistory(v, context);
+        if (newId) {
+          card.dataset.savedId = newId;
+          saveBadge.className = 'card-save-badge saved';
+          saveBadge.textContent = '✓ 已保存';
+          resaveBtn.textContent = '↻ 重新保存';
+          saveActions.style.display = 'flex';
+          delBtn.style.display = '';
+        } else {
+          saveBadge.className = 'card-save-badge error';
+          saveBadge.textContent = '⚠ 保存失败';
+          saveActions.style.display = 'flex';
+        }
+      };
+      delBtn.style.display = 'none';
+    }
+  });
 }
 
 // ── 延续风格 ──
