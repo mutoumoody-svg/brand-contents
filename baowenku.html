@@ -154,6 +154,50 @@ body { font-family: var(--serif); background: var(--cream); color: var(--ink); m
 .analysis-tag.emotion { background: var(--gold-pale); color: var(--gold); border-color: rgba(184,115,51,0.2); }
 .analysis-tag.pattern { background: var(--green-bg); color: var(--green); border-color: rgba(90,158,111,0.2); }
 .analysis-viral-reason { background: linear-gradient(135deg, #fff8e6, #fdf5f3); border: 1px solid rgba(184,115,51,0.2); border-radius: 4px; padding: 12px 14px; font-size: 13px; color: var(--ink-soft); line-height: 1.7; font-style: italic; }
+
+/* GENERATE SECTION */
+.btn-generate { font-family: var(--mono); font-size: 11px; letter-spacing: 0.06em; padding: 7px 14px; background: var(--accent); color: white; border: none; border-radius: 2px; cursor: pointer; transition: all 0.15s; }
+.btn-generate:hover { background: #a93226; }
+.generate-section { border-top: 2px solid var(--border); }
+.generate-toggle { width: 100%; background: var(--cream); border: none; padding: 14px 24px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; transition: background 0.15s; }
+.generate-toggle:hover { background: var(--cream-dark); }
+.generate-toggle-label { font-family: var(--mono); font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-soft); }
+.generate-toggle-arrow { font-size: 12px; color: var(--ink-muted); transition: transform 0.2s; }
+.generate-toggle.open .generate-toggle-arrow { transform: rotate(180deg); }
+.generate-body { display: none; padding: 20px 24px; background: var(--cream); border-top: 1px solid var(--border); }
+.generate-body.show { display: block; }
+.gen-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+.gen-field { display: flex; flex-direction: column; gap: 4px; }
+.gen-field label { font-family: var(--mono); font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-muted); }
+.gen-field input { background: white; border: 1px solid var(--border-strong); border-radius: 2px; font-family: var(--serif); font-size: 13px; color: var(--ink); padding: 7px 10px; outline: none; transition: border 0.15s; }
+.gen-field input:focus { border-color: var(--ink); }
+.gen-actions { display: flex; align-items: center; gap: 12px; margin-top: 16px; }
+.gen-btn { font-family: var(--mono); font-size: 12px; letter-spacing: 0.08em; padding: 11px 24px; background: var(--ink); color: white; border: none; border-radius: 2px; cursor: pointer; transition: all 0.15s; }
+.gen-btn:hover { background: var(--ink-soft); }
+.gen-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.gen-loading { font-family: var(--mono); font-size: 11px; color: var(--ink-muted); letter-spacing: 0.1em; display: none; }
+.gen-loading.show { display: block; }
+.gen-results { padding: 0 24px 24px; background: white; }
+.gen-card { border: 1px solid var(--border); border-radius: 4px; padding: 18px 20px; margin-bottom: 12px; background: white; animation: fadeUp 0.3s ease both; }
+@keyframes fadeUp { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+.gen-card-meta { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+.gen-card-badge { font-family: var(--mono); font-size: 10px; letter-spacing: 0.08em; padding: 3px 10px; border-radius: 20px; background: var(--purple-bg); color: var(--purple); }
+.gen-card-style { font-family: var(--mono); font-size: 11px; color: var(--ink-muted); }
+.gen-card-title { font-size: 15px; font-weight: 600; color: var(--ink); padding: 8px 0 8px 12px; border-left: 2px solid var(--accent); margin-bottom: 12px; }
+.gen-card-body { font-size: 13px; color: var(--ink-soft); line-height: 1.8; cursor: pointer; padding: 12px; background: var(--cream); border-radius: 2px; transition: background 0.15s; white-space: pre-wrap; }
+.gen-card-body:hover { background: var(--cream-dark); }
+.gen-card-body.copied { background: var(--green-bg); }
+.gen-save-row { display: flex; align-items: center; justify-content: space-between; margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--border); gap: 8px; flex-wrap: wrap; }
+.gen-save-badge { font-family: var(--mono); font-size: 10px; letter-spacing: 0.08em; padding: 3px 10px; border-radius: 20px; white-space: nowrap; }
+.gen-save-badge.saving  { background: #f5f5f0; color: var(--ink-muted); }
+.gen-save-badge.saved   { background: var(--green-bg); color: var(--green); border: 1px solid #b8dfc6; }
+.gen-save-badge.error   { background: #fdf5f3; color: var(--accent); border: 1px solid #e8c4b8; }
+.gen-save-badge.deleted { background: #f5f5f0; color: var(--ink-muted); border: 1px solid var(--border); }
+.gen-save-actions { display: flex; gap: 6px; }
+.gen-save-btn { font-family: var(--mono); font-size: 10px; letter-spacing: 0.08em; padding: 4px 12px; border-radius: 2px; cursor: pointer; border: 1px solid var(--border-strong); background: transparent; color: var(--ink-muted); transition: all 0.15s; }
+.gen-save-btn:hover { background: var(--cream-dark); color: var(--ink); }
+.gen-save-btn.del:hover { border-color: #e8c4b8; color: var(--accent); background: #fdf5f3; }
+.gen-divider { font-family: var(--mono); font-size: 10px; letter-spacing: 0.15em; text-transform: uppercase; color: var(--ink-muted); padding: 16px 0 8px; border-bottom: 1px solid var(--border); margin-bottom: 12px; }
 </style>
 </head>
 <body>
@@ -271,6 +315,7 @@ body { font-family: var(--serif); background: var(--cream); color: var(--ink); m
     <div class="view-modal-header">
       <div class="view-modal-title" id="viewTitle"></div>
       <div class="view-modal-actions">
+        <button class="btn-generate" onclick="toggleGenerateSection()">✎ 生成仿写</button>
         <button class="btn-analyze" id="analyzeBtn" onclick="analyzeCurrentPost()">✦ 重新分析</button>
         <button class="btn-delete-post" onclick="deleteCurrentPost()">删除</button>
         <button class="modal-close" onclick="closeViewModal()" style="margin-left:4px">✕</button>
@@ -286,6 +331,43 @@ body { font-family: var(--serif); background: var(--cream); color: var(--ink); m
         <div class="panel-label">AI 结构分析</div>
         <div id="viewAnalysis"></div>
       </div>
+    </div>
+    <!-- 生成仿写区域 -->
+    <div class="generate-section" id="generateSection" style="display:none">
+      <button class="generate-toggle" id="generateToggle" onclick="toggleGenerateBody()">
+        <span class="generate-toggle-label">✎ 根据此爆文生成仿写文案</span>
+        <span class="generate-toggle-arrow">▾</span>
+      </button>
+      <div class="generate-body show" id="generateBody">
+        <div class="gen-grid">
+          <div class="gen-field">
+            <label>产品名称（选填）</label>
+            <input type="text" id="gen-product" placeholder="例：STTOKE 保温杯，不填则留空" />
+          </div>
+          <div class="gen-field">
+            <label>核心卖点</label>
+            <input type="text" id="gen-feature" placeholder="例：陶瓷涂层，长效保温" />
+          </div>
+        </div>
+        <div class="gen-grid">
+          <div class="gen-field">
+            <label>目标人群</label>
+            <input type="text" id="gen-audience" placeholder="例：30-40岁职场女性" />
+          </div>
+          <div class="gen-field">
+            <label>文案长度（字数）</label>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <input type="number" id="gen-length" min="50" max="1000" value="200" style="width:80px;" />
+              <span style="font-family:var(--mono);font-size:11px;color:var(--ink-muted);">字（50-1000，默认200）</span>
+            </div>
+          </div>
+        </div>
+        <div class="gen-actions">
+          <button class="gen-btn" id="genBtn" onclick="generateFromPost()">生成 3 个仿写版本 →</button>
+          <span class="gen-loading" id="genLoading">✦ AI 正在仿写中，请稍候…</span>
+        </div>
+      </div>
+      <div class="gen-results" id="genResults"></div>
     </div>
   </div>
 </div>
@@ -441,6 +523,11 @@ function openViewModal(id) {
   document.getElementById('viewContent').textContent = post.content;
 
   renderAnalysis(post.analysis);
+  // 重置仿写区域
+  document.getElementById('generateSection').style.display = 'none';
+  document.getElementById('genResults').innerHTML = '';
+  document.getElementById('genBtn').disabled = false;
+  document.getElementById('genLoading').classList.remove('show');
   document.getElementById('viewOverlay').classList.add('show');
 }
 
@@ -632,6 +719,294 @@ function renderInsights(ins, count) {
       </div>
     </div>
   `;
+}
+
+// ── 品牌档案（用于仿写 prompt）──
+let activeBrand = null;
+async function loadActiveBrand() {
+  const activeId = localStorage.getItem('brand_center_active');
+  if (!activeId) return;
+  try {
+    const res = await fetch('/api/brands', { headers: { Authorization: 'Bearer ' + TOKEN } });
+    if (!res.ok) return;
+    const brands = await res.json();
+    activeBrand = brands.find(b => String(b.id) === String(activeId)) || null;
+  } catch {}
+}
+loadActiveBrand();
+
+function buildBrandContext() {
+  if (!activeBrand) return '';
+  const parts = [];
+  if (activeBrand.name)     parts.push(`【品牌名称】${activeBrand.name}`);
+  if (activeBrand.slogan)   parts.push(`【品牌理念】${activeBrand.slogan}`);
+  if (activeBrand.tone)     parts.push(`【语气风格】${activeBrand.tone}`);
+  if (activeBrand.keywords) parts.push(`【关键词】${activeBrand.keywords}`);
+  if (activeBrand.avoid)    parts.push(`【禁忌词】${activeBrand.avoid}`);
+  if (activeBrand.audience) parts.push(`【目标人群】${activeBrand.audience}`);
+  return parts.join('\n');
+}
+
+// ── 生成仿写 ──
+function toggleGenerateSection() {
+  const sec = document.getElementById('generateSection');
+  sec.style.display = sec.style.display === 'none' ? '' : 'none';
+  if (sec.style.display !== 'none') {
+    sec.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+}
+
+function toggleGenerateBody() {
+  const body = document.getElementById('generateBody');
+  const toggle = document.getElementById('generateToggle');
+  body.classList.toggle('show');
+  toggle.classList.toggle('open');
+}
+
+async function generateFromPost() {
+  const post = allPosts.find(p => p.id === currentPostId);
+  if (!post) return;
+  const a = post.analysis;
+  if (!a) { alert('请先对这篇爆文进行分析，再生成仿写'); return; }
+
+  const product  = document.getElementById('gen-product').value.trim();
+  const feature  = document.getElementById('gen-feature').value.trim();
+  const audience = document.getElementById('gen-audience').value.trim();
+  const length   = Math.min(1000, Math.max(50, parseInt(document.getElementById('gen-length').value) || 200));
+  const brandCtx = buildBrandContext();
+
+  const btn = document.getElementById('genBtn');
+  const loading = document.getElementById('genLoading');
+  btn.disabled = true;
+  loading.classList.add('show');
+  document.getElementById('genResults').innerHTML = '';
+
+  const prompt = `你是顶级小红书文案专家。请严格按照以下爆文结构规律，为我的产品仿写3个不同版本的完整小红书帖子。
+
+【爆文结构规律（严格学习并复刻）】
+- 开头钩子：${a.hook || '未分析'}
+- 内容结构：${a.structure || '未分析'}
+- 风格类型：${a.style_label || '未分析'}
+- 情绪触发：${(a.emotional_triggers||[]).join('、') || '未分析'}
+- Emoji风格：${a.emoji_style || '未分析'}
+- CTA引导：${a.cta || '未分析'}
+- 可复用模式：${(a.copyable_patterns||[]).join('；') || '未分析'}
+
+${brandCtx ? `【品牌档案（严格遵守调性和禁忌词）】\n${brandCtx}\n` : ''}
+【产品信息】
+- 产品：${product || '未提供，请根据品牌档案发挥'}
+- 核心卖点：${feature || '未提供'}
+- 目标人群：${audience || (activeBrand?.audience) || '未提供'}
+- 文案正文字数：每个版本约 ${length} 字
+
+要求：
+1. 严格复刻爆文的钩子类型、结构节奏、情绪触发方式，内容完全换成我的产品
+2. ${brandCtx ? '严格遵守品牌档案中的调性、关键词，避免禁忌词' : '保持品牌一致性'}
+3. 三个版本风格各有侧重
+4. 每个版本包含：标题 + 完整正文（有换行、有节奏感、有emoji）
+5. 结尾必须有互动引导
+6. 每个版本正文字数控制在 ${length} 字左右
+
+【输出格式】纯文本，三个版本用 ===== 分隔：
+
+【风格】版本风格名称
+【标题】标题
+【正文】
+完整正文内容
+=====
+【风格】版本风格名称
+【标题】标题
+【正文】
+完整正文内容
+=====
+【风格】版本风格名称
+【标题】标题
+【正文】
+完整正文内容`;
+
+  try {
+    const res = await fetch('https://anthorpic-proxy.mutoumoody.workers.dev/', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-worker-secret': 'brand-worker-nz-2024' },
+      body: JSON.stringify({ model: 'claude-haiku-4-5-20251001', max_tokens: 3000, messages: [{ role: 'user', content: prompt }] }),
+    });
+    if (!res.ok) throw new Error('生成请求失败');
+    const data = await res.json();
+    const text = (data.content || []).map(c => c.text || '').join('');
+    const versions = parseGenText(text);
+    if (versions.length === 0) throw new Error('未能解析出仿写内容，请重试');
+    renderGenResults(versions, `爆文仿写·${post.title || post.content.slice(0,20)}`);
+  } catch(e) {
+    document.getElementById('genResults').innerHTML = `<div style="padding:16px;font-family:var(--mono);font-size:12px;color:var(--accent)">生成失败：${escHtml(e.message)}</div>`;
+  } finally {
+    btn.disabled = false;
+    loading.classList.remove('show');
+  }
+}
+
+function parseGenText(text) {
+  const blocks = text.split(/={3,}/).map(b => b.trim()).filter(b => b);
+  const versions = [];
+  blocks.forEach(block => {
+    const styleMatch = block.match(/【风格】\s*(.+)/);
+    const titleMatch = block.match(/【标题】\s*(.+)/);
+    const bodyMatch  = block.match(/【正文】\s*([\s\S]+)/);
+    if (titleMatch && bodyMatch) {
+      versions.push({
+        style: styleMatch ? styleMatch[1].trim() : '仿写版本',
+        title: titleMatch[1].trim(),
+        body:  bodyMatch[1].trim(),
+      });
+    }
+  });
+  if (versions.length === 0) {
+    const altBlocks = text.split(/(?=【风格】)/).map(b => b.trim()).filter(b => b);
+    altBlocks.forEach(block => {
+      const styleMatch = block.match(/【风格】\s*(.+)/);
+      const titleMatch = block.match(/【标题】\s*(.+)/);
+      const bodyMatch  = block.match(/【正文】\s*([\s\S]+)/);
+      if (titleMatch && bodyMatch) {
+        versions.push({
+          style: styleMatch ? styleMatch[1].trim() : '仿写版本',
+          title: titleMatch[1].trim(),
+          body:  bodyMatch[1].trim(),
+        });
+      }
+    });
+  }
+  return versions;
+}
+
+function renderGenResults(versions, context) {
+  const container = document.getElementById('genResults');
+  container.innerHTML = `<div class="gen-divider">仿写结果（点击正文可复制）</div>`;
+  versions.forEach((v, i) => renderGenCard(container, v, i, context));
+}
+
+function renderGenCard(container, v, i, context) {
+  const card = document.createElement('div');
+  card.className = 'gen-card';
+  card.style.animationDelay = (i * 0.1) + 's';
+
+  const bodyEl = document.createElement('div');
+  bodyEl.className = 'gen-card-body';
+  bodyEl.textContent = v.body;
+  bodyEl.onclick = function() {
+    navigator.clipboard.writeText(`${v.title}\n\n${v.body}`).then(() => {
+      bodyEl.classList.add('copied');
+      setTimeout(() => bodyEl.classList.remove('copied'), 1500);
+    });
+  };
+
+  // 保存状态行
+  const saveRow = document.createElement('div');
+  saveRow.className = 'gen-save-row';
+  const saveBadge = document.createElement('span');
+  saveBadge.className = 'gen-save-badge saving';
+  saveBadge.textContent = '保存中...';
+  const saveActions = document.createElement('div');
+  saveActions.className = 'gen-save-actions';
+  saveActions.style.display = 'none';
+  const resaveBtn = document.createElement('button');
+  resaveBtn.className = 'gen-save-btn';
+  resaveBtn.textContent = '↻ 重新保存';
+  const delBtn = document.createElement('button');
+  delBtn.className = 'gen-save-btn del';
+  delBtn.textContent = '✕ 删除此条';
+  // 下载按钮
+  const dlBtn = document.createElement('button');
+  dlBtn.className = 'gen-save-btn';
+  dlBtn.textContent = '↓ 下载';
+  dlBtn.onclick = () => {
+    const blob = new Blob([`${v.title}\n\n${v.body}`], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = `${v.title.slice(0,20)}.txt`;
+    document.body.appendChild(a); a.click();
+    document.body.removeChild(a); URL.revokeObjectURL(url);
+  };
+  saveActions.append(resaveBtn, delBtn, dlBtn);
+  saveRow.append(saveBadge, saveActions);
+
+  card.innerHTML = `
+    <div class="gen-card-meta">
+      <span class="gen-card-badge">版本 ${i + 1}</span>
+      <span class="gen-card-style">${escHtml(v.style)}</span>
+    </div>
+    <div class="gen-card-title">${escHtml(v.title)}</div>
+    <div style="font-family:var(--mono);font-size:10px;color:var(--ink-muted);margin-bottom:6px;">正文（点击复制）</div>`;
+  card.appendChild(bodyEl);
+  card.appendChild(saveRow);
+  container.appendChild(card);
+
+  // 自动保存
+  saveGenToHistory(v, context).then(savedId => {
+    if (savedId) {
+      card.dataset.savedId = savedId;
+      saveBadge.className = 'gen-save-badge saved';
+      saveBadge.textContent = '✓ 已保存';
+      saveActions.style.display = 'flex';
+      resaveBtn.onclick = async () => {
+        saveBadge.className = 'gen-save-badge saving';
+        saveBadge.textContent = '保存中...';
+        saveActions.style.display = 'none';
+        if (card.dataset.savedId) {
+          await fetch(`/api/content/${card.dataset.savedId}`, { method: 'DELETE', headers: { Authorization: 'Bearer ' + TOKEN } });
+        }
+        const newId = await saveGenToHistory(v, context);
+        if (newId) {
+          card.dataset.savedId = newId;
+          saveBadge.className = 'gen-save-badge saved';
+          saveBadge.textContent = '✓ 已重新保存';
+          saveActions.style.display = 'flex';
+        }
+      };
+      delBtn.onclick = async () => {
+        if (!confirm('删除这条文案记录？')) return;
+        await fetch(`/api/content/${card.dataset.savedId}`, { method: 'DELETE', headers: { Authorization: 'Bearer ' + TOKEN } });
+        saveBadge.className = 'gen-save-badge deleted';
+        saveBadge.textContent = '已删除';
+        saveActions.style.display = 'none';
+        const readdBtn = document.createElement('button');
+        readdBtn.className = 'gen-save-btn';
+        readdBtn.textContent = '↩ 重新保存';
+        readdBtn.onclick = async () => {
+          saveRow.removeChild(readdBtn);
+          saveBadge.className = 'gen-save-badge saving';
+          saveBadge.textContent = '保存中...';
+          const newId = await saveGenToHistory(v, context);
+          if (newId) { card.dataset.savedId = newId; saveBadge.className = 'gen-save-badge saved'; saveBadge.textContent = '✓ 已保存'; saveActions.style.display = 'flex'; }
+        };
+        saveRow.appendChild(readdBtn);
+      };
+    } else {
+      saveBadge.className = 'gen-save-badge error';
+      saveBadge.textContent = '⚠ 保存失败';
+      resaveBtn.textContent = '重试';
+      saveActions.style.display = 'flex';
+      delBtn.style.display = 'none';
+    }
+  });
+}
+
+async function saveGenToHistory(version, context) {
+  try {
+    const res = await fetch('/api/content', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + TOKEN },
+      body: JSON.stringify({
+        type: 'fangxie',
+        brand_name: activeBrand?.name || '',
+        style: version.style,
+        title: version.title,
+        body: version.body,
+        context,
+      }),
+    });
+    if (!res.ok) return null;
+    const data = await res.json();
+    return data.id;
+  } catch { return null; }
 }
 
 // ── JSON 解析 ──
