@@ -323,6 +323,15 @@ AI 会学习这段内容的语气、节奏、用词习惯，然后用同样的�
           <input type="text" id="q-extra" placeholder="例：更温柔、加故事感、突出澳洲背景..." style="width:100%;background:transparent;border:none;border-bottom:1px solid var(--border-strong);font-family:var(--serif);font-size:15px;color:var(--ink);padding:6px 0 8px;outline:none;transition:border-color 0.2s;" />
         </div>
       </div>
+      <div class="form-grid">
+        <div class="field">
+          <label>文案长度（字数）</label>
+          <div style="display:flex;align-items:center;gap:8px;border-bottom:1px solid var(--border-strong);padding:6px 0 8px;">
+            <input type="number" id="q-length" min="50" max="1000" value="200" placeholder="200" style="width:80px;background:transparent;border:none;font-family:var(--serif);font-size:15px;color:var(--ink);outline:none;" />
+            <span style="font-family:var(--mono);font-size:11px;color:var(--ink-muted);">字（50 - 1000）</span>
+          </div>
+        </div>
+      </div>
 
       <button class="action-btn" id="quickBtn" onclick="quickCopy()" style="margin-top:1.5rem;">按参考风格生成仿写 →</button>
 
@@ -478,6 +487,15 @@ AI 会学习这段内容的语气、节奏、用词习惯，然后用同样的�
         <div class="form-full field">
           <label>补充说明（选填）</label>
           <input type="text" id="p-extra-manual" placeholder="例：希望语气更温柔、加入个人故事感、突出澳洲背景..." />
+        </div>
+        <div class="form-grid" style="margin-top:0;">
+          <div class="field">
+            <label>文案长度（字数）</label>
+            <div style="display:flex;align-items:center;gap:8px;border-bottom:1px solid var(--border-strong);padding:6px 0 8px;">
+              <input type="number" id="p-length" min="50" max="1000" value="200" placeholder="200" style="width:80px;background:transparent;border:none;font-family:var(--serif);font-size:15px;color:var(--ink);outline:none;" />
+              <span style="font-family:var(--mono);font-size:11px;color:var(--ink-muted);">字（50 - 1000）</span>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -924,6 +942,7 @@ async function quickCopy() {
   const feature  = document.getElementById('q-feature').value.trim();
   const audience = document.getElementById('q-audience').value.trim();
   const extra    = document.getElementById('q-extra').value.trim();
+  const length   = Math.min(1000, Math.max(50, parseInt(document.getElementById('q-length').value) || 200));
 
   if (qInputMode === 'text' && !document.getElementById('q-ref').value.trim()) {
     alert('请先粘贴参考内容'); return;
@@ -953,12 +972,14 @@ ${brandContext ? `【品牌档案（写作时严格遵守）】\n${brandContext}
 - 核心卖点：${feature || '未提供'}
 - 目标人群：${audience || (activeBrand?.audience) || '未提供'}
 - 补充要求：${extra || '无'}
+- 文案正文字数：每个版本约 ${length} 字
 
 【写作要求】
 1. 完整复刻参考内容的语气、节奏、用词风格
 2. 内容完全换成我的产品，不能照抄参考内容的任何句子
 3. ${brandContext ? '严格遵守品牌档案的调性和关键词，避免禁忌词' : '保持品牌一致性'}
 4. 三个版本各有侧重（情感故事版 / 产品种草版 / 场景代入版）
+5. 每个版本正文字数控制在 ${length} 字左右
 5. 每个版本有标题和完整正文，有换行和emoji
 
 【输出格式】纯文本，三个版本用 ===== 分隔：
@@ -1320,6 +1341,7 @@ async function rewrite() {
   const audience = usingBrand ? (activeBrand.audience || '') : document.getElementById('p-audience').value.trim();
   const feature  = usingBrand ? '' : document.getElementById('p-feature').value.trim();
   const brand    = usingBrand ? (activeBrand.slogan || '') : document.getElementById('p-brand').value.trim();
+  const length   = Math.min(1000, Math.max(50, parseInt(document.getElementById('p-length').value) || 200));
 
   const btn = document.getElementById('rewriteBtn');
   btn.disabled = true;
@@ -1348,6 +1370,7 @@ ${brandContext ? `【品牌档案（请严格遵守品牌调性、关键词和�
 - 核心卖点：${feature || '未提供'}
 - 品牌理念：${brand || (activeBrand?.slogan) || '未提供'}
 - 补充要求：${extra || '无'}
+- 文案正文字数：每个版本约 ${length} 字
 
 要求：
 1. 严格复刻爆文的结构套路，内容完全换成我的产品
@@ -1355,6 +1378,7 @@ ${brandContext ? `【品牌档案（请严格遵守品牌调性、关键词和�
 3. 三个版本风格略有差异（情感故事版 / 干货种草版 / 闺蜜推荐版）
 4. 每个版本包含：标题 + 完整正文（有换行、有节奏感、有emoji）
 5. 结尾必须有互动引导
+6. 每个版本正文字数控制在 ${length} 字左右
 
 【输出格式】严格按下面的纯文本格式输出，不要用JSON，不要用代码块。三个版本之间用一行 ===== 分隔：
 
