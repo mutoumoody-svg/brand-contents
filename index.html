@@ -130,6 +130,16 @@ main { padding: 2.5rem 0 6rem; }
 .rewrite-badge { font-family: var(--mono); font-size: 10px; letter-spacing: 0.1em; background: var(--tag-bg); color: var(--tag-color); padding: 3px 12px; border-radius: 20px; white-space: nowrap; }
 .rewrite-label { font-family: var(--mono); font-size: 11px; color: var(--ink-muted); }
 
+/* RESULT ACTIONS BAR */
+.result-actions { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.25rem; gap: 12px; flex-wrap: wrap; }
+.copy-all-btn { font-family: var(--mono); font-size: 11px; letter-spacing: 0.15em; text-transform: uppercase; background: var(--ink); color: var(--cream); border: none; padding: 10px 22px; border-radius: 2px; cursor: pointer; transition: background 0.2s; white-space: nowrap; }
+.copy-all-btn:hover { background: #3a3630; }
+.copy-all-btn.copied { background: var(--green); }
+.save-status { font-family: var(--mono); font-size: 10px; color: var(--ink-muted); display: flex; align-items: center; gap: 8px; letter-spacing: 0.06em; }
+.save-ok { color: var(--green); }
+.delete-btn { font-family: var(--mono); font-size: 10px; color: var(--red); background: transparent; border: 1px solid var(--red-border); padding: 4px 10px; border-radius: 2px; cursor: pointer; letter-spacing: 0.06em; transition: all 0.15s; }
+.delete-btn:hover { background: var(--red-bg); }
+
 /* ERROR */
 .error-card { border: 1px solid var(--red-border); background: var(--red-bg); border-radius: 2px; padding: 1.25rem 1.5rem; margin-bottom: 1rem; }
 .error-title { font-family: var(--mono); font-size: 10px; letter-spacing: 0.15em; color: var(--red); margin-bottom: 6px; text-transform: uppercase; }
@@ -496,6 +506,14 @@ ${brandContext ? '重要：严格遵守品牌档案中的调性风格，必须�
     const container = document.getElementById('g-results');
     container.classList.add('show');
 
+    // 操作栏：一键复制 + 保存状态
+    const actionsBar = document.createElement('div');
+    actionsBar.className = 'result-actions';
+    actionsBar.innerHTML = `
+      <button class="copy-all-btn" id="copyAllBtn" onclick="copyAll()">一键复制全部</button>
+      <span class="save-status"><span id="saveStatus">正在保存…</span></span>`;
+    container.appendChild(actionsBar);
+
     parsed.results.forEach((item, i) => {
       const meta = levelMeta[item.level];
       if (!meta) return;
@@ -509,6 +527,21 @@ ${brandContext ? '重要：严格遵守品牌档案中的调性风格，必须�
       card.innerHTML = `<div class="card-header"><span class="level-badge">${meta.tag}</span><span class="card-title">${meta.title}</span></div>${linesHtml}`;
       container.appendChild(card);
     });
+
+    // 自动保存全部文案
+    const allLines = parsed.results.flatMap(r => r.lines);
+    const bodyText  = allLines.join('\n');
+    const styleText = parsed.results.map(r => levelMeta[r.level]?.tag || '').join('、');
+    saveContent('generate', activeBrand?.name || '', styleText, (product || '文案') + ' · ' + platform, bodyText, JSON.stringify(parsed.results))
+      .then(id => {
+        const el = document.getElementById('saveStatus');
+        if (!el) return;
+        if (id) {
+          el.innerHTML = `<span class="save-ok">✓ 已保存</span> · <button class="delete-btn" onclick="deleteContent(${id},this)">删除</button>`;
+        } else {
+          el.textContent = '保存失败';
+        }
+      });
   } catch (err) {
     document.getElementById('g-loading').classList.remove('show');
     const container = document.getElementById('g-results');
@@ -616,6 +649,50 @@ ${levelList}
   } finally {
     btn.disabled = false;
   }
+}
+
+// ── 一键复制全部 ──
+function copyAll() {
+  const lines = [...document.querySelectorAll('#g-results .copy-line')].map(el => el.textContent.trim());
+  if (!lines.length) return;
+  navigator.clipboard.writeText(lines.join('\n\n')).then(() => {
+    const btn = document.getElementById('copyAllBtn');
+    if (!btn) return;
+    const orig = btn.textContent;
+    btn.textContent = '已复制全部 ✓';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = orig; btn.classList.remove('copied'); }, 2000);
+  });
+}
+
+// ── 保存 / 删除文案 ──
+async function saveContent(type, brandName, style, title, body, context) {
+  try {
+    const res = await fetch('/api/content', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + (localStorage.getItem('brand_auth_token') || '')
+      },
+      body: JSON.stringify({ type, brand_name: brandName, style, title, body, context })
+    });
+    if (!res.ok) return null;
+    return (await res.json()).id;
+  } catch { return null; }
+}
+
+async function deleteContent(id, btnEl) {
+  if (!confirm('确认删除这条文案记录？')) return;
+  try {
+    const res = await fetch('/api/content/' + id, {
+      method: 'DELETE',
+      headers: { 'Authorization': 'Bearer ' + (localStorage.getItem('brand_auth_token') || '') }
+    });
+    if (res.ok) {
+      const el = document.getElementById('saveStatus');
+      if (el) el.innerHTML = '<span style="color:var(--ink-muted)">已删除</span>';
+    }
+  } catch {}
 }
 
 // ── 登录状态 ──
