@@ -503,7 +503,7 @@ function _fixQuotes(str) {
 }
 function sanitizeJson(str) { return _fixCtrl(str); }
 
-async function callClaude(prompt) {
+async function callClaude(prompt, maxTokens = 1500) {
   const res = await fetch('https://anthorpic-proxy.mutoumoody.workers.dev/', {
     method: 'POST',
     headers: {
@@ -512,7 +512,7 @@ async function callClaude(prompt) {
     },
     body: JSON.stringify({
       model: 'claude-haiku-4-5-20251001',
-      max_tokens: 1500,
+      max_tokens: maxTokens,
       messages: [{ role: 'user', content: prompt }],
     }),
   });
@@ -568,7 +568,7 @@ ${brandContext ? '重要：严格遵守品牌档案中的调性风格，必须�
 每个段位输出2-3条，语言简洁有力，符合${platform}风格，体现品牌调性。`;
 
   try {
-    const text   = await callClaude(prompt);
+    const text   = await callClaude(prompt, 4000);
     const clean  = text.replace(/```json|```/g, '').trim();
     const parsed = safeParseJson(clean);
 
