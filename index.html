@@ -77,6 +77,17 @@ main { padding: 2.5rem 0 6rem; }
 .field textarea.tall { min-height: 130px; }
 .field select { cursor: pointer; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%239a9590'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 2px center; padding-right: 18px; }
 
+/* WORD COUNT */
+.wc-row { display: flex; align-items: center; gap: 8px; margin-bottom: 2rem; flex-wrap: wrap; }
+.wc-label { font-family: var(--mono); font-size: 10px; letter-spacing: 0.18em; color: var(--ink-muted); text-transform: uppercase; white-space: nowrap; margin-right: 4px; }
+.wc-chip { border: 1px solid var(--border-strong); background: transparent; border-radius: 2px; padding: 7px 16px; cursor: pointer; font-family: var(--mono); font-size: 11px; color: var(--ink-muted); transition: all 0.15s; letter-spacing: 0.05em; }
+.wc-chip:hover { border-color: var(--accent); color: var(--ink); }
+.wc-chip.active { background: var(--accent-pale); border-color: var(--accent); color: var(--ink); }
+.wc-input { width: 64px; border: none; border-bottom: 1px solid var(--border-strong); font-family: var(--mono); font-size: 11px; color: var(--ink); padding: 6px 4px; background: transparent; outline: none; text-align: center; -moz-appearance: textfield; }
+.wc-input::-webkit-outer-spin-button, .wc-input::-webkit-inner-spin-button { -webkit-appearance: none; }
+.wc-input:focus { border-bottom-color: var(--accent); }
+.wc-unit { font-family: var(--mono); font-size: 10px; color: var(--ink-muted); }
+
 /* LEVEL BUTTONS */
 .levels-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-bottom: 2.5rem; }
 .level-btn { border: 1px solid var(--border-strong); background: transparent; border-radius: 2px; padding: 12px 6px; cursor: pointer; text-align: center; transition: all 0.18s; font-family: var(--serif); }
@@ -266,6 +277,16 @@ footer em { color: var(--accent); font-style: normal; }
         </select>
       </div>
 
+      <div class="wc-row">
+        <span class="wc-label">字数要求</span>
+        <button class="wc-chip" data-wc="100" onclick="setWordCount(100,this)">100字</button>
+        <button class="wc-chip active" data-wc="200" onclick="setWordCount(200,this)">200字</button>
+        <button class="wc-chip" data-wc="300" onclick="setWordCount(300,this)">300字</button>
+        <button class="wc-chip" data-wc="500" onclick="setWordCount(500,this)">500字</button>
+        <input class="wc-input" type="number" id="wcInput" value="200" min="50" max="1000" oninput="setWordCountCustom(this.value)" />
+        <span class="wc-unit">字</span>
+      </div>
+
       <div class="divider"><span>选择段位（可多选）</span></div>
       <div class="levels-grid">
         <button class="level-btn active" data-level="1" onclick="toggleLevel(this)"><span class="lnum">01</span><span class="lname">顾客任务</span></button>
@@ -425,6 +446,24 @@ const levelDescriptions = {
   '5': '身份思维：让产品代表用户的审美、身份、生活态度，不卖产品卖身份认同',
 };
 
+// ── 字数控制 ──
+let wordCount = 200;
+
+function setWordCount(n, btn) {
+  wordCount = n;
+  document.getElementById('wcInput').value = n;
+  document.querySelectorAll('.wc-chip').forEach(c => c.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+function setWordCountCustom(val) {
+  const n = Math.max(50, Math.min(1000, parseInt(val) || 200));
+  wordCount = n;
+  document.querySelectorAll('.wc-chip').forEach(c => {
+    c.classList.toggle('active', parseInt(c.dataset.wc) === n);
+  });
+}
+
 function switchMode(mode) {
   document.querySelectorAll('.mode-tab').forEach((t, i) => {
     t.classList.toggle('active', (mode === 'generate' && i === 0) || (mode === 'optimize' && i === 1));
@@ -523,6 +562,7 @@ ${brandContext ? `【品牌档案（请严格遵守品牌调性、关键词和�
 ${selectedLevelText}
 
 ${brandContext ? '重要：严格遵守品牌档案中的调性风格，必须使用核心关键词，绝对避免禁忌词。' : ''}
+字数要求：每条文案控制在 ${wordCount} 字左右。
 严格只输出JSON，不含任何其他文字和代码块标记：
 {"results":[{"level":"1","lines":["文案1","文案2","文案3"]},...]}
 每个段位输出2-3条，语言简洁有力，符合${platform}风格，体现品牌调性。`;
