@@ -183,10 +183,12 @@ main { padding: 2.5rem 0 6rem; }
 .rewrite-section.show { display: block; }
 
 .rewrite-card { background: white; border: 1px solid var(--border); border-radius: 2px; padding: 1.5rem; margin-bottom: 1.25rem; animation: fadeUp 0.35s ease both; }
-.copy-block { font-size: 15px; color: var(--ink); line-height: 1.85; padding: 1rem 3.5rem 1rem 1rem; border-left: 2px solid var(--accent-light); cursor: pointer; transition: all 0.18s; position: relative; border-radius: 0 2px 2px 0; white-space: pre-wrap; }
+.copy-block { font-size: 15px; color: var(--ink); line-height: 1.85; padding: 1rem 3.5rem 1rem 1rem; border-left: 2px solid var(--accent-light); cursor: pointer; transition: all 0.18s; position: relative; border-radius: 0 2px 2px 0; }
 .copy-block:hover { border-left-color: var(--gold); background: var(--gold-pale); }
 .copy-block:hover::after { content: '点击复制全文'; position: absolute; right: 12px; top: 12px; font-family: var(--mono); font-size: 9px; color: var(--ink-muted); }
 .copy-block.copied { border-left-color: var(--green); background: var(--green-bg); }
+.post-title { font-size: 16px; font-weight: 600; color: var(--ink); line-height: 1.5; margin-bottom: 0.875rem; }
+.post-body { font-size: 15px; color: var(--ink-soft); line-height: 1.85; white-space: pre-wrap; }
 .copy-block.copied::after { content: '已复制 ✓'; position: absolute; right: 12px; top: 12px; font-family: var(--mono); font-size: 9px; color: var(--green); }
 
 /* ERROR */
@@ -981,7 +983,7 @@ ${brandContext ? `【品牌档案（写作时严格遵守）】\n${brandContext}
 3. ${brandContext ? '严格遵守品牌档案的调性和关键词，避免禁忌词' : '保持品牌一致性'}
 4. 三个版本各有侧重（情感故事版 / 产品种草版 / 场景代入版）
 5. 每个版本正文字数控制在 ${length} 字左右
-5. 每个版本有标题和完整正文，有换行和emoji
+6. 每个版本有标题和完整正文，有换行，emoji 参考原文风格自然融入标题和段落中
 
 【输出格式】纯文本，三个版本用 ===== 分隔：
 
@@ -1377,9 +1379,10 @@ ${brandContext ? `【品牌档案（请严格遵守品牌调性、关键词和�
 1. 严格复刻爆文的结构套路，内容完全换成我的产品
 2. ${brandContext ? '严格遵守品牌档案中的调性、关键词风格，避免使用禁忌词' : '保持品牌一致性'}
 3. 三个版本风格略有差异（情感故事版 / 干货种草版 / 闺蜜推荐版）
-4. 每个版本包含：标题 + 完整正文（有换行、有节奏感、有emoji）
-5. 结尾必须有互动引导
-6. 每个版本正文字数控制在 ${length} 字左右
+4. 每个版本包含：标题 + 完整正文（有换行、有节奏感）
+5. emoji：参考原文的 emoji 使用风格，在标题和正文段落中加入适量 emoji，自然融入文案
+6. 结尾必须有互动引导
+7. 每个版本正文字数控制在 ${length} 字左右
 
 【输出格式】严格按下面的纯文本格式输出，不要用JSON，不要用代码块。三个版本之间用一行 ===== 分隔：
 
@@ -1684,11 +1687,11 @@ function renderVersionCard(container, v, i, context) {
   card.className = 'rewrite-card';
   card.style.animationDelay = (i * 0.1) + 's';
 
-  // 正文复制区
+  // 标题 + 正文合并复制区
   const bodyEl = document.createElement('div');
   bodyEl.className = 'copy-block';
   bodyEl.dataset.copy = `${v.title}\n\n${v.body}`;
-  bodyEl.innerHTML = v.body.replace(/\n/g, '<br>');
+  bodyEl.innerHTML = `<div class="post-title">${v.title}</div><div class="post-body">${v.body.replace(/\n/g, '<br>')}</div>`;
   bodyEl.onclick = function() { copyBlock(this); };
 
   // 延续风格按钮
@@ -1727,15 +1730,9 @@ function renderVersionCard(container, v, i, context) {
       <span class="badge badge-purple">版本 ${i + 1}</span>
       <span class="card-subtitle">${v.style}</span>
     </div>
-    <div style="margin-bottom:0.75rem;">
-      <div class="analysis-label">标题</div>
-      <div style="font-size:16px;font-weight:600;color:var(--ink);padding:8px 0 0 12px;border-left:2px solid var(--accent)">${v.title}</div>
-    </div>
-    <div>
-      <div class="analysis-label">正文（点击复制）</div>
-    </div>`;
+    <div class="analysis-label" style="margin-bottom:8px;">全文（点击复制）</div>`;
 
-  card.querySelector('div:last-child').appendChild(bodyEl);
+  card.appendChild(bodyEl);
   card.appendChild(continueBtn);
   card.appendChild(contLoading);
   card.appendChild(saveRow);
