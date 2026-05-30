@@ -749,9 +749,9 @@ function renderHistory(items) {
     return;
   }
   list.innerHTML = items.map(item => {
-    const d = new Date(item.created_at);
-    const date = (d.getMonth()+1).toString().padStart(2,'0') + '/' + d.getDate().toString().padStart(2,'0')
-               + ' ' + d.getHours().toString().padStart(2,'0') + ':' + d.getMinutes().toString().padStart(2,'0');
+    // created_at 已是北京时间字符串（UTC+8），直接截取 MM/DD HH:mm
+    const ts = item.created_at || '';
+    const date = ts.length >= 16 ? ts.slice(5, 7) + '/' + ts.slice(8, 10) + ' ' + ts.slice(11, 16) : ts;
     const tags = [item.brand_name, item.style].filter(Boolean)
                   .map(t => `<span class="history-tag">${t}</span>`).join('');
     const bodyEsc  = (item.body || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');

@@ -186,7 +186,7 @@ app.post('/api/content', authenticateToken, (req, res) => {
   const { type, brand_name, style, title, body, context } = req.body || {};
   if (!body) return res.status(400).json({ error: '内容不能为空' });
   const result = db.prepare(
-    'INSERT INTO content (user_id, user_name, type, brand_name, style, title, body, context) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
+    "INSERT INTO content (user_id, user_name, type, brand_name, style, title, body, context, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, datetime('now', '+8 hours'))"
   ).run(req.user.id, req.user.name, type || 'fangxie', brand_name || '', style || '', title || '', body, context || '');
   res.json({ id: result.lastInsertRowid });
 });
