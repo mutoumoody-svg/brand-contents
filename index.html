@@ -390,6 +390,11 @@ function onBrandChange() {
   const id = document.getElementById('brandSelect').value;
   activeBrand = _allBrands.find(b => String(b.id) === String(id)) || null;
   document.getElementById('brandBadge').style.display = activeBrand ? 'inline' : 'none';
+  if (activeBrand) {
+    localStorage.setItem(BRAND_ACTIVE_KEY, id);
+  } else {
+    localStorage.removeItem(BRAND_ACTIVE_KEY);
+  }
   renderHistoryFiltered();
   if (activeBrand) {
     // 自动填入生成面板
@@ -404,6 +409,7 @@ function clearBrand() {
   document.getElementById('brandSelect').value = '';
   document.getElementById('brandBadge').style.display = 'none';
   activeBrand = null;
+  localStorage.removeItem(BRAND_ACTIVE_KEY);
   renderHistoryFiltered();
 }
 
