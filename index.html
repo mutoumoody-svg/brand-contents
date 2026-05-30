@@ -129,6 +129,28 @@ main { padding: 2.5rem 0 6rem; }
 .rewrite-badge { font-family: var(--mono); font-size: 10px; letter-spacing: 0.1em; background: var(--tag-bg); color: var(--tag-color); padding: 3px 12px; border-radius: 20px; white-space: nowrap; }
 .rewrite-label { font-family: var(--mono); font-size: 11px; color: var(--ink-muted); }
 
+/* HISTORY */
+.history-section { border-top: 2px solid var(--border); padding: 2.5rem 0 5rem; }
+.history-title { font-family: var(--mono); font-size: 10px; letter-spacing: 0.25em; color: var(--ink-muted); text-transform: uppercase; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 10px; }
+.history-title::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+.history-empty { font-family: var(--mono); font-size: 11px; color: var(--ink-muted); letter-spacing: 0.1em; text-align: center; padding: 2rem 0; }
+.history-item { background: white; border: 1px solid var(--border); border-radius: 2px; padding: 1.25rem 1.5rem; margin-bottom: 0.875rem; }
+.history-header { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 0.6rem; }
+.history-item-title { font-family: var(--serif); font-size: 14px; color: var(--ink); flex: 1; line-height: 1.4; }
+.history-date { font-family: var(--mono); font-size: 9px; color: var(--ink-muted); letter-spacing: 0.06em; white-space: nowrap; padding-top: 3px; }
+.history-tags { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 0.75rem; }
+.history-tag { font-family: var(--mono); font-size: 9px; letter-spacing: 0.08em; padding: 2px 9px; border-radius: 20px; background: var(--tag-bg); color: var(--tag-color); }
+.history-body { font-size: 13px; color: var(--ink-soft); line-height: 1.75; white-space: pre-wrap; max-height: 72px; overflow: hidden; position: relative; }
+.history-body:not(.expanded)::after { content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 32px; background: linear-gradient(transparent, white); pointer-events: none; }
+.history-footer { display: flex; align-items: center; justify-content: space-between; margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px solid var(--border); gap: 8px; }
+.history-expand { font-family: var(--mono); font-size: 9px; letter-spacing: 0.08em; color: var(--accent); background: transparent; border: none; cursor: pointer; padding: 0; }
+.history-actions { display: flex; gap: 6px; }
+.history-copy-btn { font-family: var(--mono); font-size: 9px; letter-spacing: 0.1em; text-transform: uppercase; background: transparent; color: var(--ink-muted); border: 1px solid var(--border-strong); padding: 4px 10px; border-radius: 2px; cursor: pointer; transition: all 0.15s; }
+.history-copy-btn:hover { color: var(--ink); border-color: var(--ink); }
+.history-copy-btn.copied { color: var(--green); border-color: var(--green); background: var(--green-bg); }
+.history-del-btn { font-family: var(--mono); font-size: 9px; letter-spacing: 0.06em; color: var(--red); background: transparent; border: 1px solid var(--red-border); padding: 4px 10px; border-radius: 2px; cursor: pointer; transition: all 0.15s; }
+.history-del-btn:hover { background: var(--red-bg); }
+
 /* RESULT ACTIONS BAR */
 .result-actions { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.25rem; gap: 12px; flex-wrap: wrap; }
 .copy-all-btn { font-family: var(--mono); font-size: 11px; letter-spacing: 0.15em; text-transform: uppercase; background: var(--ink); color: var(--cream); border: none; padding: 10px 22px; border-radius: 2px; cursor: pointer; transition: background 0.2s; white-space: nowrap; }
@@ -296,6 +318,13 @@ footer em { color: var(--accent); font-style: normal; }
 
   </div>
 </main>
+
+<section class="history-section">
+  <div class="container">
+    <div class="history-title">历史文案</div>
+    <div id="historyList"><div class="history-empty">加载中…</div></div>
+  </div>
+</section>
 
 <footer>
   <div class="container">基于五段位文案方法论 · Powered by <em>Claude AI</em></div>
@@ -538,6 +567,7 @@ ${brandContext ? '重要：严格遵守品牌档案中的调性风格，必须�
         } else {
           el.textContent = '保存失败';
         }
+        loadHistory();
       });
   } catch (err) {
     document.getElementById('g-loading').classList.remove('show');
@@ -648,6 +678,77 @@ ${levelList}
   }
 }
 
+// ── 历史文案 ──
+async function loadHistory() {
+  try {
+    const res = await fetch('/api/content', {
+      headers: { 'Authorization': 'Bearer ' + (localStorage.getItem('brand_auth_token') || '') }
+    });
+    if (!res.ok) return;
+    renderHistory(await res.json());
+  } catch {}
+}
+
+function renderHistory(items) {
+  const list = document.getElementById('historyList');
+  if (!list) return;
+  if (!items.length) {
+    list.innerHTML = '<div class="history-empty">暂无历史记录</div>';
+    return;
+  }
+  list.innerHTML = items.map(item => {
+    const d = new Date(item.created_at);
+    const date = (d.getMonth()+1).toString().padStart(2,'0') + '/' + d.getDate().toString().padStart(2,'0')
+               + ' ' + d.getHours().toString().padStart(2,'0') + ':' + d.getMinutes().toString().padStart(2,'0');
+    const tags = [item.brand_name, item.style].filter(Boolean)
+                  .map(t => `<span class="history-tag">${t}</span>`).join('');
+    const bodyEsc  = (item.body || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    const safeBody = (item.body || '').replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+    return `<div class="history-item" id="hi-${item.id}">
+      <div class="history-header">
+        <div class="history-item-title">${item.title || '文案记录'}</div>
+        <div class="history-date">${date}</div>
+      </div>
+      ${tags ? `<div class="history-tags">${tags}</div>` : ''}
+      <div class="history-body" id="hb-${item.id}">${bodyEsc}</div>
+      <div class="history-footer">
+        <button class="history-expand" onclick="toggleHistoryBody(${item.id})">展开全部</button>
+        <div class="history-actions">
+          <button class="history-copy-btn" onclick="copyHistoryItem(this,'${safeBody}')">复制</button>
+          <button class="history-del-btn" onclick="deleteHistoryItem(${item.id})">删除</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function toggleHistoryBody(id) {
+  const body = document.getElementById('hb-' + id);
+  const btn  = body?.closest('.history-item')?.querySelector('.history-expand');
+  if (!body) return;
+  body.classList.toggle('expanded');
+  if (btn) btn.textContent = body.classList.contains('expanded') ? '收起' : '展开全部';
+}
+
+function copyHistoryItem(btn, text) {
+  navigator.clipboard.writeText(text).then(() => {
+    btn.textContent = '已复制 ✓';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = '复制'; btn.classList.remove('copied'); }, 2000);
+  });
+}
+
+async function deleteHistoryItem(id) {
+  if (!confirm('确认删除这条记录？')) return;
+  try {
+    const res = await fetch('/api/content/' + id, {
+      method: 'DELETE',
+      headers: { 'Authorization': 'Bearer ' + (localStorage.getItem('brand_auth_token') || '') }
+    });
+    if (res.ok) document.getElementById('hi-' + id)?.remove();
+  } catch {}
+}
+
 // ── 卡片复制 ──
 function copyCardText(btn, text) {
   navigator.clipboard.writeText(text).then(() => {
@@ -716,8 +817,9 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 });
 
-// 初始化品牌选择器
+// 初始化品牌选择器 + 历史文案
 initBrandBar();
+loadHistory();
 </script>
 </body>
 </html>
