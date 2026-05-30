@@ -369,6 +369,7 @@ function onBrandChange() {
   const id = document.getElementById('brandSelect').value;
   activeBrand = _allBrands.find(b => String(b.id) === String(id)) || null;
   document.getElementById('brandBadge').style.display = activeBrand ? 'inline' : 'none';
+  renderHistoryFiltered();
   if (activeBrand) {
     // 自动填入生成面板
     if (activeBrand.audience) document.getElementById('g-audience').value = activeBrand.audience;
@@ -382,6 +383,7 @@ function clearBrand() {
   document.getElementById('brandSelect').value = '';
   document.getElementById('brandBadge').style.display = 'none';
   activeBrand = null;
+  renderHistoryFiltered();
 }
 
 function buildBrandContext() {
@@ -567,7 +569,7 @@ ${brandContext ? '重要：严格遵守品牌档案中的调性风格，必须�
         } else {
           el.textContent = '保存失败';
         }
-        loadHistory();
+        loadHistory(); // 重新拉取并过滤
       });
   } catch (err) {
     document.getElementById('g-loading').classList.remove('show');
@@ -679,14 +681,24 @@ ${levelList}
 }
 
 // ── 历史文案 ──
+let _allHistory = [];
+
 async function loadHistory() {
   try {
     const res = await fetch('/api/content', {
       headers: { 'Authorization': 'Bearer ' + (localStorage.getItem('brand_auth_token') || '') }
     });
     if (!res.ok) return;
-    renderHistory(await res.json());
+    _allHistory = await res.json();
+    renderHistoryFiltered();
   } catch {}
+}
+
+function renderHistoryFiltered() {
+  const items = activeBrand
+    ? _allHistory.filter(i => i.brand_name === activeBrand.name)
+    : _allHistory;
+  renderHistory(items);
 }
 
 function renderHistory(items) {
