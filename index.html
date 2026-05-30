@@ -742,7 +742,7 @@ async function loadHistory() {
 
 function renderHistoryFiltered() {
   const items = activeBrand
-    ? _allHistory.filter(i => i.brand_name === activeBrand.name)
+    ? _allHistory.filter(i => (i.brand_name || '').trim() === (activeBrand.name || '').trim())
     : _allHistory;
   renderHistory(items);
 }
@@ -875,9 +875,8 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 });
 
-// 初始化品牌选择器 + 历史文案
-initBrandBar();
-loadHistory();
+// 先初始化品牌（确保 activeBrand 就绪），再加载历史
+initBrandBar().then(() => loadHistory());
 </script>
 </body>
 </html>
