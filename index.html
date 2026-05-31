@@ -395,7 +395,7 @@ function onBrandChange() {
   } else {
     localStorage.removeItem(BRAND_ACTIVE_KEY);
   }
-  renderHistoryFiltered();
+  loadHistory();
   if (activeBrand) {
     // 自动填入生成面板
     if (activeBrand.audience) document.getElementById('g-audience').value = activeBrand.audience;
@@ -410,7 +410,7 @@ function clearBrand() {
   document.getElementById('brandBadge').style.display = 'none';
   activeBrand = null;
   localStorage.removeItem(BRAND_ACTIVE_KEY);
-  renderHistoryFiltered();
+  loadHistory();
 }
 
 function buildBrandContext() {
@@ -727,24 +727,17 @@ ${levelList}
 }
 
 // ── 历史文案 ──
-let _allHistory = [];
-
 async function loadHistory() {
   try {
-    const res = await fetch('/api/content', {
+    const url = activeBrand
+      ? '/api/content?brand_name=' + encodeURIComponent(activeBrand.name)
+      : '/api/content';
+    const res = await fetch(url, {
       headers: { 'Authorization': 'Bearer ' + (localStorage.getItem('brand_auth_token') || '') }
     });
     if (!res.ok) return;
-    _allHistory = await res.json();
-    renderHistoryFiltered();
+    renderHistory(await res.json());
   } catch {}
-}
-
-function renderHistoryFiltered() {
-  const items = activeBrand
-    ? _allHistory.filter(i => (i.brand_name || '').trim() === (activeBrand.name || '').trim())
-    : _allHistory;
-  renderHistory(items);
 }
 
 function renderHistory(items) {
@@ -876,7 +869,7 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 // 先初始化品牌（确保 activeBrand 就绪），再加载历史
-initBrandBar().then(() => loadHistory());
+initBrandBar().then(loadHistory);
 </script>
 </body>
 </html>

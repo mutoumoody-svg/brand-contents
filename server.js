@@ -173,11 +173,19 @@ db.exec(`
   )
 `);
 
-// 获取全部内容（按时间倒序）
+// 获取内容（支持 ?brand_name= 过滤）
 app.get('/api/content', authenticateToken, (req, res) => {
-  const rows = db.prepare(
-    'SELECT id, user_id, user_name, type, brand_name, style, title, body, context, created_at FROM content ORDER BY created_at DESC LIMIT 300'
-  ).all();
+  const brand = req.query.brand_name;
+  let rows;
+  if (brand !== undefined && brand !== '') {
+    rows = db.prepare(
+      'SELECT id, user_id, user_name, type, brand_name, style, title, body, context, created_at FROM content WHERE brand_name = ? ORDER BY created_at DESC LIMIT 300'
+    ).all(brand);
+  } else {
+    rows = db.prepare(
+      'SELECT id, user_id, user_name, type, brand_name, style, title, body, context, created_at FROM content ORDER BY created_at DESC LIMIT 300'
+    ).all();
+  }
   res.json(rows);
 });
 
