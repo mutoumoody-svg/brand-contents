@@ -730,8 +730,8 @@ ${levelList}
 async function loadHistory() {
   try {
     const url = activeBrand
-      ? '/api/content?brand_name=' + encodeURIComponent(activeBrand.name)
-      : '/api/content';
+      ? '/api/content?brand_name=' + encodeURIComponent(activeBrand.name) + '&type=generate'
+      : '/api/content?type=generate';
     const res = await fetch(url, {
       headers: { 'Authorization': 'Bearer ' + (localStorage.getItem('brand_auth_token') || '') }
     });

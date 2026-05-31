@@ -120,6 +120,31 @@ main { padding: 2.5rem 0 6rem; }
 .poster-download-btn:hover { background: var(--ink); color: white; border-color: var(--ink); }
 .poster-download-btn:disabled { opacity: 0.45; cursor: not-allowed; }
 
+/* POSTER HISTORY */
+.poster-history-section { background: white; border-top: 2px solid var(--border); margin-top: 3rem; padding: 2.5rem 0 4rem; }
+.ph-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem; }
+.ph-title { font-family: var(--mono); font-size: 11px; letter-spacing: 0.2em; color: var(--ink-muted); text-transform: uppercase; }
+.ph-count { font-family: var(--mono); font-size: 10px; color: var(--ink-muted); background: var(--cream-dark); padding: 4px 10px; border-radius: 20px; }
+.ph-empty { font-family: var(--serif); font-size: 14px; color: var(--ink-muted); font-style: italic; text-align: center; padding: 3rem 0; }
+.ph-list { display: flex; flex-direction: column; gap: 14px; }
+.ph-item { border: 1px solid var(--border); border-radius: 2px; background: var(--cream); overflow: hidden; }
+.ph-item-header { display: flex; align-items: center; justify-content: space-between; padding: 14px 18px; cursor: pointer; user-select: none; }
+.ph-item-header:hover { background: var(--cream-dark); }
+.ph-item-meta { display: flex; align-items: center; gap: 12px; flex: 1; min-width: 0; }
+.ph-brand-tag { font-family: var(--mono); font-size: 10px; letter-spacing: 0.1em; color: #2c5f8a; background: #ddeef8; padding: 3px 10px; border-radius: 20px; white-space: nowrap; flex-shrink: 0; }
+.ph-topic { font-family: var(--serif); font-size: 14px; color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ph-time { font-family: var(--mono); font-size: 10px; color: var(--ink-muted); white-space: nowrap; flex-shrink: 0; margin-left: 12px; }
+.ph-actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; margin-left: 12px; }
+.ph-del-btn { font-family: var(--mono); font-size: 10px; letter-spacing: 0.1em; color: var(--red); background: transparent; border: 1px solid var(--red-border); padding: 4px 10px; border-radius: 2px; cursor: pointer; transition: all 0.15s; white-space: nowrap; }
+.ph-del-btn:hover { background: var(--red-bg); }
+.ph-chevron { font-size: 12px; color: var(--ink-muted); transition: transform 0.2s; }
+.ph-item.open .ph-chevron { transform: rotate(180deg); }
+.ph-item-body { display: none; padding: 0 18px 18px; }
+.ph-item.open .ph-item-body { display: block; }
+.ph-mini-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; margin-top: 4px; }
+.ph-mini-card { aspect-ratio: 3/4; background: #f0f0ee; border: 1px solid var(--border); border-radius: 1px; font-family: var(--mono); font-size: 9px; color: var(--ink-muted); display: flex; align-items: flex-end; padding: 4px; letter-spacing: 0.08em; }
+@media (max-width: 560px) { .ph-mini-grid { grid-template-columns: repeat(4, 1fr); } }
+
 /* FOOTER */
 footer { text-align: center; border-top: 1px solid var(--border); padding: 2rem 0; font-family: var(--mono); font-size: 10px; letter-spacing: 0.12em; color: var(--ink-muted); }
 footer em { color: var(--accent); font-style: normal; }
@@ -286,7 +311,7 @@ footer em { color: var(--accent); font-style: normal; }
     <div class="form-grid">
       <div class="field">
         <label>品牌（选填）</label>
-        <select id="p-brand">
+        <select id="p-brand" onchange="loadPosterHistory()">
           <option value="">— 不使用品牌 —</option>
         </select>
       </div>
@@ -338,6 +363,16 @@ footer em { color: var(--accent); font-style: normal; }
   </div>
 </main>
 
+<section class="poster-history-section" id="posterHistorySection">
+  <div class="container">
+    <div class="ph-header">
+      <span class="ph-title">历史海报记录</span>
+      <span class="ph-count" id="phCount">—</span>
+    </div>
+    <div id="phList"></div>
+  </div>
+</section>
+
 <footer>
   <div class="container">7 张 1080×1440 · Swiss International Style · Powered by <em>Claude AI</em></div>
 </footer>
@@ -363,7 +398,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const adminLink = document.getElementById('adminNavLink');
     if (adminLink) adminLink.style.display = '';
   }
-  loadBrands();
+  loadBrands().then(() => loadPosterHistory());
   updatePreviewScales();
   window.addEventListener('resize', updatePreviewScales);
 });
@@ -382,6 +417,7 @@ async function loadBrands() {
       sel.appendChild(opt);
     });
   } catch {}
+  // always resolves so .then(loadPosterHistory) fires
 }
 
 // ── Accent Selection ──
@@ -563,6 +599,10 @@ ${brandCtx ? '品牌信息：' + brandCtx : ''}
 
     // Render all 7 cards
     renderAllCards(data, currentAccent);
+
+    // Save record
+    const brandName = getCurrentPosterBrandName();
+    savePosterRecord(brandName, topic, data);
 
     // Show output
     document.getElementById('p-loading').classList.remove('show');
@@ -872,6 +912,99 @@ async function downloadAll() {
 
   btn.disabled = false;
   btn.textContent = '⬇ 下载全部 7 张';
+}
+
+// ── Poster History ──
+function getCurrentPosterBrandName() {
+  const val = document.getElementById('p-brand').value;
+  if (!val) return '';
+  try { return JSON.parse(val).name || ''; } catch { return ''; }
+}
+
+async function savePosterRecord(brandName, topic, data) {
+  try {
+    const body = JSON.stringify(data);
+    const token = localStorage.getItem('brand_auth_token') || '';
+    const res = await fetch('/api/content', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+      body: JSON.stringify({
+        type: 'poster',
+        brand_name: brandName || '',
+        style: currentAccent,
+        title: topic,
+        body: body,
+        context: '7张海报'
+      })
+    });
+    if (res.ok) loadPosterHistory();
+  } catch {}
+}
+
+async function loadPosterHistory() {
+  try {
+    const brandName = getCurrentPosterBrandName();
+    const url = brandName
+      ? '/api/content?brand_name=' + encodeURIComponent(brandName) + '&type=poster'
+      : '/api/content?type=poster';
+    const token = localStorage.getItem('brand_auth_token') || '';
+    const res = await fetch(url, { headers: { 'Authorization': 'Bearer ' + token } });
+    if (!res.ok) return;
+    const items = await res.json();
+    renderPosterHistory(items);
+  } catch {}
+}
+
+function renderPosterHistory(items) {
+  const list = document.getElementById('phList');
+  const count = document.getElementById('phCount');
+  count.textContent = items.length ? items.length + ' 条' : '暂无记录';
+
+  if (!items.length) {
+    list.innerHTML = '<div class="ph-empty">暂无历史海报记录</div>';
+    return;
+  }
+
+  const MINI_LABELS = ['P01','P02','P03','P04','P05','P06','P07'];
+  list.innerHTML = items.map(item => {
+    const ts = item.created_at || '';
+    const timeStr = ts.length >= 16 ? ts.slice(5,7) + '/' + ts.slice(8,10) + ' ' + ts.slice(11,16) : ts;
+    const brandTag = item.brand_name ? `<span class="ph-brand-tag">${item.brand_name}</span>` : '';
+    const miniCards = MINI_LABELS.map(l => `<div class="ph-mini-card">${l}</div>`).join('');
+    return `<div class="ph-item" id="phi-${item.id}">
+      <div class="ph-item-header" onclick="togglePhItem(${item.id})">
+        <div class="ph-item-meta">
+          ${brandTag}
+          <span class="ph-topic">${item.title || '无标题'}</span>
+          <span class="ph-time">${timeStr}</span>
+        </div>
+        <div class="ph-actions">
+          <button class="ph-del-btn" onclick="event.stopPropagation();deletePosterRecord(${item.id})">删除</button>
+          <span class="ph-chevron">▾</span>
+        </div>
+      </div>
+      <div class="ph-item-body">
+        <div class="ph-mini-grid">${miniCards}</div>
+        <div style="margin-top:10px;font-family:var(--mono);font-size:10px;letter-spacing:0.1em;color:var(--ink-muted);">
+          配色：${item.style || '—'} · 主题：${item.title || '—'}
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function togglePhItem(id) {
+  const el = document.getElementById('phi-' + id);
+  if (el) el.classList.toggle('open');
+}
+
+async function deletePosterRecord(id) {
+  if (!confirm('确认删除这条历史记录？')) return;
+  try {
+    const token = localStorage.getItem('brand_auth_token') || '';
+    await fetch('/api/content/' + id, { method: 'DELETE', headers: { 'Authorization': 'Bearer ' + token } });
+    loadPosterHistory();
+  } catch {}
 }
 </script>
 </body>
