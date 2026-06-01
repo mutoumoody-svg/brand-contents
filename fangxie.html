@@ -1422,40 +1422,95 @@ ${brandContext ? `【品牌档案（请严格遵守品牌调性、关键词和�
   }
 }
 
-// 解析分隔符格式的仿写结果
+// 解析分隔符格式的仿写结果（多策略兜底）
 function parseRewriteText(text) {
-  console.log('[仿写原始输出]', text.slice(0, 300));
-  // 支持 ====、=====、====== 等各种分隔符
-  const blocks = text.split(/={3,}/).map(b => b.trim()).filter(b => b);
+  console.log('[仿写原始输出]', text.slice(0, 500));
   const versions = [];
-  blocks.forEach(block => {
-    const styleMatch = block.match(/[【\[]风格[】\]]\s*(.+)/);
-    const titleMatch = block.match(/[【\[]标题[】\]]\s*(.+)/);
-    const bodyMatch  = block.match(/[【\[]正文[】\]]\s*([\s\S]+)/);
-    if (titleMatch && bodyMatch) {
-      versions.push({
-        style: styleMatch ? styleMatch[1].trim() : '仿写版本',
-        title: titleMatch[1].trim(),
-        body:  bodyMatch[1].trim(),
-      });
+
+  // ── 单个块解析（多格式兼容）──
+  function extractFromBlock(block, idx) {
+    block = block.trim();
+    if (block.length < 10) return null;
+    let style = null, title = null, body = null;
+
+    // A: 【标题】xxx 或 【标题】: xxx
+    const tA = block.match(/[【\[]标题[】\]]\s*:?\s*(.+)/);
+    const bA = block.match(/[【\[]正文[】\]]\s*:?\s*([\s\S]+)/);
+    const sA = block.match(/[【\[]风格[】\]]\s*:?\s*(.+)/);
+    if (tA && bA) { title = tA[1].trim(); body = bA[1].trim(); style = sA?.[1]?.trim() || null; }
+
+    // B: 标题：xxx / 正文：xxx（无括号）
+    if (!title) {
+      const tB = block.match(/^标题[：:]\s*(.+)/m);
+      const bB = block.match(/^正文[：:]\s*([\s\S]+)/m);
+      const sB = block.match(/^(?:风格|版本名?)[：:]\s*(.+)/m);
+      if (tB && bB) { title = tB[1].trim(); body = bB[1].trim(); style = sB?.[1]?.trim() || null; }
     }
-  });
-  // 如果用分隔符解析失败，尝试直接按【风格】标记分割
-  if (versions.length === 0) {
-    const altBlocks = text.split(/(?=【风格】)/).map(b => b.trim()).filter(b => b);
-    altBlocks.forEach(block => {
-      const styleMatch = block.match(/【风格】\s*(.+)/);
-      const titleMatch = block.match(/【标题】\s*(.+)/);
-      const bodyMatch  = block.match(/【正文】\s*([\s\S]+)/);
-      if (titleMatch && bodyMatch) {
-        versions.push({
-          style: styleMatch ? styleMatch[1].trim() : '仿写版本',
-          title: titleMatch[1].trim(),
-          body:  bodyMatch[1].trim(),
-        });
+
+    // C: **标题**: xxx markdown 粗体格式
+    if (!title) {
+      const tC = block.match(/\*{1,2}标题\*{1,2}\s*[：:]\s*(.+)/);
+      const bC = block.match(/\*{1,2}正文\*{1,2}\s*[：:]\s*([\s\S]+)/);
+      const sC = block.match(/\*{1,2}风格\*{1,2}\s*[：:]\s*(.+)/);
+      if (tC && bC) { title = tC[1].trim(); body = bC[1].trim(); style = sC?.[1]?.trim() || null; }
+    }
+
+    // D: 把第一个非空非元信息行当标题，其余当正文（最后兜底）
+    if (!title) {
+      const lines = block.split('\n').map(l => l.trim()).filter(l => l);
+      let start = 0;
+      while (start < lines.length && /^[=\-–—]{2,}$|^版本[一二三1-3]|^第[一二三1-3]/.test(lines[start])) start++;
+      const potTitle = lines[start] || '';
+      const potBody  = lines.slice(start + 1).join('\n').trim();
+      if (potTitle.length >= 4 && potTitle.length <= 100 && potBody.length >= 20) {
+        title = potTitle; body = potBody;
       }
-    });
+    }
+
+    if (!title || !body) return null;
+    // 去掉正文末尾残留的分隔符
+    body = body.replace(/\n?={3,}\s*$/, '').trim();
+    return { style: style || `版本 ${idx + 1}`, title, body };
   }
+
+  // ── 策略1：按 ===== 分隔 ──
+  {
+    const bs = text.split(/\n?={3,}\n?/).map(b => b.trim()).filter(b => b.length > 10);
+    if (bs.length >= 2) {
+      bs.forEach((b, i) => { const v = extractFromBlock(b, i); if (v) versions.push(v); });
+    }
+  }
+
+  // ── 策略2：按 【风格】 标记分割 ──
+  if (versions.length === 0) {
+    const bs = text.split(/(?=【风格】)/).map(b => b.trim()).filter(b => b.length > 10);
+    if (bs.length >= 2) {
+      bs.forEach((b, i) => { const v = extractFromBlock(b, i); if (v) versions.push(v); });
+    }
+  }
+
+  // ── 策略3：按 --- 分隔 ──
+  if (versions.length === 0) {
+    const bs = text.split(/\n-{3,}\n/).map(b => b.trim()).filter(b => b.length > 10);
+    if (bs.length >= 2) {
+      bs.forEach((b, i) => { const v = extractFromBlock(b, i); if (v) versions.push(v); });
+    }
+  }
+
+  // ── 策略4：按 版本N / 第N版本 分割 ──
+  if (versions.length === 0) {
+    const bs = text.split(/\n(?=版本[123一二三]|第[123一二三](?:个)?版本)/).map(b => b.trim()).filter(b => b.length > 10);
+    if (bs.length >= 2) {
+      bs.forEach((b, i) => { const v = extractFromBlock(b, i); if (v) versions.push(v); });
+    }
+  }
+
+  // ── 策略5：整体当一个块，至少拿出一个版本 ──
+  if (versions.length === 0) {
+    const v = extractFromBlock(text, 0);
+    if (v) versions.push(v);
+  }
+
   console.log('[仿写解析结果]', versions.length, '个版本');
   return versions;
 }
