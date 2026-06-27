@@ -43,7 +43,9 @@ XHS_NOTE_LINK = re.compile(r"xiaohongshu\.com/(?:explore|discovery/item)/([a-f0-
 
 BOCHA_API_KEY = os.environ.get("BOCHA_API_KEY", "")
 BOCHA_URL = "https://api.bochaai.com/v1/web-search"
-CLAUDE_PROXY_URL = os.environ.get("CLAUDE_PROXY_URL", "https://anthorpic-proxy.mutoumoody.workers.dev/")
+# 直连 anthorpic-proxy.mutoumoody.workers.dev 在这台服务器上遇到 DNS 污染连不通，
+# 改走本机 Node 服务的内部转发端口（Node 进程本身连得通这个域名）
+CLAUDE_PROXY_URL = os.environ.get("CLAUDE_PROXY_URL", "http://localhost:3000/api/internal/claude")
 CLAUDE_WORKER_SECRET = "brand-worker-nz-2024"
 
 

@@ -725,6 +725,35 @@ app.post('/api/claude', authenticateToken, async (req, res) => {
   }
 });
 
+// 内部专用 Claude 中转：仅供本机后台脚本调用（如 xhs_scrape.py），
+// 不要求用户登录态，靠共享密钥 + 仅限本机 IP 兜底防护。
+// 背景：服务器到 anthorpic-proxy.mutoumoody.workers.dev 的直连 DNS 被污染，
+// Node 进程因为早先缓存了正确解析结果还能连通，但新进程（curl/python）连不上，
+// 所以让脚本绕一圈走本机这个已经能用的 Node 出口，而不是直连外部域名。
+app.post('/api/internal/claude', (req, res) => {
+  const ip = (req.ip || '').replace('::ffff:', '');
+  if (ip !== '127.0.0.1' && ip !== '::1') {
+    return res.status(403).json({ error: { message: '仅限本机调用' } });
+  }
+  if (req.headers['x-worker-secret'] !== 'brand-worker-nz-2024') {
+    return res.status(403).json({ error: { message: '密钥错误' } });
+  }
+  if (!API_KEY) {
+    return res.status(500).json({ error: { message: '服务器未配置 ANTHROPIC_API_KEY' } });
+  }
+  const PROXY_URL = process.env.CLAUDE_PROXY_URL || 'https://anthorpic-proxy.mutoumoody.workers.dev/';
+  fetch(PROXY_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'x-worker-secret': 'brand-worker-nz-2024' },
+    body: JSON.stringify(req.body),
+  })
+    .then(async (response) => {
+      const data = await response.json();
+      res.status(response.status).json(data);
+    })
+    .catch((err) => res.status(500).json({ error: { message: 'API 请求失败：' + err.message } }));
+});
+
 // ── 静态文件 ──
 app.use(express.static(path.join(__dirname)));
 
