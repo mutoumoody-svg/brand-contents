@@ -229,7 +229,7 @@ async function triggerSync() {
   try {
     const res = await fetch('/api/xhs/sync', { method: 'POST', headers: getAuthHeader() });
     const data = await res.json();
-    if (!res.ok) throw new Error(data.error || '同步失败');
+    if (!res.ok) throw new Error((data.error && data.error.message) || data.error || '同步失败');
     document.getElementById('lastSync').textContent = new Date().toLocaleString('zh-CN', { hour12: false });
     await loadKeywords();
     await loadNotes();
