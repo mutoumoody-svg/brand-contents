@@ -37,9 +37,9 @@ PC_HEADERS = {
     "Referer": f"{XHS_BASE_URL}/",
 }
 
-NOTE_ID_PATTERN = re.compile(r"[a-f0-9]{8}0{8}[a-f0-9]{8}")
-XHS_EXPLORE_LINK = re.compile(r"xiaohongshu\.com/explore/([a-f0-9]{8}0{8}[a-f0-9]{8})")
-XHS_EXPLORE_LINK_LOOSE = re.compile(r"xiaohongshu\.com/explore/([a-f0-9]{16,32})")
+# 同时匹配桌面版 /explore/{id} 和移动版 /discovery/item/{id} 两种链接格式
+# 真实笔记ID不一定符合"中间8位是0"的规律，去掉这条过严的校验
+XHS_NOTE_LINK = re.compile(r"xiaohongshu\.com/(?:explore|discovery/item)/([a-f0-9]{16,32})")
 
 BOCHA_API_KEY = os.environ.get("BOCHA_API_KEY", "")
 BOCHA_URL = "https://api.bochaai.com/v1/web-search"
@@ -75,12 +75,8 @@ class NoteIdStore:
 def _extract_xhs_links(text, store):
     if not text:
         return
-    for m in XHS_EXPLORE_LINK.finditer(text):
+    for m in XHS_NOTE_LINK.finditer(text):
         store.add(m.group(1))
-    for m in XHS_EXPLORE_LINK_LOOSE.finditer(text):
-        nid = m.group(1)
-        if NOTE_ID_PATTERN.match(nid):
-            store.add(nid)
 
 
 class XhsHttpClient:
