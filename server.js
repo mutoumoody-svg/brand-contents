@@ -391,6 +391,173 @@ app.delete('/api/viral-posts/:id', authenticateToken, (req, res) => {
 });
 
 // ══════════════════════════════════════════
+//  小红书热点洞察（飞书多维表格同步）
+// ══════════════════════════════════════════
+db.exec(`
+  CREATE TABLE IF NOT EXISTS xhs_notes (
+    id               INTEGER PRIMARY KEY AUTOINCREMENT,
+    feishu_record_id TEXT UNIQUE,
+    keyword          TEXT DEFAULT '',
+    title            TEXT DEFAULT '',
+    body             TEXT DEFAULT '',
+    author           TEXT DEFAULT '',
+    note_url         TEXT DEFAULT '',
+    cover_image      TEXT DEFAULT '',
+    tags             TEXT DEFAULT '[]',
+    likes            INTEGER DEFAULT 0,
+    comments         INTEGER DEFAULT 0,
+    collects         INTEGER DEFAULT 0,
+    synced_at        DATETIME DEFAULT CURRENT_TIMESTAMP
+  )
+`);
+
+// 飞书多维表格字段名映射：你的表格列名跟这里不一致时，在服务器环境变量里覆盖（如 FEISHU_FIELD_TITLE=笔记标题）
+const FEISHU_FIELD_MAP = {
+  keyword:    process.env.FEISHU_FIELD_KEYWORD  || '关键词',
+  title:      process.env.FEISHU_FIELD_TITLE    || '标题',
+  body:       process.env.FEISHU_FIELD_BODY     || '文案',
+  author:     process.env.FEISHU_FIELD_AUTHOR   || '博主',
+  noteUrl:    process.env.FEISHU_FIELD_URL      || '笔记链接',
+  coverImage: process.env.FEISHU_FIELD_COVER    || '封面图',
+  tags:       process.env.FEISHU_FIELD_TAGS     || '标签',
+  likes:      process.env.FEISHU_FIELD_LIKES    || '点赞',
+  comments:   process.env.FEISHU_FIELD_COMMENTS || '评论',
+  collects:   process.env.FEISHU_FIELD_COLLECTS || '收藏',
+};
+
+// 飞书多维表格字段值可能是字符串/数字/富文本数组/附件数组，统一转成文字
+function feishuFieldText(fields, name) {
+  const v = fields[name];
+  if (v === undefined || v === null) return '';
+  if (typeof v === 'string' || typeof v === 'number') return v;
+  if (Array.isArray(v)) {
+    return v.map(item => {
+      if (typeof item === 'string') return item;
+      if (item?.text) return item.text;
+      if (item?.name) return item.name;
+      if (item?.url)  return item.url;
+      return '';
+    }).filter(Boolean).join(v.length > 1 ? '、' : '');
+  }
+  if (typeof v === 'object') return v.text || v.link || '';
+  return String(v);
+}
+
+let _feishuToken = null, _feishuTokenExpiry = 0;
+async function getFeishuToken() {
+  if (_feishuToken && Date.now() < _feishuTokenExpiry) return _feishuToken;
+  const res = await fetch('https://open.feishu.cn/open-apis/auth/v3/tenant_access_token/internal', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      app_id:     process.env.FEISHU_APP_ID,
+      app_secret: process.env.FEISHU_APP_SECRET,
+    }),
+  });
+  const data = await res.json();
+  if (data.code !== 0) throw new Error('飞书 Token 获取失败：' + data.msg);
+  _feishuToken = data.tenant_access_token;
+  _feishuTokenExpiry = Date.now() + (data.expire - 60) * 1000;
+  return _feishuToken;
+}
+
+async function fetchAllFeishuRecords() {
+  const token    = await getFeishuToken();
+  const appToken = process.env.FEISHU_BITABLE_APP_TOKEN;
+  const tableId  = process.env.FEISHU_BITABLE_TABLE_ID;
+  if (!appToken || !tableId) throw new Error('未配置 FEISHU_BITABLE_APP_TOKEN / FEISHU_BITABLE_TABLE_ID');
+
+  let records = [], pageToken = '';
+  do {
+    const url = `https://open.feishu.cn/open-apis/bitable/v1/apps/${appToken}/tables/${tableId}/records?page_size=500` + (pageToken ? `&page_token=${pageToken}` : '');
+    const res = await fetch(url, { headers: { 'Authorization': 'Bearer ' + token } });
+    const data = await res.json();
+    if (data.code !== 0) throw new Error('飞书读取失败：' + data.msg);
+    records.push(...(data.data.items || []));
+    pageToken = data.data.has_more ? data.data.page_token : '';
+  } while (pageToken);
+  return records;
+}
+
+async function syncFeishuNotes() {
+  const records = await fetchAllFeishuRecords();
+  let inserted = 0, updated = 0;
+
+  for (const rec of records) {
+    const f = rec.fields || {};
+    const tagsRaw = String(feishuFieldText(f, FEISHU_FIELD_MAP.tags) || '');
+    const row = {
+      feishu_record_id: rec.record_id,
+      keyword:     String(feishuFieldText(f, FEISHU_FIELD_MAP.keyword)    || ''),
+      title:       String(feishuFieldText(f, FEISHU_FIELD_MAP.title)      || ''),
+      body:        String(feishuFieldText(f, FEISHU_FIELD_MAP.body)       || ''),
+      author:      String(feishuFieldText(f, FEISHU_FIELD_MAP.author)     || ''),
+      note_url:    String(feishuFieldText(f, FEISHU_FIELD_MAP.noteUrl)    || ''),
+      cover_image: String(feishuFieldText(f, FEISHU_FIELD_MAP.coverImage) || ''),
+      tags:        JSON.stringify(tagsRaw.split(/[,，、\s#]+/).filter(Boolean)),
+      likes:       parseInt(feishuFieldText(f, FEISHU_FIELD_MAP.likes))    || 0,
+      comments:    parseInt(feishuFieldText(f, FEISHU_FIELD_MAP.comments)) || 0,
+      collects:    parseInt(feishuFieldText(f, FEISHU_FIELD_MAP.collects)) || 0,
+    };
+
+    const existing = db.prepare('SELECT id FROM xhs_notes WHERE feishu_record_id = ?').get(row.feishu_record_id);
+    if (existing) {
+      db.prepare(`UPDATE xhs_notes SET keyword=?, title=?, body=?, author=?, note_url=?, cover_image=?, tags=?, likes=?, comments=?, collects=?, synced_at=datetime('now','+8 hours') WHERE id=?`)
+        .run(row.keyword, row.title, row.body, row.author, row.note_url, row.cover_image, row.tags, row.likes, row.comments, row.collects, existing.id);
+      updated++;
+    } else {
+      db.prepare(`INSERT INTO xhs_notes (feishu_record_id, keyword, title, body, author, note_url, cover_image, tags, likes, comments, collects, synced_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,datetime('now','+8 hours'))`)
+        .run(row.feishu_record_id, row.keyword, row.title, row.body, row.author, row.note_url, row.cover_image, row.tags, row.likes, row.comments, row.collects);
+      inserted++;
+    }
+  }
+  return { total: records.length, inserted, updated };
+}
+
+// 手动触发同步
+app.post('/api/xhs/sync', authenticateToken, async (req, res) => {
+  if (!process.env.FEISHU_APP_ID || !process.env.FEISHU_APP_SECRET) {
+    return res.status(500).json({ error: '服务器未配置 FEISHU_APP_ID / FEISHU_APP_SECRET 环境变量' });
+  }
+  try {
+    const result = await syncFeishuNotes();
+    res.json(result);
+  } catch (err) {
+    res.status(500).json({ error: '同步失败：' + err.message });
+  }
+});
+
+// 笔记列表（支持 ?keyword= 过滤，按点赞数排序）
+app.get('/api/xhs/notes', authenticateToken, (req, res) => {
+  const keyword = req.query.keyword;
+  const where  = keyword ? 'WHERE keyword = ?' : '';
+  const params = keyword ? [keyword] : [];
+  const rows = db.prepare(`SELECT * FROM xhs_notes ${where} ORDER BY likes DESC LIMIT 500`).all(...params);
+  res.json(rows.map(r => ({ ...r, tags: JSON.parse(r.tags || '[]') })));
+});
+
+// 关键词聚合统计（笔记数 / 平均点赞）
+app.get('/api/xhs/keywords', authenticateToken, (req, res) => {
+  const rows = db.prepare(`SELECT keyword, COUNT(*) as count, ROUND(AVG(likes)) as avg_likes FROM xhs_notes WHERE keyword != '' GROUP BY keyword ORDER BY count DESC`).all();
+  res.json(rows);
+});
+
+// 删除单条笔记记录
+app.delete('/api/xhs/notes/:id', authenticateToken, (req, res) => {
+  db.prepare('DELETE FROM xhs_notes WHERE id=?').run(req.params.id);
+  res.json({ ok: true });
+});
+
+// 若已配置飞书凭证，每 30 分钟自动同步一次
+if (process.env.FEISHU_APP_ID && process.env.FEISHU_APP_SECRET && process.env.FEISHU_BITABLE_APP_TOKEN && process.env.FEISHU_BITABLE_TABLE_ID) {
+  setInterval(() => {
+    syncFeishuNotes()
+      .then(r => console.log('[飞书自动同步]', r))
+      .catch(e => console.error('[飞书自动同步失败]', e.message));
+  }, 30 * 60 * 1000);
+}
+
+// ══════════════════════════════════════════
 //  文件解析 → 品牌信息提取
 // ══════════════════════════════════════════
 

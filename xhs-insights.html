@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>小红书热点洞察 · Brand Center</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@300;400;600&family=DM+Mono:wght@300;400&family=Playfair+Display:ital,wght@0,400;1,400&display=swap" rel="stylesheet" />
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --ink: #1a1814; --ink-soft: #4a4640; --ink-muted: #9a9590;
+  --cream: #f7f4ef; --cream-dark: #ede9e2;
+  --accent: #c0392b; --accent-light: #f5c6c0; --accent-pale: #fdf5f3;
+  --gold: #b87333; --gold-pale: #f5ede0;
+  --border: rgba(26,24,20,0.12); --border-strong: rgba(26,24,20,0.25);
+  --tag-bg: #f0edf8; --tag-color: #6b5b95;
+  --green: #5a9e6f; --green-bg: #f0f8f3;
+  --blue: #2c5f8a; --blue-bg: #edf4fa; --blue-border: #b8d4e8;
+  --serif: 'Noto Serif SC', Georgia, serif;
+  --mono: 'DM Mono', monospace;
+  --display: 'Playfair Display', serif;
+}
+body { font-family: var(--serif); background: var(--cream); color: var(--ink); min-height: 100vh; line-height: 1.7; }
+
+/* TOP NAV */
+.top-nav { background: var(--ink); height: 64px; display: flex; align-items: center; position: sticky; top: 0; z-index: 200; }
+.top-nav-inner { max-width: 980px; margin: 0 auto; padding: 0 24px; display: flex; align-items: center; justify-content: space-between; width: 100%; }
+.top-nav-logo { font-family: var(--mono); font-size: 16px; letter-spacing: 0.08em; text-transform: uppercase; color: rgba(255,255,255,0.5); text-decoration: none; }
+.top-nav-links { display: flex; gap: 4px; flex-wrap: wrap; }
+.top-nav-link { font-family: var(--mono); font-size: 14px; letter-spacing: 0.04em; text-transform: uppercase; color: rgba(255,255,255,0.5); text-decoration: none; padding: 8px 10px; border-radius: 2px; transition: all 0.15s; white-space: nowrap; }
+.top-nav-link:hover { color: white; background: rgba(255,255,255,0.1); }
+.top-nav-link.active { color: white; }
+
+/* HEADER */
+header { border-bottom: 1px solid var(--border); padding: 1.5rem 0 1.25rem; text-align: center; background: var(--cream); }
+.logo-line { font-family: var(--mono); font-size: 10px; letter-spacing: 0.25em; color: var(--ink-muted); text-transform: uppercase; margin-bottom: 5px; }
+header h1 { font-family: var(--display); font-size: clamp(18px, 3.5vw, 26px); font-weight: 400; font-style: italic; color: var(--ink); }
+.tagline { font-family: var(--mono); font-size: 10px; color: var(--accent); letter-spacing: 0.2em; margin-top: 4px; }
+
+/* LAYOUT */
+.container { max-width: 900px; margin: 0 auto; padding: 0 24px; }
+main { padding: 2.5rem 0 6rem; }
+
+.divider { display: flex; align-items: center; gap: 14px; margin: 2rem 0 1.5rem; }
+.divider::before, .divider::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+.divider span { font-family: var(--mono); font-size: 11px; letter-spacing: 0.2em; color: var(--ink-muted); text-transform: uppercase; white-space: nowrap; }
+
+/* SYNC PANEL */
+.sync-panel { background: white; border: 1px solid var(--border); border-radius: 2px; padding: 1.25rem 1.5rem; display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 1.5rem; }
+.sync-info { font-family: var(--mono); font-size: 11px; color: var(--ink-muted); letter-spacing: 0.05em; }
+.sync-info b { color: var(--ink); font-weight: 600; }
+.sync-btn { padding: 11px 22px; background: var(--ink); color: var(--cream); border: none; font-family: var(--mono); font-size: 11px; letter-spacing: 0.15em; text-transform: uppercase; cursor: pointer; border-radius: 2px; transition: background 0.2s; white-space: nowrap; }
+.sync-btn:hover { background: #3a3630; }
+.sync-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+/* STATS ROW */
+.stats-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 1.5rem; }
+.stat-card { background: white; border: 1px solid var(--border); border-radius: 2px; padding: 1rem 1.25rem; text-align: center; }
+.stat-num { font-family: var(--display); font-size: 28px; font-style: italic; color: var(--ink); }
+.stat-label { font-family: var(--mono); font-size: 9px; letter-spacing: 0.15em; color: var(--ink-muted); text-transform: uppercase; margin-top: 4px; }
+
+/* KEYWORD CHIPS */
+.kw-chips { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 1.5rem; }
+.kw-chip { display: flex; align-items: center; gap: 6px; padding: 7px 14px; border: 1px solid var(--border-strong); border-radius: 20px; cursor: pointer; font-family: var(--mono); font-size: 11px; letter-spacing: 0.05em; color: var(--ink-soft); transition: all 0.18s; background: white; }
+.kw-chip:hover { border-color: var(--gold); }
+.kw-chip.active { background: var(--ink); color: var(--cream); border-color: var(--ink); }
+.kw-chip .kw-count { opacity: 0.6; }
+
+/* NOTES LIST */
+.notes-empty { text-align: center; padding: 3rem 0; font-family: var(--mono); font-size: 11px; color: var(--ink-muted); letter-spacing: 0.1em; }
+.note-card { background: white; border: 1px solid var(--border); border-radius: 2px; padding: 1.1rem 1.4rem; margin-bottom: 10px; }
+.note-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 8px; flex-wrap: wrap; }
+.note-meta { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.note-kw-tag { font-family: var(--mono); font-size: 9px; letter-spacing: 0.1em; background: var(--blue-bg); color: var(--blue); padding: 2px 9px; border-radius: 20px; }
+.note-author { font-family: var(--mono); font-size: 10px; color: var(--ink-muted); }
+.note-stats { display: flex; gap: 12px; font-family: var(--mono); font-size: 10px; color: var(--ink-muted); }
+.note-title { font-size: 15px; font-weight: 600; color: var(--ink); margin-bottom: 6px; }
+.note-body { font-size: 13px; color: var(--ink-soft); line-height: 1.6; max-height: 60px; overflow: hidden; position: relative; cursor: pointer; }
+.note-body::after { content: '点击展开'; position: absolute; bottom: 0; left: 0; right: 0; height: 24px; background: linear-gradient(transparent,white); display: flex; align-items: flex-end; font-family: var(--mono); font-size: 9px; color: var(--ink-muted); }
+.note-body.expanded { max-height: none; }
+.note-body.expanded::after { display: none; }
+.note-foot { display: flex; align-items: center; justify-content: space-between; margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--border); }
+.note-link { font-family: var(--mono); font-size: 10px; color: var(--gold); text-decoration: none; }
+.note-link:hover { text-decoration: underline; }
+.note-del { font-family: var(--mono); font-size: 9px; color: var(--ink-muted); background: transparent; border: 1px solid var(--border-strong); padding: 3px 9px; border-radius: 2px; cursor: pointer; }
+.note-del:hover { color: var(--accent); border-color: var(--accent-light); background: var(--accent-pale); }
+
+/* ANALYSIS */
+.action-btn { width: 100%; padding: 16px; background: var(--ink); color: var(--cream); border: none; font-family: var(--mono); font-size: 12px; letter-spacing: 0.25em; text-transform: uppercase; cursor: pointer; transition: background 0.2s; border-radius: 2px; margin-top: 0.5rem; margin-bottom: 1.5rem; }
+.action-btn:hover { background: #3a3630; }
+.action-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+.loading { display: none; text-align: center; padding: 3rem 0; }
+.loading.show { display: block; }
+.loading-text { font-family: var(--mono); font-size: 11px; letter-spacing: 0.2em; color: var(--ink-muted); }
+.loading-text::after { content: '.'; animation: ldots 1.4s infinite; }
+@keyframes ldots { 0%{content:'.'} 33%{content:'..'} 66%{content:'...'} }
+
+.analysis-card { background: white; border: 1px solid var(--border); border-radius: 2px; padding: 1.5rem; margin-bottom: 1rem; animation: fadeUp 0.3s ease both; }
+@keyframes fadeUp { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+.analysis-card .card-header { display: flex; align-items: center; gap: 10px; margin-bottom: 1rem; padding-bottom: 0.875rem; border-bottom: 1px solid var(--border); }
+.badge { font-family: var(--mono); font-size: 10px; letter-spacing: 0.1em; padding: 3px 12px; border-radius: 20px; white-space: nowrap; }
+.badge-gold { background: #fff8e6; color: #9a6500; }
+.badge-red { background: var(--accent-pale); color: var(--accent); }
+.badge-purple { background: var(--tag-bg); color: var(--tag-color); }
+.badge-green { background: var(--green-bg); color: var(--green); }
+.analysis-issue { display: flex; gap: 8px; font-size: 13px; color: var(--ink-soft); line-height: 1.7; margin-bottom: 6px; }
+.analysis-issue span.arrow { color: var(--gold); flex-shrink: 0; }
+
+/* ERROR */
+.error-card { border: 1px solid #e8c4b8; background: #fdf5f3; border-radius: 2px; padding: 1.25rem 1.5rem; margin-bottom: 1rem; }
+.error-title { font-family: var(--mono); font-size: 10px; letter-spacing: 0.15em; color: var(--accent); margin-bottom: 6px; text-transform: uppercase; }
+.error-msg { font-size: 14px; color: var(--ink-soft); line-height: 1.6; }
+
+/* FOOTER */
+footer { text-align: center; border-top: 1px solid var(--border); padding: 2rem 0; font-family: var(--mono); font-size: 10px; letter-spacing: 0.12em; color: var(--ink-muted); }
+footer em { color: var(--gold); font-style: normal; }
+
+@media (max-width: 560px) {
+  .stats-row { grid-template-columns: 1fr 1fr; }
+}
+</style>
+</head>
+<body>
+<script>(function(){if(!localStorage.getItem('brand_auth_token'))window.location.replace('/login.html');})()</script>
+
+<nav class="top-nav">
+  <div class="top-nav-inner">
+    <a class="top-nav-logo" href="brand.html">Brand Center</a>
+    <div class="top-nav-links">
+      <a class="top-nav-link" href="brand.html">品牌管理</a>
+      <a class="top-nav-link" href="index.html">文案生成</a>
+      <a class="top-nav-link" href="fangxie.html">爆文仿写</a>
+      <a class="top-nav-link" href="fenxi.html">文案分析</a>
+      <a class="top-nav-link" href="baowenku.html">爆文库</a>
+      <a class="top-nav-link" href="xiaohongshu-poster.html">图片海报</a>
+      <a class="top-nav-link active" href="xhs-insights.html">热点洞察</a>
+      <a class="top-nav-link" href="admin.html" id="adminNavLink" style="display:none">用户管理</a>
+    </div>
+    <div style="display:flex;align-items:center;gap:4px;">
+      <span id="navUserName" style="font-family:var(--mono);font-size:14px;color:rgba(255,255,255,0.35);letter-spacing:0.05em;padding:0 8px;"></span>
+      <button onclick="logout()" style="font-family:var(--mono);font-size:20px;letter-spacing:0.06em;text-transform:uppercase;color:rgba(255,255,255,0.5);background:transparent;border:none;cursor:pointer;padding:8px 14px;border-radius:2px;transition:all 0.15s;" onmouseover="this.style.color='white';this.style.background='rgba(255,255,255,0.1)'" onmouseout="this.style.color='rgba(255,255,255,0.5)';this.style.background='transparent'">退出</button>
+    </div>
+  </div>
+</nav>
+
+<header>
+  <div class="container">
+    <div class="logo-line">Trend Intelligence</div>
+    <h1>小红书热点洞察</h1>
+    <div class="tagline">飞书数据同步 · 关键词分析 · 爆款共性拆解</div>
+  </div>
+</header>
+
+<main>
+  <div class="container">
+
+    <div class="sync-panel">
+      <div class="sync-info">已同步 <b id="noteCount">0</b> 篇笔记 · 上次同步：<b id="lastSync">从未同步</b></div>
+      <button class="sync-btn" id="syncBtn" onclick="triggerSync()">↻ 立即同步飞书数据</button>
+    </div>
+
+    <div id="sync-error"></div>
+
+    <div class="stats-row">
+      <div class="stat-card">
+        <div class="stat-num" id="statTotal">0</div>
+        <div class="stat-label">笔记总数</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num" id="statKeywords">0</div>
+        <div class="stat-label">关键词数</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num" id="statAvgLikes">0</div>
+        <div class="stat-label">平均点赞</div>
+      </div>
+    </div>
+
+    <div class="divider"><span>按关键词筛选</span></div>
+    <div class="kw-chips" id="kwChips">
+      <div class="kw-chip active" data-kw="" onclick="selectKeyword('')">全部</div>
+    </div>
+
+    <button class="action-btn" id="analyzeBtn" onclick="runAnalysis()">AI 生成热点分析报告 →</button>
+    <div class="loading" id="a-loading"><div class="loading-text">正在分析关键词热度、爆款共性与品牌提及</div></div>
+    <div id="analysisResults"></div>
+
+    <div class="divider"><span>笔记列表（按点赞排序）</span></div>
+    <div id="notesList"><div class="notes-empty">还没有数据，先点上方"立即同步"拉取飞书表格内容</div></div>
+
+  </div>
+</main>
+
+<footer>
+  <div class="container">小红书热点洞察 · 数据来源：飞书多维表格 · 分析 Powered by <em>Claude AI</em></div>
+</footer>
+
+<script>
+function logout() {
+  ['brand_auth_token','brand_user_name','brand_user_role'].forEach(k => localStorage.removeItem(k));
+  window.location.replace('/login.html');
+}
+function getAuthHeader() {
+  return { 'Authorization': 'Bearer ' + (localStorage.getItem('brand_auth_token') || '') };
+}
+
+let allKeywords = [];
+let currentKeyword = '';
+let currentNotes = [];
+
+document.addEventListener('DOMContentLoaded', function() {
+  const name = localStorage.getItem('brand_user_name');
+  const el = document.getElementById('navUserName');
+  if (el && name) el.textContent = name;
+  if (localStorage.getItem('brand_user_role') === 'admin') {
+    const adminLink = document.getElementById('adminNavLink');
+    if (adminLink) adminLink.style.display = '';
+  }
+  loadKeywords();
+  loadNotes();
+});
+
+// ── 同步 ──
+async function triggerSync() {
+  const btn = document.getElementById('syncBtn');
+  btn.disabled = true;
+  btn.textContent = '同步中...';
+  document.getElementById('sync-error').innerHTML = '';
+  try {
+    const res = await fetch('/api/xhs/sync', { method: 'POST', headers: getAuthHeader() });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || '同步失败');
+    document.getElementById('lastSync').textContent = new Date().toLocaleString('zh-CN', { hour12: false });
+    await loadKeywords();
+    await loadNotes();
+  } catch (err) {
+    document.getElementById('sync-error').innerHTML = `<div class="error-card"><div class="error-title">同步失败</div><div class="error-msg">${err.message}</div></div>`;
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '↻ 立即同步飞书数据';
+  }
+}
+
+// ── 关键词 ──
+async function loadKeywords() {
+  try {
+    const res = await fetch('/api/xhs/keywords', { headers: getAuthHeader() });
+    if (!res.ok) return;
+    allKeywords = await res.json();
+    renderKeywordChips();
+    document.getElementById('statKeywords').textContent = allKeywords.length;
+  } catch {}
+}
+
+function renderKeywordChips() {
+  const container = document.getElementById('kwChips');
+  const allChip = `<div class="kw-chip${currentKeyword === '' ? ' active' : ''}" data-kw="" onclick="selectKeyword('')">全部</div>`;
+  const chips = allKeywords.map(k =>
+    `<div class="kw-chip${currentKeyword === k.keyword ? ' active' : ''}" onclick="selectKeyword('${k.keyword.replace(/'/g, "\\'")}')">${k.keyword} <span class="kw-count">${k.count}</span></div>`
+  ).join('');
+  container.innerHTML = allChip + chips;
+}
+
+function selectKeyword(kw) {
+  currentKeyword = kw;
+  renderKeywordChips();
+  loadNotes();
+}
+
+// ── 笔记列表 ──
+async function loadNotes() {
+  try {
+    const url = currentKeyword ? '/api/xhs/notes?keyword=' + encodeURIComponent(currentKeyword) : '/api/xhs/notes';
+    const res = await fetch(url, { headers: getAuthHeader() });
+    if (!res.ok) return;
+    currentNotes = await res.json();
+    renderNotes();
+
+    document.getElementById('noteCount').textContent = currentNotes.length;
+    document.getElementById('statTotal').textContent = currentNotes.length;
+    const avgLikes = currentNotes.length
+      ? Math.round(currentNotes.reduce((s, n) => s + (n.likes || 0), 0) / currentNotes.length)
+      : 0;
+    document.getElementById('statAvgLikes').textContent = avgLikes;
+  } catch {}
+}
+
+function renderNotes() {
+  const list = document.getElementById('notesList');
+  if (!currentNotes.length) {
+    list.innerHTML = '<div class="notes-empty">还没有数据，先点上方"立即同步"拉取飞书表格内容</div>';
+    return;
+  }
+  list.innerHTML = currentNotes.map(n => `
+    <div class="note-card">
+      <div class="note-head">
+        <div class="note-meta">
+          ${n.keyword ? `<span class="note-kw-tag">${n.keyword}</span>` : ''}
+          <span class="note-author">${n.author || '未知博主'}</span>
+        </div>
+        <div class="note-stats">
+          <span>♥ ${n.likes || 0}</span>
+          <span>💬 ${n.comments || 0}</span>
+          <span>★ ${n.collects || 0}</span>
+        </div>
+      </div>
+      <div class="note-title">${n.title || '无标题'}</div>
+      <div class="note-body" id="nb-${n.id}" onclick="toggleNoteBody(${n.id})">${(n.body || '').replace(/\n/g, '<br>')}</div>
+      <div class="note-foot">
+        ${n.note_url ? `<a class="note-link" href="${n.note_url}" target="_blank" rel="noopener">查看原帖 →</a>` : '<span></span>'}
+        <button class="note-del" onclick="deleteNote(${n.id})">删除</button>
+      </div>
+    </div>`).join('');
+}
+
+function toggleNoteBody(id) {
+  document.getElementById('nb-' + id).classList.toggle('expanded');
+}
+
+async function deleteNote(id) {
+  if (!confirm('确认删除这条笔记记录？')) return;
+  try {
+    await fetch('/api/xhs/notes/' + id, { method: 'DELETE', headers: getAuthHeader() });
+    loadNotes();
+    loadKeywords();
+  } catch {}
+}
+
+// ── Claude API ──
+async function callClaude(messages, maxTokens = 3000) {
+  const res = await fetch('https://anthorpic-proxy.mutoumoody.workers.dev/', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'x-worker-secret': 'brand-worker-nz-2024' },
+    body: JSON.stringify({ model: 'claude-haiku-4-5-20251001', max_tokens: maxTokens, messages }),
+  });
+  if (!res.ok) { const e = await res.json().catch(()=>({})); throw new Error(e.error?.message || `请求失败 (${res.status})`); }
+  const data = await res.json();
+  return data.content.map(i => i.text || '').join('');
+}
+
+// ── AI 热点分析 ──
+async function runAnalysis() {
+  if (!currentNotes.length) { alert('当前筛选下没有笔记数据，请先同步或更换关键词'); return; }
+
+  const btn = document.getElementById('analyzeBtn');
+  btn.disabled = true;
+  document.getElementById('a-loading').classList.add('show');
+  document.getElementById('analysisResults').innerHTML = '';
+
+  // 取互动数据前 40 条做样本，避免 prompt 过长
+  const sample = currentNotes.slice(0, 40).map((n, i) =>
+    `${i+1}. 【${n.keyword || '未分类'}】${n.title}（赞${n.likes} 评${n.comments} 藏${n.collects}）\n${(n.body || '').slice(0, 200)}`
+  ).join('\n\n');
+
+  const prompt = `你是一位小红书内容运营和数据分析专家。以下是${currentKeyword ? `关键词「${currentKeyword}」下` : '近期'}采集的小红书笔记样本（标题+正文片段+互动数据），请深度分析。
+
+【笔记样本】
+${sample}
+
+请严格按下面的纯文本格式输出分析报告，不要用JSON，不要用代码块：
+
+【高频关键词】列出8-12个在标题和正文里反复出现的高频词/话题词，用、分隔
+【爆款共性手法】总结点赞/收藏数较高的笔记有哪些共同的标题套路、开头钩子、内容结构，分3-4条，每条单独一行，前面不用编号
+【品牌与产品提及】列出样本中出现的具体品牌名、产品名，以及它们被提及时的语境倾向（正面种草/对比测评/吐槽），分点说明，每条单独一行
+【内容趋势判断】基于以上样本，判断当前这个话题下消费者更关心什么、什么类型的内容更容易获得高互动，2-3条，每条单独一行
+【可执行建议】给内容创作者2-3条具体可执行的选题或写法建议，每条单独一行`;
+
+  try {
+    const text = await callClaude([{ role: 'user', content: prompt }], 2500);
+    document.getElementById('a-loading').classList.remove('show');
+    renderAnalysis(text);
+  } catch (err) {
+    document.getElementById('a-loading').classList.remove('show');
+    document.getElementById('analysisResults').innerHTML = `<div class="error-card"><div class="error-title">分析失败</div><div class="error-msg">${err.message}</div></div>`;
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+function renderAnalysis(text) {
+  const container = document.getElementById('analysisResults');
+  container.innerHTML = '';
+
+  function grabBlock(label) {
+    const m = text.match(new RegExp('【' + label + '】\\s*([\\s\\S]*?)(?=【|$)'));
+    return m ? m[1].trim() : '';
+  }
+  function toLines(block) {
+    return block.split('\n').map(l => l.trim()).filter(l => l).map(l => l.replace(/^[·•\-\d\.\s]+/, ''));
+  }
+
+  const sections = [
+    { label: '高频关键词',     badge: 'badge-gold',   title: '高频关键词' },
+    { label: '爆款共性手法',   badge: 'badge-red',    title: '爆款共性手法' },
+    { label: '品牌与产品提及', badge: 'badge-purple', title: '品牌与产品提及' },
+    { label: '内容趋势判断',   badge: 'badge-green',  title: '内容趋势判断' },
+    { label: '可执行建议',     badge: 'badge-gold',   title: '可执行建议' },
+  ];
+
+  sections.forEach((sec, i) => {
+    const block = grabBlock(sec.label);
+    if (!block) return;
+    const card = document.createElement('div');
+    card.className = 'analysis-card';
+    card.style.animationDelay = (i * 0.06) + 's';
+
+    let bodyHtml;
+    if (sec.label === '高频关键词') {
+      const words = block.split(/[、，,]/).map(w => w.trim()).filter(Boolean);
+      bodyHtml = `<div style="display:flex;gap:8px;flex-wrap:wrap;">${words.map(w => `<span class="note-kw-tag" style="font-size:11px;padding:4px 12px;">${w}</span>`).join('')}</div>`;
+    } else {
+      bodyHtml = toLines(block).map(l => `<div class="analysis-issue"><span class="arrow">→</span><span>${l}</span></div>`).join('');
+    }
+
+    card.innerHTML = `
+      <div class="card-header"><span class="badge ${sec.badge}">${sec.title}</span></div>
+      ${bodyHtml}`;
+    container.appendChild(card);
+  });
+
+  if (!container.innerHTML) {
+    container.innerHTML = `<div class="error-card"><div class="error-title">解析失败</div><div class="error-msg">AI 返回内容格式异常，请重试</div></div>`;
+  }
+}
+</script>
+</body>
+</html>
