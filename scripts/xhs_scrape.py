@@ -283,8 +283,12 @@ def search_via_bocha(keyword, max_queries=3):
                 json={"query": query, "summary": True, "count": 10, "freshness": "noLimit"},
                 timeout=15,
             )
+            log(f"    [博查HTTP状态] {resp.status_code}")
             data = resp.json()
+            # 调试：打印原始返回的前800字符，方便核对字段结构是否猜对
+            log(f"    [博查原始返回] {json.dumps(data, ensure_ascii=False)[:800]}")
             pages = ((data.get("data") or {}).get("webPages") or {}).get("value", []) or []
+            log(f"    [博查解析出] {len(pages)} 条结果")
             for p in pages:
                 url = p.get("url", "") or ""
                 text = f"{p.get('name','')} {p.get('snippet','')} {p.get('summary','')}"
