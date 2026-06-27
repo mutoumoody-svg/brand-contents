@@ -53,6 +53,16 @@ main { padding: 2.5rem 0 6rem; }
 .sync-btn:hover { background: #3a3630; }
 .sync-btn:disabled { opacity: 0.45; cursor: not-allowed; }
 
+/* SCRAPE PANEL */
+.scrape-panel { background: white; border: 1px solid var(--border); border-radius: 2px; padding: 1.25rem 1.5rem; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 1.5rem; }
+.scrape-input { flex: 1; min-width: 180px; background: transparent; border: none; border-bottom: 1px solid var(--border-strong); font-family: var(--serif); font-size: 15px; color: var(--ink); padding: 6px 0 8px; outline: none; }
+.scrape-input::placeholder { color: var(--ink-muted); font-style: italic; }
+.scrape-input:focus { border-bottom-color: var(--gold); }
+.scrape-btn { padding: 11px 22px; background: var(--gold); color: white; border: none; font-family: var(--mono); font-size: 11px; letter-spacing: 0.15em; text-transform: uppercase; cursor: pointer; border-radius: 2px; transition: background 0.2s; white-space: nowrap; }
+.scrape-btn:hover { background: #9c5d29; }
+.scrape-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+.scrape-hint { width: 100%; font-family: var(--mono); font-size: 10px; color: var(--ink-muted); letter-spacing: 0.05em; }
+
 /* STATS ROW */
 .stats-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 1.5rem; }
 .stat-card { background: white; border: 1px solid var(--border); border-radius: 2px; padding: 1rem 1.25rem; text-align: center; }
@@ -159,7 +169,14 @@ footer em { color: var(--gold); font-style: normal; }
       <button class="sync-btn" id="syncBtn" onclick="triggerSync()">↻ 立即同步飞书数据</button>
     </div>
 
+    <div class="scrape-panel">
+      <input type="text" class="scrape-input" id="scrapeKeyword" placeholder="输入关键词，直接采集小红书公开内容（不经过飞书）" />
+      <button class="scrape-btn" id="scrapeBtn" onclick="triggerScrape()">⌕ 采集关键词</button>
+      <div class="scrape-hint">采集来源：搜索引擎发现的公开笔记 + 小红书探索页热门，不使用账号登录，结果直接进数据库</div>
+    </div>
+
     <div id="sync-error"></div>
+    <div id="scrape-error"></div>
 
     <div class="stats-row">
       <div class="stat-card">
@@ -238,6 +255,35 @@ async function triggerSync() {
   } finally {
     btn.disabled = false;
     btn.textContent = '↻ 立即同步飞书数据';
+  }
+}
+
+// ── 关键词直接采集 ──
+async function triggerScrape() {
+  const keyword = document.getElementById('scrapeKeyword').value.trim();
+  if (!keyword) { alert('请输入关键词'); return; }
+
+  const btn = document.getElementById('scrapeBtn');
+  btn.disabled = true;
+  btn.textContent = '采集中（可能需要30-60秒）...';
+  document.getElementById('scrape-error').innerHTML = '';
+  try {
+    const res = await fetch('/api/xhs/scrape', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
+      body: JSON.stringify({ keyword }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error((data.error && data.error.message) || data.error || '采集失败');
+    document.getElementById('scrape-error').innerHTML = `<div class="error-card" style="border-color:#b8dfc6;background:var(--green-bg);"><div class="error-title" style="color:var(--green);">采集完成</div><div class="error-msg">关键词「${data.keyword}」共获取 ${data.total} 条，新增 ${data.inserted} 条，更新 ${data.updated} 条</div></div>`;
+    document.getElementById('scrapeKeyword').value = '';
+    await loadKeywords();
+    await loadNotes();
+  } catch (err) {
+    document.getElementById('scrape-error').innerHTML = `<div class="error-card"><div class="error-title">采集失败</div><div class="error-msg">${err.message}</div></div>`;
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '⌕ 采集关键词';
   }
 }
 

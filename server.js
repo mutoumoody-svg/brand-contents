@@ -4,6 +4,7 @@ const fs        = require('fs');
 const bcrypt    = require('bcrypt');
 const jwt       = require('jsonwebtoken');
 const Database  = require('better-sqlite3');
+const { execFile } = require('child_process');
 // 文件解析包（懒加载，缺包时不影响主服务启动）
 let multer, pdfParse, mammoth, JSZip;
 try { multer   = require('multer');    } catch(e) {}
@@ -410,6 +411,9 @@ db.exec(`
     synced_at        DATETIME DEFAULT CURRENT_TIMESTAMP
   )
 `);
+// 兼容旧表：补充直接采集需要的列（已存在则忽略报错）
+try { db.exec("ALTER TABLE xhs_notes ADD COLUMN note_id TEXT DEFAULT ''"); } catch (e) {}
+try { db.exec("ALTER TABLE xhs_notes ADD COLUMN source TEXT DEFAULT 'feishu'"); } catch (e) {}
 
 // 飞书多维表格字段名映射：你的表格列名跟这里不一致时，在服务器环境变量里覆盖（如 FEISHU_FIELD_TITLE=笔记标题）
 const FEISHU_FIELD_MAP = {
@@ -548,6 +552,57 @@ app.post('/api/xhs/sync', authenticateToken, async (req, res) => {
   } catch (err) {
     res.status(500).json({ error: '同步失败：' + err.message });
   }
+});
+
+// 关键词直接采集：调用本地 Python 脚本（不依赖飞书/Coze，独立抓取公开小红书内容）
+app.post('/api/xhs/scrape', authenticateToken, (req, res) => {
+  const keyword = String(req.body?.keyword || '').trim();
+  if (!keyword) return res.status(400).json({ error: '请输入关键词' });
+  if (!process.env.BOCHA_API_KEY) {
+    return res.status(500).json({ error: '服务器未配置 BOCHA_API_KEY 环境变量' });
+  }
+  const maxDetails = Math.min(50, Math.max(5, parseInt(req.body?.max_details) || 20));
+  const scriptPath = path.join(__dirname, 'scripts', 'xhs_scrape.py');
+
+  execFile(
+    'python3',
+    [scriptPath, keyword, String(maxDetails)],
+    { timeout: 120000, maxBuffer: 10 * 1024 * 1024 },
+    (err, stdout, stderr) => {
+      if (stderr) console.log('[xhs_scrape stderr]\n' + stderr.slice(-2000));
+      if (err) return res.status(500).json({ error: '采集脚本执行失败：' + err.message });
+
+      let parsed;
+      try {
+        const lastLine = stdout.trim().split('\n').filter(Boolean).pop() || '';
+        parsed = JSON.parse(lastLine);
+      } catch (e) {
+        return res.status(500).json({ error: '采集结果解析失败：' + e.message });
+      }
+      if (parsed.error) return res.status(500).json({ error: parsed.error });
+
+      let inserted = 0, updated = 0;
+      for (const n of (parsed.notes || [])) {
+        const noteId = n.noteId || '';
+        const tagsJson = JSON.stringify(n.tagList || []);
+        const existing = noteId
+          ? db.prepare("SELECT id FROM xhs_notes WHERE note_id = ? AND note_id != ''").get(noteId)
+          : null;
+        if (existing) {
+          db.prepare(`UPDATE xhs_notes SET keyword=?, title=?, body=?, author=?, note_url=?, cover_image=?, tags=?, likes=?, comments=?, collects=?, synced_at=datetime('now','+8 hours') WHERE id=?`)
+            .run(n._keyword || keyword, n.title || '', n.desc || '', n.author || '', n.noteUrl || '', n.coverUrl || '', tagsJson,
+                 parseInt(n.likedCount) || 0, parseInt(n.commentCount) || 0, parseInt(n.collectedCount) || 0, existing.id);
+          updated++;
+        } else {
+          db.prepare(`INSERT INTO xhs_notes (note_id, source, keyword, title, body, author, note_url, cover_image, tags, likes, comments, collects, synced_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,datetime('now','+8 hours'))`)
+            .run(noteId, 'direct_scrape', n._keyword || keyword, n.title || '', n.desc || '', n.author || '', n.noteUrl || '', n.coverUrl || '', tagsJson,
+                 parseInt(n.likedCount) || 0, parseInt(n.commentCount) || 0, parseInt(n.collectedCount) || 0);
+          inserted++;
+        }
+      }
+      res.json({ total: (parsed.notes || []).length, inserted, updated, keyword });
+    }
+  );
 });
 
 // 笔记列表（支持 ?keyword= 过滤，按点赞数排序）
