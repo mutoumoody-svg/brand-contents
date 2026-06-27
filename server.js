@@ -461,11 +461,34 @@ async function getFeishuToken() {
   return _feishuToken;
 }
 
+// 如果多维表格是建在飞书"知识库"里的，URL 里拿不到 app_token，只能拿到 wiki 节点 token，
+// 需要先调用 wiki API 把节点 token 换成真正的 obj_token（即 bitable 的 app_token）
+let _resolvedAppToken = null;
+async function resolveFeishuAppToken() {
+  if (process.env.FEISHU_BITABLE_APP_TOKEN) return process.env.FEISHU_BITABLE_APP_TOKEN;
+  if (_resolvedAppToken) return _resolvedAppToken;
+
+  const nodeToken = process.env.FEISHU_WIKI_NODE_TOKEN;
+  if (!nodeToken) throw new Error('未配置 FEISHU_BITABLE_APP_TOKEN 或 FEISHU_WIKI_NODE_TOKEN');
+
+  const token = await getFeishuToken();
+  const res = await fetch(`https://open.feishu.cn/open-apis/wiki/v2/spaces/get_node?token=${encodeURIComponent(nodeToken)}`, {
+    headers: { 'Authorization': 'Bearer ' + token },
+  });
+  const data = await res.json();
+  if (data.code !== 0) throw new Error('飞书 Wiki 节点解析失败：' + data.msg);
+  if (data.data.node.obj_type !== 'bitable') throw new Error('该 Wiki 节点不是多维表格类型，实际类型：' + data.data.node.obj_type);
+
+  _resolvedAppToken = data.data.node.obj_token;
+  console.log('[飞书] Wiki 节点已解析为 app_token：', _resolvedAppToken);
+  return _resolvedAppToken;
+}
+
 async function fetchAllFeishuRecords() {
   const token    = await getFeishuToken();
-  const appToken = process.env.FEISHU_BITABLE_APP_TOKEN;
+  const appToken = await resolveFeishuAppToken();
   const tableId  = process.env.FEISHU_BITABLE_TABLE_ID;
-  if (!appToken || !tableId) throw new Error('未配置 FEISHU_BITABLE_APP_TOKEN / FEISHU_BITABLE_TABLE_ID');
+  if (!appToken || !tableId) throw new Error('未配置 FEISHU_BITABLE_APP_TOKEN(或FEISHU_WIKI_NODE_TOKEN) / FEISHU_BITABLE_TABLE_ID');
 
   let records = [], pageToken = '';
   do {
