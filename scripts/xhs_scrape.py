@@ -358,16 +358,32 @@ def search_notes(keyword, max_details=20):
                 })
 
     # 策略3: 直接抓取公开笔记页详情（数据最完整：真实点赞/收藏/评论）
+    # 先多抓一些候选（不直接按 max_details 截断），抓完详情后按点赞数排序，
+    # 再只保留 Top N —— 确保拿到的是这个关键词下互动最高、最值得参考的内容，
+    # 而不是博查搜索结果里随便排在前面的几条。
     detailed_notes = []
     if len(id_store) > 0:
-        ids = list(id_store.ids)[:max_details]
-        log(f"  → 获取 {len(ids)} 条笔记详情")
+        fetch_pool_size = min(len(id_store.ids), max(max_details * 2, 30))
+        ids = list(id_store.ids)[:fetch_pool_size]
+        log(f"  → 候选 {len(ids)} 条，抓取详情后按点赞排序取前 {max_details} 条")
         for note_id in ids:
             xsec = id_store.get_token(note_id)
             detail = fetch_note_detail(http_client, note_id, xsec)
             if detail:
                 detail["_extraction_method"] = "direct_fetch"
                 detailed_notes.append(detail)
+
+        def _likes(n):
+            raw = str(n.get("likedCount", 0) or 0)
+            try:
+                if "万" in raw:
+                    return int(float(raw.replace("万", "")) * 10000)
+                return int(float(raw))
+            except (ValueError, TypeError):
+                return 0
+
+        detailed_notes.sort(key=_likes, reverse=True)
+        detailed_notes = detailed_notes[:max_details]
 
     # 策略4兜底: explore 首页热门
     basic_notes = []

@@ -171,8 +171,9 @@ footer em { color: var(--gold); font-style: normal; }
 
     <div class="scrape-panel">
       <input type="text" class="scrape-input" id="scrapeKeyword" placeholder="输入关键词，直接采集小红书公开内容（不经过飞书）" />
+      <input type="number" class="scrape-input" id="scrapeMaxDetails" value="20" min="5" max="50" style="flex:0 0 90px;" title="想要几条（按点赞排序取前N条）" />
       <button class="scrape-btn" id="scrapeBtn" onclick="triggerScrape()">⌕ 采集关键词</button>
-      <div class="scrape-hint">采集来源：搜索引擎发现的公开笔记 + 小红书探索页热门，不使用账号登录，结果直接进数据库</div>
+      <div class="scrape-hint">采集来源：搜索引擎发现的公开笔记 + 小红书探索页热门，不使用账号登录，按点赞数取前N条最有参考价值的内容，结果直接进数据库</div>
     </div>
 
     <div id="sync-error"></div>
@@ -262,6 +263,7 @@ async function triggerSync() {
 async function triggerScrape() {
   const keyword = document.getElementById('scrapeKeyword').value.trim();
   if (!keyword) { alert('请输入关键词'); return; }
+  const maxDetails = Math.min(50, Math.max(5, parseInt(document.getElementById('scrapeMaxDetails').value) || 20));
 
   const btn = document.getElementById('scrapeBtn');
   btn.disabled = true;
@@ -271,7 +273,7 @@ async function triggerScrape() {
     const res = await fetch('/api/xhs/scrape', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
-      body: JSON.stringify({ keyword }),
+      body: JSON.stringify({ keyword, max_details: maxDetails }),
     });
     const data = await res.json();
     if (!res.ok) throw new Error((data.error && data.error.message) || data.error || '采集失败');
