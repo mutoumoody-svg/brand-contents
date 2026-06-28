@@ -4,7 +4,6 @@ const fs        = require('fs');
 const bcrypt    = require('bcrypt');
 const jwt       = require('jsonwebtoken');
 const Database  = require('better-sqlite3');
-const { execFile } = require('child_process');
 // 文件解析包（懒加载，缺包时不影响主服务启动）
 let multer, pdfParse, mammoth, JSZip;
 try { multer   = require('multer');    } catch(e) {}
@@ -554,55 +553,49 @@ app.post('/api/xhs/sync', authenticateToken, async (req, res) => {
   }
 });
 
-// 关键词直接采集：调用本地 Python 脚本（不依赖飞书/Coze，独立抓取公开小红书内容）
-app.post('/api/xhs/scrape', authenticateToken, (req, res) => {
+// 关键词采集：调用 Coze 工作流（小红书搜索+详情 → 写入飞书多维表格），再把飞书最新数据同步进本地库
+async function runCozeScrapeWorkflow(keyword) {
+  if (!process.env.COZE_PAT || !process.env.COZE_WORKFLOW_ID) {
+    throw new Error('服务器未配置 COZE_PAT / COZE_WORKFLOW_ID 环境变量');
+  }
+  if (!process.env.XHS_COOKIE) {
+    throw new Error('服务器未配置 XHS_COOKIE 环境变量（小红书登录态，过期需手动更新）');
+  }
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 120000);
+  let res;
+  try {
+    res = await fetch('https://api.coze.cn/v1/workflow/run', {
+      method: 'POST',
+      headers: {
+        'Authorization': 'Bearer ' + process.env.COZE_PAT,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        workflow_id: process.env.COZE_WORKFLOW_ID,
+        parameters: { keyword, cookie: process.env.XHS_COOKIE },
+      }),
+      signal: controller.signal,
+    });
+  } finally {
+    clearTimeout(timer);
+  }
+  const data = await res.json();
+  if (data.code !== 0) throw new Error('Coze 工作流调用失败：' + data.msg);
+  return data;
+}
+
+app.post('/api/xhs/scrape', authenticateToken, async (req, res) => {
   const keyword = String(req.body?.keyword || '').trim();
   if (!keyword) return res.status(400).json({ error: '请输入关键词' });
-  if (!process.env.BOCHA_API_KEY) {
-    return res.status(500).json({ error: '服务器未配置 BOCHA_API_KEY 环境变量' });
+  try {
+    await runCozeScrapeWorkflow(keyword);
+    const result = await syncFeishuNotes();
+    const keywordCount = db.prepare('SELECT COUNT(*) as c FROM xhs_notes WHERE keyword = ?').get(keyword).c;
+    res.json({ ...result, keyword, keyword_count: keywordCount });
+  } catch (err) {
+    res.status(500).json({ error: '采集失败：' + err.message });
   }
-  const maxDetails = Math.min(50, Math.max(5, parseInt(req.body?.max_details) || 20));
-  const scriptPath = path.join(__dirname, 'scripts', 'xhs_scrape.py');
-
-  execFile(
-    'python3',
-    [scriptPath, keyword, String(maxDetails)],
-    { timeout: 120000, maxBuffer: 10 * 1024 * 1024 },
-    (err, stdout, stderr) => {
-      if (stderr) console.log('[xhs_scrape stderr]\n' + stderr.slice(-2000));
-      if (err) return res.status(500).json({ error: '采集脚本执行失败：' + err.message });
-
-      let parsed;
-      try {
-        const lastLine = stdout.trim().split('\n').filter(Boolean).pop() || '';
-        parsed = JSON.parse(lastLine);
-      } catch (e) {
-        return res.status(500).json({ error: '采集结果解析失败：' + e.message });
-      }
-      if (parsed.error) return res.status(500).json({ error: parsed.error });
-
-      let inserted = 0, updated = 0;
-      for (const n of (parsed.notes || [])) {
-        const noteId = n.noteId || '';
-        const tagsJson = JSON.stringify(n.tagList || []);
-        const existing = noteId
-          ? db.prepare("SELECT id FROM xhs_notes WHERE note_id = ? AND note_id != ''").get(noteId)
-          : null;
-        if (existing) {
-          db.prepare(`UPDATE xhs_notes SET keyword=?, title=?, body=?, author=?, note_url=?, cover_image=?, tags=?, likes=?, comments=?, collects=?, synced_at=datetime('now','+8 hours') WHERE id=?`)
-            .run(n._keyword || keyword, n.title || '', n.desc || '', n.author || '', n.noteUrl || '', n.coverUrl || '', tagsJson,
-                 parseInt(n.likedCount) || 0, parseInt(n.commentCount) || 0, parseInt(n.collectedCount) || 0, existing.id);
-          updated++;
-        } else {
-          db.prepare(`INSERT INTO xhs_notes (note_id, source, keyword, title, body, author, note_url, cover_image, tags, likes, comments, collects, synced_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,datetime('now','+8 hours'))`)
-            .run(noteId, 'direct_scrape', n._keyword || keyword, n.title || '', n.desc || '', n.author || '', n.noteUrl || '', n.coverUrl || '', tagsJson,
-                 parseInt(n.likedCount) || 0, parseInt(n.commentCount) || 0, parseInt(n.collectedCount) || 0);
-          inserted++;
-        }
-      }
-      res.json({ total: (parsed.notes || []).length, inserted, updated, keyword });
-    }
-  );
 });
 
 // 笔记列表（支持 ?keyword= 过滤，按点赞数排序）
