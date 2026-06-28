@@ -363,16 +363,24 @@ function renderNotes() {
           <span>♥ ${n.likes || 0}</span>
           <span>💬 ${n.comments || 0}</span>
           <span>★ ${n.collects || 0}</span>
+          <span>Σ ${n.total_engagement || 0}</span>
         </div>
       </div>
       <div class="note-title">${n.title || '无标题'}</div>
       <div class="note-body" id="nb-${n.id}" onclick="toggleNoteBody(${n.id})">${(n.body || '').replace(/\n/g, '<br>')}</div>
       <div class="note-foot">
         ${n.note_url ? `<a class="note-link" href="${n.note_url}" target="_blank" rel="noopener">查看原帖 →</a>` : '<span></span>'}
-        <span class="note-synced-at">采集于 ${n.synced_at || '未知时间'}</span>
+        <span class="note-synced-at">发布于 ${formatDate(n.published_at)} · 采集于 ${formatDate(n.fetched_at)}</span>
         <button class="note-del" onclick="deleteNote(${n.id})">删除</button>
       </div>
     </div>`).join('');
+}
+
+function formatDate(ms) {
+  if (!ms) return '未知时间';
+  const d = new Date(ms);
+  const pad = n => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
 function toggleNoteBody(id) {

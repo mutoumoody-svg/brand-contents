@@ -414,6 +414,9 @@ db.exec(`
 // 兼容旧表：补充直接采集需要的列（已存在则忽略报错）
 try { db.exec("ALTER TABLE xhs_notes ADD COLUMN note_id TEXT DEFAULT ''"); } catch (e) {}
 try { db.exec("ALTER TABLE xhs_notes ADD COLUMN source TEXT DEFAULT 'feishu'"); } catch (e) {}
+try { db.exec("ALTER TABLE xhs_notes ADD COLUMN total_engagement INTEGER DEFAULT 0"); } catch (e) {}
+try { db.exec("ALTER TABLE xhs_notes ADD COLUMN published_at INTEGER"); } catch (e) {}
+try { db.exec("ALTER TABLE xhs_notes ADD COLUMN fetched_at INTEGER"); } catch (e) {}
 
 // 飞书多维表格字段名映射：你的表格列名跟这里不一致时，在服务器环境变量里覆盖（如 FEISHU_FIELD_TITLE=笔记标题）
 const FEISHU_FIELD_MAP = {
@@ -427,6 +430,9 @@ const FEISHU_FIELD_MAP = {
   likes:      process.env.FEISHU_FIELD_LIKES    || '点赞',
   comments:   process.env.FEISHU_FIELD_COMMENTS || '评论',
   collects:   process.env.FEISHU_FIELD_COLLECTS || '收藏',
+  totalEngagement: process.env.FEISHU_FIELD_TOTAL_ENGAGEMENT || '总互动量',
+  publishedAt:     process.env.FEISHU_FIELD_PUBLISHED_AT     || '发布时间',
+  fetchedAt:       process.env.FEISHU_FIELD_FETCHED_AT       || '数据获取时间',
 };
 
 // 飞书多维表格字段值可能是字符串/数字/富文本数组/附件数组，统一转成文字
@@ -525,16 +531,19 @@ async function syncFeishuNotes() {
       likes:       parseInt(feishuFieldText(f, FEISHU_FIELD_MAP.likes))    || 0,
       comments:    parseInt(feishuFieldText(f, FEISHU_FIELD_MAP.comments)) || 0,
       collects:    parseInt(feishuFieldText(f, FEISHU_FIELD_MAP.collects)) || 0,
+      total_engagement: parseInt(feishuFieldText(f, FEISHU_FIELD_MAP.totalEngagement)) || 0,
+      published_at:     parseInt(feishuFieldText(f, FEISHU_FIELD_MAP.publishedAt))     || null,
+      fetched_at:        parseInt(feishuFieldText(f, FEISHU_FIELD_MAP.fetchedAt))       || null,
     };
 
     const existing = db.prepare('SELECT id FROM xhs_notes WHERE feishu_record_id = ?').get(row.feishu_record_id);
     if (existing) {
-      db.prepare(`UPDATE xhs_notes SET keyword=?, title=?, body=?, author=?, note_url=?, cover_image=?, tags=?, likes=?, comments=?, collects=?, synced_at=datetime('now','+8 hours') WHERE id=?`)
-        .run(row.keyword, row.title, row.body, row.author, row.note_url, row.cover_image, row.tags, row.likes, row.comments, row.collects, existing.id);
+      db.prepare(`UPDATE xhs_notes SET keyword=?, title=?, body=?, author=?, note_url=?, cover_image=?, tags=?, likes=?, comments=?, collects=?, total_engagement=?, published_at=?, fetched_at=?, synced_at=datetime('now','+8 hours') WHERE id=?`)
+        .run(row.keyword, row.title, row.body, row.author, row.note_url, row.cover_image, row.tags, row.likes, row.comments, row.collects, row.total_engagement, row.published_at, row.fetched_at, existing.id);
       updated++;
     } else {
-      db.prepare(`INSERT INTO xhs_notes (feishu_record_id, keyword, title, body, author, note_url, cover_image, tags, likes, comments, collects, synced_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,datetime('now','+8 hours'))`)
-        .run(row.feishu_record_id, row.keyword, row.title, row.body, row.author, row.note_url, row.cover_image, row.tags, row.likes, row.comments, row.collects);
+      db.prepare(`INSERT INTO xhs_notes (feishu_record_id, keyword, title, body, author, note_url, cover_image, tags, likes, comments, collects, total_engagement, published_at, fetched_at, synced_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,datetime('now','+8 hours'))`)
+        .run(row.feishu_record_id, row.keyword, row.title, row.body, row.author, row.note_url, row.cover_image, row.tags, row.likes, row.comments, row.collects, row.total_engagement, row.published_at, row.fetched_at);
       inserted++;
     }
   }
