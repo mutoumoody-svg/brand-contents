@@ -586,17 +586,32 @@ async function runCozeScrapeWorkflow(keyword) {
   return data;
 }
 
-app.post('/api/xhs/scrape', authenticateToken, async (req, res) => {
+// Coze 工作流单次运行要 30-50 秒，容易被反向代理超时打断，导致请求"看起来失败"但后台其实跑完了。
+// 改成提交即返回 + 前端轮询状态，避免长时间挂住一个 HTTP 请求。
+const scrapeJobs = {}; // keyword -> { status: 'running'|'success'|'failed', startedAt, finishedAt, error, result, keywordCount }
+
+app.post('/api/xhs/scrape', authenticateToken, (req, res) => {
   const keyword = String(req.body?.keyword || '').trim();
   if (!keyword) return res.status(400).json({ error: '请输入关键词' });
-  try {
-    await runCozeScrapeWorkflow(keyword);
-    const result = await syncFeishuNotes();
-    const keywordCount = db.prepare('SELECT COUNT(*) as c FROM xhs_notes WHERE keyword = ?').get(keyword).c;
-    res.json({ ...result, keyword, keyword_count: keywordCount });
-  } catch (err) {
-    res.status(500).json({ error: '采集失败：' + err.message });
-  }
+
+  scrapeJobs[keyword] = { status: 'running', startedAt: Date.now() };
+  res.json({ status: 'started', keyword });
+
+  (async () => {
+    try {
+      await runCozeScrapeWorkflow(keyword);
+      const result = await syncFeishuNotes();
+      const keywordCount = db.prepare('SELECT COUNT(*) as c FROM xhs_notes WHERE keyword = ?').get(keyword).c;
+      scrapeJobs[keyword] = { status: 'success', finishedAt: Date.now(), result, keywordCount };
+    } catch (err) {
+      scrapeJobs[keyword] = { status: 'failed', finishedAt: Date.now(), error: err.message };
+    }
+  })();
+});
+
+app.get('/api/xhs/scrape/status', authenticateToken, (req, res) => {
+  const keyword = String(req.query.keyword || '').trim();
+  res.json(scrapeJobs[keyword] || { status: 'unknown' });
 });
 
 // 笔记列表（支持 ?keyword= 过滤，按点赞数排序）

@@ -89,10 +89,11 @@ main { padding: 2.5rem 0 6rem; }
 .note-body::after { content: '点击展开'; position: absolute; bottom: 0; left: 0; right: 0; height: 24px; background: linear-gradient(transparent,white); display: flex; align-items: flex-end; font-family: var(--mono); font-size: 9px; color: var(--ink-muted); }
 .note-body.expanded { max-height: none; }
 .note-body.expanded::after { display: none; }
-.note-foot { display: flex; align-items: center; justify-content: space-between; margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--border); }
-.note-link { font-family: var(--mono); font-size: 10px; color: var(--gold); text-decoration: none; }
+.note-foot { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--border); }
+.note-link { font-family: var(--mono); font-size: 10px; color: var(--gold); text-decoration: none; flex: 0 0 auto; }
 .note-link:hover { text-decoration: underline; }
-.note-del { font-family: var(--mono); font-size: 9px; color: var(--ink-muted); background: transparent; border: 1px solid var(--border-strong); padding: 3px 9px; border-radius: 2px; cursor: pointer; }
+.note-synced-at { font-family: var(--mono); font-size: 9px; color: var(--ink-muted); flex: 1; text-align: center; }
+.note-del { font-family: var(--mono); font-size: 9px; color: var(--ink-muted); background: transparent; border: 1px solid var(--border-strong); padding: 3px 9px; border-radius: 2px; cursor: pointer; flex: 0 0 auto; }
 .note-del:hover { color: var(--accent); border-color: var(--accent-light); background: var(--accent-pale); }
 
 /* ANALYSIS */
@@ -258,24 +259,38 @@ async function triggerSync() {
   }
 }
 
-// ── 关键词直接采集 ──
+// ── 关键词直接采集（提交即返回，前端轮询状态，避免长请求被反向代理超时打断）──
 async function triggerScrape() {
   const keyword = document.getElementById('scrapeKeyword').value.trim();
   if (!keyword) { alert('请输入关键词'); return; }
 
   const btn = document.getElementById('scrapeBtn');
   btn.disabled = true;
-  btn.textContent = '采集中（可能需要30-60秒）...';
   document.getElementById('scrape-error').innerHTML = '';
   try {
-    const res = await fetch('/api/xhs/scrape', {
+    const startRes = await fetch('/api/xhs/scrape', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
       body: JSON.stringify({ keyword }),
     });
-    const data = await res.json();
-    if (!res.ok) throw new Error((data.error && data.error.message) || data.error || '采集失败');
-    document.getElementById('scrape-error').innerHTML = `<div class="error-card" style="border-color:#b8dfc6;background:var(--green-bg);"><div class="error-title" style="color:var(--green);">采集完成</div><div class="error-msg">关键词「${data.keyword}」库中现有 ${data.keyword_count} 条，本次同步新增 ${data.inserted} 条，更新 ${data.updated} 条</div></div>`;
+    const startData = await startRes.json();
+    if (!startRes.ok) throw new Error((startData.error && startData.error.message) || startData.error || '提交失败');
+
+    btn.textContent = '采集中（可能需要30-60秒）...';
+    document.getElementById('scrape-error').innerHTML = `<div class="error-card" style="border-color:#cdd7e8;background:#eef2f8;"><div class="error-title" style="color:#3a5a8c;">已提交</div><div class="error-msg">关键词「${keyword}」正在后台采集，请稍候...</div></div>`;
+
+    const deadline = Date.now() + 90000;
+    let final = null;
+    while (Date.now() < deadline) {
+      await new Promise(r => setTimeout(r, 3000));
+      const statusRes = await fetch('/api/xhs/scrape/status?keyword=' + encodeURIComponent(keyword), { headers: getAuthHeader() });
+      const statusData = await statusRes.json();
+      if (statusData.status === 'success' || statusData.status === 'failed') { final = statusData; break; }
+    }
+    if (!final) throw new Error('采集超时，可能仍在后台运行，请稍后点"立即同步"查看结果');
+    if (final.status === 'failed') throw new Error(final.error || '采集失败');
+
+    document.getElementById('scrape-error').innerHTML = `<div class="error-card" style="border-color:#b8dfc6;background:var(--green-bg);"><div class="error-title" style="color:var(--green);">采集完成</div><div class="error-msg">关键词「${keyword}」库中现有 ${final.keywordCount} 条，本次同步新增 ${final.result.inserted} 条，更新 ${final.result.updated} 条</div></div>`;
     document.getElementById('scrapeKeyword').value = '';
     await loadKeywords();
     await loadNotes();
@@ -354,6 +369,7 @@ function renderNotes() {
       <div class="note-body" id="nb-${n.id}" onclick="toggleNoteBody(${n.id})">${(n.body || '').replace(/\n/g, '<br>')}</div>
       <div class="note-foot">
         ${n.note_url ? `<a class="note-link" href="${n.note_url}" target="_blank" rel="noopener">查看原帖 →</a>` : '<span></span>'}
+        <span class="note-synced-at">采集于 ${n.synced_at || '未知时间'}</span>
         <button class="note-del" onclick="deleteNote(${n.id})">删除</button>
       </div>
     </div>`).join('');
