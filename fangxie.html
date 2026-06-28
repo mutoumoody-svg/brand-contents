@@ -383,6 +383,14 @@ AI 会学习这段内容的语气、节奏、用词习惯，然后用同样的�
     <!-- Text input -->
     <div class="input-panel active" id="panel-text">
       <div class="field">
+        <label>小红书帖子链接（可选，自动提取标题和文案）</label>
+        <div style="display:flex;gap:10px;align-items:center;">
+          <input type="text" id="note-url" placeholder="粘贴小红书帖子链接..." style="flex:1;background:transparent;border:none;border-bottom:1px solid var(--border-strong);font-family:var(--serif);font-size:14px;color:var(--ink);padding:6px 0 8px;outline:none;transition:border-color 0.2s;" />
+          <button type="button" id="extractBtn" onclick="extractNote()" style="flex:0 0 auto;border:1px solid var(--border-strong);background:transparent;padding:7px 16px;font-size:13px;cursor:pointer;white-space:nowrap;">提取</button>
+        </div>
+        <div id="extract-error" style="margin-top:6px;"></div>
+      </div>
+      <div class="field">
         <label>爆文内容（标题 + 正文全部粘贴进来）</label>
         <textarea id="viral-text" placeholder="把小红书爆文的标题和正文全部粘贴在这里...
 
@@ -707,6 +715,33 @@ function switchInput(mode) {
   });
   document.getElementById('panel-text').classList.toggle('active', mode === 'text');
   document.getElementById('panel-image').classList.toggle('active', mode === 'image');
+}
+
+async function extractNote() {
+  const noteUrl = document.getElementById('note-url').value.trim();
+  const errBox = document.getElementById('extract-error');
+  errBox.innerHTML = '';
+  if (!noteUrl) { errBox.innerHTML = '<div class="error-msg" style="color:#b54848;font-size:13px;">请先粘贴链接</div>'; return; }
+
+  const btn = document.getElementById('extractBtn');
+  btn.disabled = true;
+  btn.textContent = '提取中...';
+  try {
+    const res = await fetch('/api/xhs/extract', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
+      body: JSON.stringify({ noteUrl }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || '提取失败');
+    const ta = document.getElementById('viral-text');
+    ta.value = `【标题】${data.title}\n【正文】${data.desc}`;
+  } catch (err) {
+    errBox.innerHTML = `<div class="error-msg" style="color:#b54848;font-size:13px;">${err.message}</div>`;
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '提取';
+  }
 }
 
 function setStep(n) {
