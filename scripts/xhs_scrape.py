@@ -189,34 +189,6 @@ def extract_note_detail(state, note_id):
     }
 
 
-def extract_note_basic(feed_item):
-    note_card = feed_item.get("noteCard", {})
-    if not note_card:
-        return None
-    note_id = feed_item.get("id", "")
-    user = note_card.get("user", {})
-    interact = note_card.get("interactInfo", {})
-    cover = note_card.get("cover", {})
-    cover_hd = ""
-    for info in cover.get("infoList", []):
-        if info.get("url"):
-            cover_hd = info["url"]
-            break
-    return {
-        "noteId": note_id,
-        "title": note_card.get("displayTitle", ""),
-        "desc": "",
-        "author": user.get("nickname", user.get("nickName", "")),
-        "likedCount": interact.get("likedCount", "0"),
-        "collectedCount": interact.get("collectedCount", "0"),
-        "commentCount": interact.get("commentCount", "0"),
-        "tagList": [],
-        "coverUrl": cover_hd or cover.get("url", ""),
-        "noteUrl": f"{XHS_EXPLORE_URL}/{note_id}",
-        "xsecToken": feed_item.get("xsecToken", ""),
-    }
-
-
 def fetch_note_detail(http_client, note_id, xsec_token=""):
     try:
         url = f"{XHS_EXPLORE_URL}/{note_id}"
@@ -224,38 +196,19 @@ def fetch_note_detail(http_client, note_id, xsec_token=""):
             url += f"?xsec_token={xsec_token}&xsec_source=pc_search"
         resp = http_client.get(url)
         if not resp:
+            log(f"    [详情失败] {note_id}: HTTP 请求未成功（重试后仍失败，可能是403/429/超时）")
             return None
         state = parse_initial_state(resp.text)
         if not state:
+            log(f"    [详情失败] {note_id}: 页面里没找到 __INITIAL_STATE__，可能是验证页/登录墙，页面片段：{resp.text[:150]!r}")
             return None
-        return extract_note_detail(state, note_id)
+        detail = extract_note_detail(state, note_id)
+        if not detail:
+            log(f"    [详情失败] {note_id}: __INITIAL_STATE__ 解析到了但取不出笔记数据（可能是无 xsec_token 被限制返回）")
+        return detail
     except Exception as e:
-        log(f"    [详情错误] {e}")
+        log(f"    [详情错误] {note_id}: {e}")
         return None
-
-
-def search_via_explore(http_client):
-    """策略4兜底: 小红书 explore 首页公开热门推荐（未登录可见）"""
-    notes = []
-    store = NoteIdStore()
-    try:
-        resp = http_client.get(XHS_EXPLORE_URL)
-        if not resp:
-            return notes, store
-        state = parse_initial_state(resp.text)
-        if not state:
-            return notes, store
-        feeds = state.get("feed", {}).get("feeds", [])
-        for item in feeds:
-            if not isinstance(item, dict):
-                continue
-            basic = extract_note_basic(item)
-            if basic:
-                notes.append(basic)
-                store.add(basic["noteId"], basic.get("xsecToken", ""))
-    except Exception as e:
-        log(f"  [explore 错误] {e}")
-    return notes, store
 
 
 def search_via_bocha(keyword, max_queries=3):
@@ -385,19 +338,15 @@ def search_notes(keyword, max_details=20):
         detailed_notes.sort(key=_likes, reverse=True)
         detailed_notes = detailed_notes[:max_details]
 
-    # 策略4兜底: explore 首页热门
-    basic_notes = []
-    if len(detailed_notes) < 3 and len(extracted_notes) < 3:
-        log("  → 数据不足，回退到 explore 首页热门推荐")
-        explore_notes, _ = search_via_explore(http_client)
-        for n in explore_notes:
-            n["_extraction_method"] = "explore_trending"
-        basic_notes = explore_notes
+    # 不再用 explore 首页热门兜底凑数：那批内容跟关键词毫无关系，
+    # 混进结果里只会让人觉得"搜A出来的是B"。宁可结果少，不要塞不相关内容。
+    if len(detailed_notes) == 0 and len(extracted_notes) == 0:
+        log("  ⚠️ 没有找到与关键词相关的真实小红书内容，建议换个更通用/更常见的关键词试试")
 
-    result = detailed_notes + extracted_notes + basic_notes
+    result = detailed_notes + extracted_notes
     for n in result:
         n["_keyword"] = keyword
-    log(f"\n完成: 共获取 {len(result)} 条笔记")
+    log(f"\n完成: 共获取 {len(result)} 条与关键词相关的笔记")
     return result
 
 
