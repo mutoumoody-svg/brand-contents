@@ -118,6 +118,16 @@ h1 {
   border-bottom: 1px solid var(--border);
 }
 .footer-link a:hover { color: var(--ink); }
+.module-note {
+  margin: 1.25rem 0 0;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  background: var(--accent-pale);
+  color: var(--ink-soft);
+  font-size: 13px;
+  line-height: 1.7;
+  text-align: center;
+}
 </style>
 </head>
 <body>
@@ -134,12 +144,13 @@ h1 {
     <input type="password" id="password" placeholder="••••••••" autocomplete="current-password"/>
   </div>
   <button class="btn" id="loginBtn" onclick="login()">登录 →</button>
+  <div class="module-note">登录后进入“小红书文案”模块，学习写法方法、分析爆文并生成小红书笔记。</div>
   <div class="footer-link" style="margin-top:1.25rem;">还没有账号？<a href="/register.html">申请注册</a></div>
 </div>
 
 <script>
 // 已登录则直接跳转
-if (localStorage.getItem('brand_auth_token')) window.location.replace('/index.html');
+if (localStorage.getItem('brand_auth_token')) window.location.replace('/xhs-writing.html');
 
 document.getElementById('password').addEventListener('keydown', e => {
   if (e.key === 'Enter') login();
@@ -178,7 +189,7 @@ async function login() {
     localStorage.setItem('brand_auth_token', data.token);
     localStorage.setItem('brand_user_name',  data.name);
     localStorage.setItem('brand_user_role',  data.role);
-    window.location.replace('/index.html');
+    window.location.replace('/xhs-writing.html');
   } catch {
     errEl.textContent   = '网络错误，请重试';
     errEl.style.display = 'block';
