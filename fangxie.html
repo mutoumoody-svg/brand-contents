@@ -1089,11 +1089,11 @@ ${brandContext ? `【品牌档案（写作时严格遵守）】\n${brandContext}
 function checkKey() { return true; } // Key 由服务器环境变量管理
 
 async function callClaude(messages) {
-  const res = await fetch('https://anthorpic-proxy.mutoumoody.workers.dev/', {
+  const res = await fetch('/api/claude', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'x-worker-secret': 'brand-worker-nz-2024',
+      'Authorization': 'Bearer ' + (localStorage.getItem('brand_auth_token') || ''),
     },
     body: JSON.stringify({
       model: 'claude-haiku-4-5-20251001',

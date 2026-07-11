@@ -2,7 +2,7 @@ try { require('dotenv').config(); } catch (e) {}
 const express  = require('express');
 const path      = require('path');
 const fs        = require('fs');
-const bcrypt    = require('bcrypt');
+const bcrypt    = require('bcryptjs');
 const jwt       = require('jsonwebtoken');
 const Database  = require('better-sqlite3');
 // 文件解析包（懒加载，缺包时不影响主服务启动）
@@ -16,6 +16,7 @@ const app        = express();
 const PORT       = process.env.PORT       || 3000;
 const API_KEY    = process.env.ANTHROPIC_API_KEY;
 const JWT_SECRET = process.env.JWT_SECRET || 'brand-center-change-this-in-env';
+const CLAUDE_WORKER_SECRET = process.env.CLAUDE_WORKER_SECRET || 'brand-worker-nz-2024';
 
 // ── 数据库初始化 ──
 const DATA_DIR = path.join(__dirname, 'data');
@@ -34,6 +35,14 @@ db.exec(`
 `);
 
 app.use(express.json({ limit: '10mb' }));
+
+app.get('/api/health', (req, res) => {
+  res.json({
+    ok: true,
+    service: 'brand-contents',
+    time: new Date().toISOString(),
+  });
+});
 
 // upload 中间件（multer 加载后才初始化）
 function getUpload() {
@@ -772,7 +781,7 @@ app.post('/api/claude', authenticateToken, async (req, res) => {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'x-worker-secret': 'brand-worker-nz-2024',
+        'x-worker-secret': CLAUDE_WORKER_SECRET,
       },
       body: JSON.stringify(req.body),
     });
@@ -793,7 +802,7 @@ app.post('/api/internal/claude', (req, res) => {
   if (ip !== '127.0.0.1' && ip !== '::1') {
     return res.status(403).json({ error: { message: '仅限本机调用' } });
   }
-  if (req.headers['x-worker-secret'] !== 'brand-worker-nz-2024') {
+  if (req.headers['x-worker-secret'] !== CLAUDE_WORKER_SECRET) {
     return res.status(403).json({ error: { message: '密钥错误' } });
   }
   if (!API_KEY) {
@@ -802,7 +811,7 @@ app.post('/api/internal/claude', (req, res) => {
   const PROXY_URL = process.env.CLAUDE_PROXY_URL || 'https://anthorpic-proxy.mutoumoody.workers.dev/';
   fetch(PROXY_URL, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'x-worker-secret': 'brand-worker-nz-2024' },
+    headers: { 'Content-Type': 'application/json', 'x-worker-secret': CLAUDE_WORKER_SECRET },
     body: JSON.stringify(req.body),
   })
     .then(async (response) => {

@@ -1,0 +1,708 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="ink-classic">
+<head>
+  <meta charset="utf-8">
+  <title>用 AI 替小品牌扛下来 · Social Card Set</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;500;700&family=Noto+Sans+SC:wght@300;400;500;700&family=Playfair+Display:ital,wght@0,400;1,400&family=Inter:wght@300;400;500&family=IBM+Plex+Mono:wght@400;500&display=swap">
+  <style>
+    /* === 1. Theme tokens === */
+    :root, [data-theme="ink-classic"] {
+      --paper:       #f3f0e8;
+      --paper-2:     #ebe6da;
+      --ink:         #0a0a0b;
+      --muted:       #68625a;
+      --line:        rgba(10,10,11,.22);
+      --accent:      #111111;
+      --accent-soft: #d8d2c6;
+      --ink-rgb:     10,10,11;
+      --paper-rgb:   243,240,232;
+      --accent-rgb:  17,17,17;
+    }
+
+    /* === 2. Typography stack === */
+    :root {
+      --serif-zh: "Noto Serif SC","Songti SC","STSong",serif;
+      --serif-en: "Playfair Display","Noto Serif SC",serif;
+      --sans-zh:  "Noto Sans SC",-apple-system,"PingFang SC","Microsoft YaHei UI",sans-serif;
+      --mono:     "IBM Plex Mono",ui-monospace,"SF Mono",Consolas,monospace;
+    }
+
+    /* === 3. Reset === */
+    *, *::before, *::after { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body {
+      background: #1a1a1a;
+      font-family: var(--sans-zh);
+      color: var(--ink);
+      -webkit-font-smoothing: antialiased;
+      padding: 64px 32px;
+    }
+    .sheet { display: flex; flex-direction: column; align-items: center; gap: 48px; }
+
+    /* === 4. Poster boards === */
+    .poster {
+      position: relative;
+      background: var(--paper);
+      color: var(--ink);
+      overflow: hidden;
+      isolation: isolate;
+    }
+    .poster.xhs    { width: 1080px; height: 1440px; }
+    .poster figure { margin: 0; }
+    .poster.xhs .content { padding: 96px 88px 128px; }
+    .content { position: relative; width: 100%; height: 100%; z-index: 2; }
+
+    /* === 5. Background layers === */
+    .mag-bg {
+      position: absolute; inset: 0;
+      width: 100%; height: 100%;
+      z-index: 0; pointer-events: none;
+    }
+    .grain {
+      position: absolute; inset: 0; z-index: 1; pointer-events: none;
+      opacity: .35; mix-blend-mode: multiply;
+      background-image: radial-gradient(rgba(0,0,0,.045) 1px, transparent 1px);
+      background-size: 3px 3px;
+    }
+    .paper-wash {
+      position: absolute; inset: 0; z-index: 1; pointer-events: none;
+      background: linear-gradient(180deg,
+        rgba(var(--ink-rgb),.02),
+        rgba(var(--ink-rgb),.05) 60%,
+        rgba(var(--ink-rgb),.08));
+    }
+
+    /* === 6. Typography roles === */
+    .kicker {
+      font-family: var(--mono);
+      font-size: 21px; letter-spacing: .22em;
+      text-transform: uppercase;
+      color: rgba(var(--ink-rgb),.55);
+      margin: 0 0 18px;
+    }
+    .h-display {
+      font-family: var(--serif-zh);
+      font-weight: 500; font-size: 112px;
+      line-height: 1.08; letter-spacing: .04em;
+      margin: 0 0 20px; color: var(--ink);
+    }
+    .h-xl {
+      font-family: var(--serif-zh);
+      font-weight: 500; font-size: 88px;
+      line-height: 1.10; letter-spacing: .03em;
+      margin: 0 0 24px; color: var(--ink);
+    }
+    .h-md {
+      font-family: var(--serif-zh);
+      font-weight: 500; font-size: 52px;
+      line-height: 1.18; letter-spacing: .02em;
+      margin: 0 0 14px; color: var(--ink);
+    }
+    .h-sub {
+      font-family: var(--serif-en);
+      font-style: italic; font-weight: 400;
+      font-size: 34px; color: var(--muted);
+      margin: 0 0 24px;
+    }
+    .lead {
+      font-family: var(--serif-zh);
+      font-weight: 400; font-size: 28px;
+      line-height: 1.6; color: rgba(var(--ink-rgb),.82);
+      margin: 0 0 20px;
+    }
+    .body {
+      font-family: var(--serif-zh);
+      font-weight: 400; font-size: 24px;
+      line-height: 1.65; color: rgba(var(--ink-rgb),.78);
+      margin: 0 0 16px;
+    }
+    .meta {
+      font-family: var(--mono); font-size: 18px;
+      letter-spacing: .20em; text-transform: uppercase;
+      color: rgba(var(--ink-rgb),.55);
+    }
+    .pullquote {
+      font-family: var(--serif-zh);
+      font-style: italic; font-weight: 500;
+      font-size: 56px; line-height: 1.28;
+      color: var(--ink); margin: 0;
+    }
+
+    /* === 7. Issue labels === */
+    .issue-row {
+      display: flex; align-items: center; gap: 16px;
+      font-family: var(--mono); font-size: 20px;
+      letter-spacing: .12em; text-transform: uppercase;
+      color: var(--muted);
+    }
+    .issue-row .dot {
+      width: 6px; height: 6px;
+      border-radius: 50%; background: var(--accent);
+    }
+    .issue-strip {
+      position: absolute; left: 88px; right: 88px; bottom: 56px;
+      display: flex; justify-content: space-between; align-items: center;
+      gap: 32px; font-family: var(--mono); font-size: 18px;
+      letter-spacing: .12em; text-transform: uppercase;
+      color: var(--muted); border-top: 1px solid var(--line);
+      padding-top: 18px; z-index: 4;
+    }
+    .issue-strip span { white-space: nowrap; }
+
+    /* === 8. Layout primitives === */
+    .stack  { display: flex; flex-direction: column; }
+    .gap-1  { gap: 12px; }
+    .gap-2  { gap: 24px; }
+    .gap-3  { gap: 36px; }
+    .gap-4  { gap: 48px; }
+    .gap-5  { gap: 64px; }
+    .row    { display: flex; flex-direction: row; }
+    .rule   { height: 1px; background: var(--line); border: 0; margin: 20px 0; }
+    .rule-accent { height: 2px; background: var(--accent); border: 0; margin: 20px 0; width: 80px; }
+    .grow   { flex: 1; }
+
+    /* === 9. Frame containers === */
+    .frame-img {
+      position: relative; overflow: hidden;
+      background: var(--paper-2); display: block; margin: 0;
+    }
+    .frame-img img {
+      width: 100%; height: 100%;
+      object-fit: cover; object-position: center 50%; display: block;
+    }
+
+    /* === 10. Editorial components === */
+    .callout {
+      border-left: 3px solid var(--accent);
+      padding: 20px 28px;
+      font-family: var(--serif-zh);
+      font-style: italic; font-size: 34px;
+      line-height: 1.38; color: var(--ink);
+      background: var(--paper-2);
+    }
+
+    /* Ledger */
+    .ledger { display: flex; flex-direction: column; }
+    .ledger-row {
+      display: grid;
+      grid-template-columns: 72px 1fr;
+      gap: 24px; align-items: baseline;
+      padding: 24px 0; border-bottom: 1px solid var(--line);
+    }
+    .ledger-row:first-child { border-top: 1px solid var(--line); }
+    .ledger-row .ledger-nb {
+      font-family: var(--mono); font-size: 26px;
+      color: var(--accent); letter-spacing: .08em;
+    }
+    .ledger-row .ledger-title {
+      font-family: var(--serif-zh);
+      font-weight: 500; font-size: 38px;
+      letter-spacing: .02em; color: var(--ink);
+      margin: 0 0 8px;
+    }
+    .ledger-row .ledger-note {
+      font-family: var(--serif-zh);
+      font-weight: 400; font-size: 22px;
+      line-height: 1.55; color: rgba(var(--ink-rgb),.70);
+      margin: 0;
+    }
+
+    /* Pipeline vertical */
+    .pipeline-v { display: flex; flex-direction: column; gap: 0; }
+    .pipeline-v .step {
+      display: grid;
+      grid-template-columns: 72px 1fr;
+      gap: 28px; align-items: baseline;
+      padding: 22px 0; border-bottom: 1px solid var(--line);
+    }
+    .pipeline-v .step:first-child { border-top: 1px solid var(--line); }
+    .pipeline-v .step:last-child { border-bottom: 0; }
+    .pipeline-v .step-nb {
+      font-family: var(--mono); font-size: 28px;
+      color: var(--accent);
+    }
+    .pipeline-v .step-title {
+      font-family: var(--serif-zh);
+      font-weight: 500; font-size: 38px;
+      letter-spacing: .02em; margin: 0 0 8px;
+    }
+    .pipeline-v .step-desc {
+      font-family: var(--serif-zh);
+      font-weight: 400; font-size: 24px;
+      line-height: 1.6; color: rgba(var(--ink-rgb),.70); margin: 0;
+    }
+
+    /* Marginalia */
+    .marginalia {
+      display: grid;
+      grid-template-columns: 1fr 210px;
+      gap: 48px;
+    }
+    .marginalia .mg-col {
+      border-left: 1px solid var(--line);
+      padding-left: 24px;
+    }
+    .marginalia .mg-col .mg-item {
+      font-family: var(--mono);
+      font-size: 19px; letter-spacing: .06em;
+      color: var(--muted); margin: 0 0 20px;
+    }
+    .marginalia .mg-col .mg-item strong {
+      display: block;
+      font-family: var(--serif-zh);
+      font-size: 22px; font-weight: 500;
+      color: var(--ink); letter-spacing: .02em; margin-bottom: 4px;
+    }
+
+    /* Before/After */
+    .beforeafter {
+      display: grid; grid-template-rows: 1fr 1fr;
+      gap: 28px;
+    }
+    .ba-block {
+      padding: 28px 32px;
+      background: var(--paper-2);
+      border-left: 3px solid var(--accent);
+    }
+    .ba-block.before { opacity: .62; }
+    .ba-block .ba-kicker {
+      font-family: var(--mono); font-size: 18px;
+      letter-spacing: .20em; text-transform: uppercase;
+      color: var(--muted); margin: 0 0 12px;
+    }
+    .ba-block .ba-title {
+      font-family: var(--serif-zh); font-weight: 500;
+      font-size: 36px; letter-spacing: .02em;
+      margin: 0 0 14px; color: var(--ink);
+    }
+    .ba-block ul {
+      margin: 0; padding-left: 1.4em;
+      font-family: var(--serif-zh); font-size: 24px;
+      line-height: 1.7; color: rgba(var(--ink-rgb),.78);
+    }
+    .ba-block ul li { margin-bottom: 4px; }
+
+    /* Corner page numbers */
+    .corner-tr {
+      position: absolute; right: 88px; top: 56px;
+      font-family: var(--mono); font-size: 18px;
+      letter-spacing: .12em; text-transform: uppercase;
+      color: var(--muted); z-index: 3;
+    }
+  </style>
+</head>
+<body>
+<main class="sheet">
+
+  <!-- ══════════════════════════════════════════
+       P01 · COVER · M01 Magazine Issue Cover
+       ══════════════════════════════════════════ -->
+  <section class="poster xhs" id="xhs-01">
+    <canvas class="mag-bg"></canvas>
+    <div class="grain"></div>
+    <div class="paper-wash"></div>
+    <span class="corner-tr">01 / 07</span>
+    <div class="content stack gap-2" style="height:100%;">
+
+      <div class="issue-row">
+        <span>AI Work</span>
+        <span class="dot"></span>
+        <span>小品牌指南</span>
+        <span class="dot"></span>
+        <span>2026.05</span>
+      </div>
+
+      <div style="height:24px;"></div>
+      <p class="kicker">职场干货 · Workplace</p>
+
+      <h1 class="h-display">让 AI<br>替你扛下来</h1>
+
+      <p class="h-sub">The AI Playbook for Solo Brands</p>
+
+      <hr class="rule-accent">
+
+      <div class="ledger" style="margin-top:4px;">
+        <div class="ledger-row">
+          <span class="ledger-nb">01</span>
+          <div>
+            <p class="ledger-title">电商统计</p>
+            <p class="ledger-note">数据导出 → AI 分析 → 自动生成周报，10 分钟搞定。</p>
+          </div>
+        </div>
+        <div class="ledger-row">
+          <span class="ledger-nb">02</span>
+          <div>
+            <p class="ledger-title">自媒体运营</p>
+            <p class="ledger-note">选题 / 配文 / 发帖节奏，AI 给建议，你做最终决策。</p>
+          </div>
+        </div>
+        <div class="ledger-row">
+          <span class="ledger-nb">03</span>
+          <div>
+            <p class="ledger-title">视频剪辑</p>
+            <p class="ledger-note">字幕、粗剪、封面文案，从 4 小时缩到 40 分钟。</p>
+          </div>
+        </div>
+      </div>
+
+      <div style="flex:1; min-height:32px;"></div>
+
+      <p class="lead" style="margin-bottom:0;">创意留给你，重复交给 AI。</p>
+
+    </div>
+    <div class="issue-strip">
+      <span>电商统计</span>
+      <span>—</span>
+      <span>自媒体运营</span>
+      <span>—</span>
+      <span>视频剪辑</span>
+    </div>
+  </section>
+
+
+  <!-- ══════════════════════════════════════════
+       P02 · PAIN POINT · M09 Atmospheric Thesis
+       ══════════════════════════════════════════ -->
+  <section class="poster xhs" id="xhs-02">
+    <canvas class="mag-bg"></canvas>
+    <div class="grain"></div>
+    <div class="paper-wash"></div>
+    <span class="corner-tr">02 / 07</span>
+    <div class="content stack gap-3" style="height:100%; justify-content:center;">
+
+      <p class="kicker">The Problem · 现实</p>
+
+      <h1 class="h-display" style="font-size:100px; line-height:1.10;">杂事压住的<br>不是时间，<br>是创意</h1>
+
+      <hr class="rule" style="margin:8px 0 24px;">
+
+      <p class="lead">
+        小品牌老板，往往一人兼运营、剪辑、客服、财务。
+        每天消耗在重复劳动上的精力，足以支撑三个创意。
+      </p>
+
+      <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:24px; margin-top:8px;">
+        <div style="border-top:2px solid var(--accent); padding-top:16px;">
+          <p class="meta" style="margin-bottom:8px;">数据</p>
+          <p class="body" style="margin:0; font-size:22px; color:var(--ink);">手工填表<br>对账报表</p>
+        </div>
+        <div style="border-top:2px solid var(--accent); padding-top:16px;">
+          <p class="meta" style="margin-bottom:8px;">内容</p>
+          <p class="body" style="margin:0; font-size:22px; color:var(--ink);">每条都从<br>零开始写</p>
+        </div>
+        <div style="border-top:2px solid var(--accent); padding-top:16px;">
+          <p class="meta" style="margin-bottom:8px;">视频</p>
+          <p class="body" style="margin:0; font-size:22px; color:var(--ink);">一条剪辑<br>半天就没了</p>
+        </div>
+      </div>
+
+      <div style="flex:1; min-height:40px;"></div>
+
+      <div class="callout" style="font-size:30px;">
+        "AI 不是替你思考的工具，<br>它是替你执行重复动作的助手。"
+      </div>
+
+    </div>
+    <div class="issue-strip">
+      <span>问题诊断</span>
+      <span>—</span>
+      <span>Section 00</span>
+    </div>
+  </section>
+
+
+  <!-- ══════════════════════════════════════════
+       P03 · 电商统计 · M14 Vertical Pipeline
+       ══════════════════════════════════════════ -->
+  <section class="poster xhs" id="xhs-03">
+    <canvas class="mag-bg"></canvas>
+    <div class="grain"></div>
+    <div class="paper-wash"></div>
+    <span class="corner-tr">03 / 07</span>
+    <div class="content stack gap-3" style="height:100%;">
+
+      <p class="kicker">电商统计 · Section 01</p>
+      <h2 class="h-xl">让 AI 帮你<br>读懂数据</h2>
+
+      <p class="lead" style="margin-bottom:8px;">
+        不需要会 Excel 函数，不需要懂 SQL。
+        一份 CSV，一个提问，答案自动来。
+      </p>
+
+      <div class="pipeline-v" style="margin-top:12px;">
+        <div class="step">
+          <div class="step-nb">01</div>
+          <div>
+            <p class="step-title">导出数据</p>
+            <p class="step-desc">从各平台（天猫/抖店/小红店）下载订单 CSV 或截图汇总</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-nb">02</div>
+          <div>
+            <p class="step-title">粘给 AI</p>
+            <p class="step-desc">直接把表格内容复制进 Claude 或 ChatGPT，附上你的问题</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-nb">03</div>
+          <div>
+            <p class="step-title">生成洞察</p>
+            <p class="step-desc">AI 自动找规律：爆款 SKU、复购高峰、流量来源分布</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-nb">04</div>
+          <div>
+            <p class="step-title">拿结论做决策</p>
+            <p class="step-desc">本周补哪款货、哪个渠道值得加投，10 分钟出周报</p>
+          </div>
+        </div>
+      </div>
+
+      <div style="flex:1; min-height:24px;"></div>
+
+    </div>
+    <div class="issue-strip">
+      <span>电商统计</span>
+      <span>—</span>
+      <span>4 步工作流</span>
+    </div>
+  </section>
+
+
+  <!-- ══════════════════════════════════════════
+       P04 · 自媒体运营 · M11 Marginalia Essay
+       ══════════════════════════════════════════ -->
+  <section class="poster xhs" id="xhs-04">
+    <canvas class="mag-bg"></canvas>
+    <div class="grain"></div>
+    <div class="paper-wash"></div>
+    <span class="corner-tr">04 / 07</span>
+    <div class="content stack gap-3" style="height:100%;">
+
+      <p class="kicker">自媒体运营 · Section 02</p>
+      <h2 class="h-xl">内容产出<br>提速三倍</h2>
+
+      <div class="marginalia">
+        <div class="stack gap-2">
+          <p class="lead" style="margin-bottom:4px; font-size:26px;">
+            <strong style="font-size:28px;">选题：</strong>
+            把本周行业热点和竞品帖子贴给 AI，直接要 10 个选题方向——5 分钟搞定，比自己头脑风暴快三倍。
+          </p>
+          <p class="body" style="font-size:23px;">
+            <strong>配文：</strong>
+            告诉 AI 你的产品卖点和目标人群，让它出初稿。你的工作变成：改风格、加真实细节、去 AI 味。
+          </p>
+          <p class="body" style="font-size:23px;">
+            <strong>发帖节奏：</strong>
+            让 AI 分析你过去 30 条帖子的数据，告诉你哪个时段互动最高、哪类话题收藏率最好。
+          </p>
+          <p class="body" style="font-size:23px;">
+            <strong>话题标签：</strong>
+            用 AI 生成 20 个候选话题标签，自己选最贴近的 5 个，既快又精准。
+          </p>
+        </div>
+        <div class="mg-col">
+          <div class="mg-item">
+            <strong>关键词库</strong>
+            每周让 AI 更新你的行业热词，备用随时取
+          </div>
+          <div class="mg-item">
+            <strong>发帖频率</strong>
+            AI 建议 3-5 条/周，你定最终节奏
+          </div>
+          <div class="mg-item">
+            <strong>爆款结构</strong>
+            问 AI 拆解竞品爆文格式，归纳可复用模板
+          </div>
+          <div class="mg-item">
+            <strong>评论回复</strong>
+            高频问题让 AI 出模板，你微调后发出
+          </div>
+        </div>
+      </div>
+
+      <div style="flex:1; min-height:24px;"></div>
+
+    </div>
+    <div class="issue-strip">
+      <span>自媒体运营</span>
+      <span>—</span>
+      <span>选题 · 配文 · 节奏</span>
+    </div>
+  </section>
+
+
+  <!-- ══════════════════════════════════════════
+       P05 · 视频剪辑 · M15 Before / After
+       ══════════════════════════════════════════ -->
+  <section class="poster xhs" id="xhs-05">
+    <canvas class="mag-bg"></canvas>
+    <div class="grain"></div>
+    <div class="paper-wash"></div>
+    <span class="corner-tr">05 / 07</span>
+    <div class="content stack gap-3" style="height:100%;">
+
+      <p class="kicker">Before · After · 视频剪辑</p>
+      <h2 class="h-xl">从 4 小时<br>到 40 分钟</h2>
+
+      <div class="beforeafter" style="margin-top:8px;">
+        <div class="ba-block before">
+          <p class="ba-kicker">Before · 以前</p>
+          <p class="ba-title">纯手动，靠熬时间</p>
+          <ul>
+            <li>逐帧拖时间轴找素材段落</li>
+            <li>手动逐句打字幕，1 小时以上</li>
+            <li>配乐靠感觉，反复试听</li>
+            <li>多版本反复改，精力全耗掉</li>
+          </ul>
+        </div>
+        <div class="ba-block">
+          <p class="ba-kicker">After · 现在</p>
+          <p class="ba-title">AI 负责脏活，你把控创意</p>
+          <ul>
+            <li>AI 自动转录 + 一键生成字幕</li>
+            <li>剪映 / CapCut AI 完成粗剪框架</li>
+            <li>AI 推荐配乐情绪段落</li>
+            <li>标题 + 封面文案直接让 AI 出</li>
+          </ul>
+        </div>
+      </div>
+
+      <div style="flex:1; min-height:24px;"></div>
+
+    </div>
+    <div class="issue-strip">
+      <span>视频剪辑</span>
+      <span>—</span>
+      <span>Before vs After</span>
+    </div>
+  </section>
+
+
+  <!-- ══════════════════════════════════════════
+       P06 · 总结 · M07 Closing Note
+       ══════════════════════════════════════════ -->
+  <section class="poster xhs" id="xhs-06">
+    <canvas class="mag-bg"></canvas>
+    <div class="grain"></div>
+    <div class="paper-wash"></div>
+    <span class="corner-tr">06 / 07</span>
+    <div class="content stack gap-3" style="height:100%;">
+
+      <p class="kicker">Summary · 总结</p>
+      <h2 class="h-xl">3 个战场<br>1 套工作流</h2>
+
+      <div class="ledger" style="margin-top:4px;">
+        <div class="ledger-row">
+          <span class="ledger-nb">01</span>
+          <div>
+            <p class="ledger-title">数据工作</p>
+            <p class="ledger-note">导出 → 粘贴 → AI 分析 → 拿结论。每周报表 10 分钟完成，省出半天。</p>
+          </div>
+        </div>
+        <div class="ledger-row">
+          <span class="ledger-nb">02</span>
+          <div>
+            <p class="ledger-title">内容创作</p>
+            <p class="ledger-note">选题 + 配文 AI 出初稿，你做最后 20% 的人味儿打磨。</p>
+          </div>
+        </div>
+        <div class="ledger-row">
+          <span class="ledger-nb">03</span>
+          <div>
+            <p class="ledger-title">视频生产</p>
+            <p class="ledger-note">字幕 + 粗剪交 AI，你专注镜头感和真实故事的选取。</p>
+          </div>
+        </div>
+        <div class="ledger-row">
+          <span class="ledger-nb">—</span>
+          <div>
+            <p class="ledger-title">核心原则</p>
+            <p class="ledger-note">AI 负责重复执行，你负责判断方向。工具够用，创意才能跑起来。</p>
+          </div>
+        </div>
+      </div>
+
+      <div style="flex:1; min-height:24px;"></div>
+
+      <div class="callout" style="font-size:28px; margin-bottom:0;">
+        "节省出来的时间，用来做 AI 替代不了的事——<br>跟用户真实连接，打磨产品本身。"
+      </div>
+
+    </div>
+    <div class="issue-strip">
+      <span>总结</span>
+      <span>—</span>
+      <span>AI × 小品牌工作流</span>
+    </div>
+  </section>
+
+
+  <!-- ══════════════════════════════════════════
+       P07 · CTA · M13 Hero Question
+       ══════════════════════════════════════════ -->
+  <section class="poster xhs" id="xhs-07">
+    <canvas class="mag-bg"></canvas>
+    <div class="grain"></div>
+    <div class="paper-wash"></div>
+    <span class="corner-tr">07 / 07</span>
+    <div class="content stack gap-3" style="height:100%; justify-content:center;">
+
+      <p class="kicker">The Question · 留给你的</p>
+
+      <h1 class="h-display" style="font-size:96px; line-height:1.12;">
+        你最想先<br>用 AI 解决<br>哪件事？
+      </h1>
+
+      <hr class="rule" style="margin:16px 0 24px;">
+
+      <p class="lead">在评论区告诉我，我们一起研究解法。</p>
+
+      <div style="flex:1; min-height:60px;"></div>
+
+    </div>
+    <div class="issue-strip">
+      <span>End · Page 07</span>
+      <span>—</span>
+      <span>欢迎留言讨论</span>
+    </div>
+  </section>
+
+
+</main>
+
+<!-- Magazine WebGL background -->
+<script src="assets/magazine-bg-webgl.js"></script>
+<script>
+(function () {
+  function cssVarRgb(name, fallback) {
+    var raw = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+    if (!raw) return fallback;
+    var parts = raw.split(',').map(function (x) { return parseInt(x.trim(), 10); });
+    return (parts.length === 3 && parts.every(function (n) { return !isNaN(n); })) ? parts : fallback;
+  }
+  function mountAll() {
+    if (!window.MagazineBg || !window.MagazineBg.mount) return;
+    var ink    = cssVarRgb('--ink-rgb',    [10, 10, 11]);
+    var paper  = cssVarRgb('--paper-rgb',  [243, 240, 232]);
+    var accent = cssVarRgb('--accent-rgb', [17, 17, 17]);
+    document.querySelectorAll('canvas.mag-bg').forEach(function (c, i) {
+      var isHero = c.closest('#xhs-01, #xhs-02, #xhs-07') !== null;
+      window.MagazineBg.mount(c, {
+        ink: ink, paper: paper, accent: accent,
+        strength: isHero ? 0.52 : 0.28,
+        frozenTime: 3.8 + i * 0.61
+      });
+    });
+  }
+  if (document.readyState === 'complete') mountAll();
+  else window.addEventListener('load', mountAll);
+})();
+</script>
+</body>
+</html>

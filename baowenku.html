@@ -609,9 +609,9 @@ async function analyzePost(content) {
 爆文内容：
 ${content.slice(0, 3000)}`;
 
-  const res = await fetch('https://anthorpic-proxy.mutoumoody.workers.dev/', {
+  const res = await fetch('/api/claude', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'x-worker-secret': 'brand-worker-nz-2024' },
+    headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + TOKEN },
     body: JSON.stringify({
       model: 'claude-haiku-4-5-20251001',
       max_tokens: 1200,
@@ -669,9 +669,9 @@ ${JSON.stringify(summaryData, null, 2)}
 }`;
 
   try {
-    const res = await fetch('https://anthorpic-proxy.mutoumoody.workers.dev/', {
+    const res = await fetch('/api/claude', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'x-worker-secret': 'brand-worker-nz-2024' },
+      headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + TOKEN },
       body: JSON.stringify({ model: 'claude-haiku-4-5-20251001', max_tokens: 1500, messages: [{ role: 'user', content: prompt }] }),
     });
     const data = await res.json();
@@ -827,9 +827,9 @@ ${brandCtx ? `【品牌档案（严格遵守调性和禁忌词）】\n${brandCtx
 完整正文内容`;
 
   try {
-    const res = await fetch('https://anthorpic-proxy.mutoumoody.workers.dev/', {
+    const res = await fetch('/api/claude', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'x-worker-secret': 'brand-worker-nz-2024' },
+      headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + TOKEN },
       body: JSON.stringify({ model: 'claude-haiku-4-5-20251001', max_tokens: 3000, messages: [{ role: 'user', content: prompt }] }),
     });
     if (!res.ok) throw new Error('生成请求失败');

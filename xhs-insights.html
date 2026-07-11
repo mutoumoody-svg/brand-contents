@@ -398,9 +398,9 @@ async function deleteNote(id) {
 
 // ── Claude API ──
 async function callClaude(messages, maxTokens = 3000) {
-  const res = await fetch('https://anthorpic-proxy.mutoumoody.workers.dev/', {
+  const res = await fetch('/api/claude', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'x-worker-secret': 'brand-worker-nz-2024' },
+    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + (localStorage.getItem('brand_auth_token') || '') },
     body: JSON.stringify({ model: 'claude-haiku-4-5-20251001', max_tokens: maxTokens, messages }),
   });
   if (!res.ok) { const e = await res.json().catch(()=>({})); throw new Error(e.error?.message || `请求失败 (${res.status})`); }
