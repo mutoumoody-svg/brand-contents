@@ -35,6 +35,7 @@ http://127.0.0.1:3000/api/health
 - `server.js`：Express 服务、登录注册、SQLite 数据库、品牌库、内容库、小红书接口、飞书同步、Claude 中转。
 - `package.json`：Node 依赖和启动脚本。
 - `index.html`：文案生成。
+- `xhs-writing.html`：小红书文案学习与产出。
 - `brand.html`：品牌管理。
 - `fangxie.html`：爆文仿写。
 - `baowenku.html`：爆文库。
@@ -87,3 +88,4 @@ JWT_SECRET=change-this-to-a-long-random-string
 - 已新增 `npm run check` / `npm run doctor` 项目检查命令。
 - 依赖尚未安装时，文件解析、数据库等运行功能需要先执行 `npm install`。
 - 前端页面的 Claude 调用已统一走服务端 `/api/claude`，不再在浏览器里暴露 Worker 地址和共享密钥。
+- 已新增“小红书文案”模块，可保存写法方法卡、分析爆文结构，并结合品牌资料与爆文样本生成小红书文案。

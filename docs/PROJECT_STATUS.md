@@ -15,6 +15,7 @@
 - 新增 `scripts/start-server-background.cmd`，用于 Windows 后台启动服务并写入日志。
 - 主项目依赖已安装，已生成 `package-lock.json`。
 - 已完成端到端启动验证：`/api/health` 正常返回，`login.html` 可访问。
+- 新增“小红书文案”模块：方法库、爆文结构学习、品牌结合生成、保存到内容库。
 
 ## 待本地补齐
 

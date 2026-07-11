@@ -14,6 +14,7 @@ Brand Contents 是一个 Express + SQLite + 静态 HTML 的本地品牌内容中
 - `admin.html`：用户审核与管理。
 - `brand.html`：品牌资料管理。
 - `index.html` / `wencai.html`：品牌文案生成。
+- `xhs-writing.html`：小红书文案写法学习、方法库和内容产出。
 - `fangxie.html`：爆文仿写。
 - `baowenku.html`：爆文库。
 - `fenxi.html`：文案分析。
@@ -30,6 +31,7 @@ Brand Contents 是一个 Express + SQLite + 静态 HTML 的本地品牌内容中
 - 飞书：通过 `FEISHU_*` 环境变量同步多维表格。
 - Coze：通过 `COZE_*` 环境变量调用小红书相关工作流。
 - 小红书采集：`scripts/xhs_scrape.py` 使用 `BOCHA_API_KEY` 和本机 Claude 内部转发辅助提取。
+- 小红书文案方法库：`xhs_writing_methods` 表保存结构公式、写作逻辑、适用场景和示例。
 
 ## 子项目
 

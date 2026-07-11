@@ -401,6 +401,83 @@ app.delete('/api/viral-posts/:id', authenticateToken, (req, res) => {
 });
 
 // ══════════════════════════════════════════
+//  小红书文案写法库
+// ══════════════════════════════════════════
+db.exec(`
+  CREATE TABLE IF NOT EXISTS xhs_writing_methods (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    title       TEXT NOT NULL,
+    category    TEXT DEFAULT '种草安利型',
+    scene       TEXT DEFAULT '',
+    structure   TEXT DEFAULT '',
+    logic       TEXT DEFAULT '',
+    example     TEXT DEFAULT '',
+    tags        TEXT DEFAULT '[]',
+    source      TEXT DEFAULT 'manual',
+    created_at  DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at  DATETIME DEFAULT CURRENT_TIMESTAMP
+  )
+`);
+
+function parseTags(value) {
+  if (Array.isArray(value)) return value.map(String).map(s => s.trim()).filter(Boolean);
+  if (!value) return [];
+  return String(value).split(/[,\n，、]/).map(s => s.trim()).filter(Boolean);
+}
+
+app.get('/api/xhs-writing/methods', authenticateToken, (req, res) => {
+  const rows = db.prepare('SELECT * FROM xhs_writing_methods ORDER BY updated_at DESC, id DESC').all();
+  res.json(rows.map(r => ({ ...r, tags: JSON.parse(r.tags || '[]') })));
+});
+
+app.post('/api/xhs-writing/methods', authenticateToken, (req, res) => {
+  const { title, category, scene, structure, logic, example, tags, source } = req.body || {};
+  if (!title) return res.status(400).json({ error: '方法标题不能为空' });
+  const result = db.prepare(`
+    INSERT INTO xhs_writing_methods
+      (title, category, scene, structure, logic, example, tags, source, created_at, updated_at)
+    VALUES (?,?,?,?,?,?,?,?,datetime('now', '+8 hours'),datetime('now', '+8 hours'))
+  `).run(
+    title,
+    category || '种草安利型',
+    scene || '',
+    structure || '',
+    logic || '',
+    example || '',
+    JSON.stringify(parseTags(tags)),
+    source || 'manual'
+  );
+  res.json({ id: result.lastInsertRowid });
+});
+
+app.put('/api/xhs-writing/methods/:id', authenticateToken, (req, res) => {
+  const { title, category, scene, structure, logic, example, tags, source } = req.body || {};
+  if (!title) return res.status(400).json({ error: '方法标题不能为空' });
+  db.prepare(`
+    UPDATE xhs_writing_methods SET
+      title=?, category=?, scene=?, structure=?, logic=?, example=?, tags=?, source=?,
+      updated_at=datetime('now', '+8 hours')
+    WHERE id=?
+  `).run(
+    title,
+    category || '种草安利型',
+    scene || '',
+    structure || '',
+    logic || '',
+    example || '',
+    JSON.stringify(parseTags(tags)),
+    source || 'manual',
+    req.params.id
+  );
+  res.json({ ok: true });
+});
+
+app.delete('/api/xhs-writing/methods/:id', authenticateToken, (req, res) => {
+  db.prepare('DELETE FROM xhs_writing_methods WHERE id=?').run(req.params.id);
+  res.json({ ok: true });
+});
+
+// ══════════════════════════════════════════
 //  小红书热点洞察（飞书多维表格同步）
 // ══════════════════════════════════════════
 db.exec(`

@@ -10,6 +10,7 @@ const requiredFiles = [
   'README.md',
   'START_HERE.md',
   'index.html',
+  'xhs-writing.html',
   'brand.html',
   'fangxie.html',
   'baowenku.html',

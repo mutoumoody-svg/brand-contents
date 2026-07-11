@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>小红书文案撰写 | Brand Center</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@300;400;600&family=DM+Mono:wght@300;400&family=Playfair+Display:ital,wght@0,400;1,400&display=swap" rel="stylesheet" />
+<style>
+:root {
+  --ink:#26211d; --muted:#8a8178; --paper:#fbfaf7; --cream:#f4f0e8; --line:#ded6ca;
+  --dark:#171514; --accent:#b85c38; --green:#5f7f68; --soft:#fffdf9;
+}
+* { box-sizing:border-box; }
+body { margin:0; background:var(--paper); color:var(--ink); font-family:"Noto Serif SC",serif; }
+.top-nav { position:sticky; top:0; z-index:20; background:var(--dark); border-bottom:1px solid rgba(255,255,255,.08); }
+.top-nav-inner { max-width:1480px; margin:0 auto; height:54px; display:flex; align-items:center; justify-content:space-between; padding:0 24px; gap:18px; }
+.top-nav-logo { color:white; text-decoration:none; font-family:"Playfair Display",serif; font-size:18px; letter-spacing:.03em; white-space:nowrap; }
+.top-nav-links { display:flex; align-items:center; gap:4px; overflow-x:auto; }
+.top-nav-link { color:rgba(255,255,255,.55); text-decoration:none; font-family:"DM Mono",monospace; font-size:12px; padding:8px 10px; border-radius:2px; white-space:nowrap; }
+.top-nav-link:hover,.top-nav-link.active { color:white; background:rgba(255,255,255,.08); }
+.nav-user { display:flex; align-items:center; gap:10px; color:rgba(255,255,255,.5); font-family:"DM Mono",monospace; font-size:12px; white-space:nowrap; }
+.nav-logout { background:transparent; border:1px solid rgba(255,255,255,.18); color:rgba(255,255,255,.55); padding:6px 10px; cursor:pointer; }
+.nav-logout:hover { color:white; border-color:rgba(255,255,255,.45); }
+.hero { border-bottom:1px solid var(--line); background:linear-gradient(180deg,#fffdf9,#f6f0e8); }
+.hero-inner { max-width:1480px; margin:0 auto; padding:34px 24px 26px; display:flex; align-items:flex-end; justify-content:space-between; gap:24px; }
+.eyebrow { font-family:"DM Mono",monospace; font-size:11px; letter-spacing:.18em; color:var(--accent); text-transform:uppercase; margin-bottom:10px; }
+h1 { font-family:"Playfair Display","Noto Serif SC",serif; font-size:42px; line-height:1.08; margin:0; font-weight:400; }
+.hero p { margin:12px 0 0; color:var(--muted); line-height:1.8; max-width:760px; }
+.stats { display:flex; gap:10px; flex-wrap:wrap; justify-content:flex-end; }
+.stat { border:1px solid var(--line); background:rgba(255,255,255,.55); padding:10px 14px; min-width:96px; }
+.stat b { display:block; font-family:"DM Mono",monospace; font-size:18px; }
+.stat span { font-size:12px; color:var(--muted); }
+.layout { max-width:1480px; margin:0 auto; padding:22px 24px 36px; display:grid; grid-template-columns:330px minmax(420px,1fr) 430px; gap:16px; align-items:start; }
+.panel { border:1px solid var(--line); background:var(--soft); min-height:120px; }
+.panel-head { padding:16px 16px 12px; border-bottom:1px solid var(--line); display:flex; align-items:center; justify-content:space-between; gap:12px; }
+.panel-title { margin:0; font-size:17px; font-weight:600; }
+.panel-sub { margin:4px 0 0; color:var(--muted); font-size:12px; line-height:1.5; }
+.panel-body { padding:16px; }
+.field { margin-bottom:12px; }
+label { display:block; font-family:"DM Mono",monospace; font-size:11px; letter-spacing:.08em; color:var(--muted); margin-bottom:6px; text-transform:uppercase; }
+input,select,textarea { width:100%; border:1px solid var(--line); background:white; color:var(--ink); padding:10px 11px; font-family:"Noto Serif SC",serif; font-size:14px; outline:none; }
+textarea { min-height:96px; resize:vertical; line-height:1.65; }
+input:focus,select:focus,textarea:focus { border-color:var(--accent); }
+.btn { border:1px solid var(--ink); background:var(--ink); color:white; padding:10px 14px; cursor:pointer; font-family:"DM Mono",monospace; font-size:12px; letter-spacing:.06em; }
+.btn.secondary { background:transparent; color:var(--ink); }
+.btn.ghost { background:transparent; color:var(--muted); border-color:var(--line); }
+.btn:disabled { opacity:.55; cursor:not-allowed; }
+.btn-row { display:flex; gap:8px; flex-wrap:wrap; }
+.method-list { display:flex; flex-direction:column; gap:10px; max-height:680px; overflow:auto; padding-right:4px; }
+.method-card { border:1px solid var(--line); background:white; padding:12px; cursor:pointer; }
+.method-card.active { border-color:var(--accent); box-shadow:inset 3px 0 0 var(--accent); }
+.method-card h3 { margin:0 0 6px; font-size:15px; }
+.meta { font-family:"DM Mono",monospace; font-size:10px; color:var(--muted); letter-spacing:.05em; }
+.tags { display:flex; flex-wrap:wrap; gap:5px; margin-top:8px; }
+.tag { font-family:"DM Mono",monospace; font-size:10px; border:1px solid var(--line); padding:2px 6px; color:var(--muted); background:#faf7f1; }
+.empty { color:var(--muted); font-size:13px; line-height:1.8; padding:18px; border:1px dashed var(--line); background:#faf8f3; }
+.tabs { display:flex; border-bottom:1px solid var(--line); }
+.tab { flex:1; padding:12px; border:0; background:#f8f4ed; border-right:1px solid var(--line); cursor:pointer; font-family:"DM Mono",monospace; font-size:12px; color:var(--muted); }
+.tab.active { background:white; color:var(--ink); }
+.tab-panel { display:none; }
+.tab-panel.active { display:block; }
+.analysis-box,.output-box { white-space:pre-wrap; line-height:1.75; border:1px solid var(--line); background:white; padding:14px; min-height:160px; font-size:14px; }
+.output-box { min-height:420px; }
+.pick-list { max-height:180px; overflow:auto; border:1px solid var(--line); background:white; padding:8px; }
+.pick-item { display:flex; gap:8px; align-items:flex-start; padding:6px 2px; border-bottom:1px solid #f2ece3; font-size:13px; }
+.pick-item:last-child { border-bottom:0; }
+.pick-item input { width:auto; margin-top:3px; }
+.small-note { font-size:12px; line-height:1.7; color:var(--muted); }
+@media (max-width:1180px) { .layout { grid-template-columns:1fr; } .hero-inner { align-items:flex-start; flex-direction:column; } .stats { justify-content:flex-start; } }
+</style>
+</head>
+<body>
+<script>(function(){ if(!localStorage.getItem('brand_auth_token')) window.location.replace('/login.html'); })()</script>
+
+<nav class="top-nav">
+  <div class="top-nav-inner">
+    <a class="top-nav-logo" href="brand.html">Brand Center</a>
+    <div class="top-nav-links">
+      <a class="top-nav-link" href="brand.html">品牌管理</a>
+      <a class="top-nav-link" href="index.html">文案生成</a>
+      <a class="top-nav-link active" href="xhs-writing.html">小红书文案</a>
+      <a class="top-nav-link" href="fangxie.html">爆文仿写</a>
+      <a class="top-nav-link" href="fenxi.html">文案分析</a>
+      <a class="top-nav-link" href="baowenku.html">爆文库</a>
+      <a class="top-nav-link" href="xiaohongshu-poster.html">图片海报</a>
+      <a class="top-nav-link" href="xhs-insights.html">热点洞察</a>
+      <a class="top-nav-link" href="admin.html" id="adminNavLink" style="display:none">用户管理</a>
+    </div>
+    <div class="nav-user">
+      <span id="navUserName"></span>
+      <button class="nav-logout" onclick="logout()">退出</button>
+    </div>
+  </div>
+</nav>
+
+<section class="hero">
+  <div class="hero-inner">
+    <div>
+      <div class="eyebrow">Xiaohongshu Copy System</div>
+      <h1>小红书文案学习与产出</h1>
+      <p>集中学习小红书的内容写法、结构逻辑、爆文样本和品牌资料，再用这些方法生成更像小红书、也更贴近品牌的标题与正文。</p>
+    </div>
+    <div class="stats">
+      <div class="stat"><b id="methodCount">0</b><span>写法方法</span></div>
+      <div class="stat"><b id="viralCount">0</b><span>爆文样本</span></div>
+      <div class="stat"><b id="brandCount">0</b><span>品牌资料</span></div>
+    </div>
+  </div>
+</section>
+
+<main class="layout">
+  <section class="panel">
+    <div class="panel-head">
+      <div>
+        <h2 class="panel-title">写法方法库</h2>
+        <p class="panel-sub">保存适合小红书的类型、结构和方法。</p>
+      </div>
+      <button class="btn ghost" onclick="clearMethodForm()">新建</button>
+    </div>
+    <div class="panel-body">
+      <div class="field">
+        <label>方法标题</label>
+        <input id="methodTitle" placeholder="例如：痛点共鸣种草结构" />
+      </div>
+      <div class="field">
+        <label>文案类型</label>
+        <select id="methodCategory">
+          <option>种草安利型</option>
+          <option>痛点共鸣型</option>
+          <option>干货攻略型</option>
+          <option>故事体验型</option>
+          <option>测评对比型</option>
+          <option>清单合集型</option>
+          <option>反差悬念型</option>
+          <option>品牌价值型</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>适用场景</label>
+        <input id="methodScene" placeholder="新品种草 / 老客复购 / 高客单信任建立" />
+      </div>
+      <div class="field">
+        <label>结构公式</label>
+        <textarea id="methodStructure" placeholder="开头钩子 → 场景痛点 → 产品介入 → 使用证据 → 情绪收束 → 软转化"></textarea>
+      </div>
+      <div class="field">
+        <label>写作逻辑</label>
+        <textarea id="methodLogic" placeholder="这类文案为什么有效？情绪如何推进？信任如何建立？"></textarea>
+      </div>
+      <div class="field">
+        <label>示例或注意事项</label>
+        <textarea id="methodExample" placeholder="可以放优秀句式、开头模板、禁忌、适合品牌等"></textarea>
+      </div>
+      <div class="field">
+        <label>标签</label>
+        <input id="methodTags" placeholder="种草, 高客单, 信任, 干货" />
+      </div>
+      <div class="btn-row">
+        <button class="btn" onclick="saveMethod()">保存方法</button>
+        <button class="btn secondary" onclick="deleteMethod()">删除</button>
+      </div>
+      <div style="height:14px"></div>
+      <div class="method-list" id="methodList"></div>
+    </div>
+  </section>
+
+  <section class="panel">
+    <div class="tabs">
+      <button class="tab active" onclick="switchTab('learn', this)">学习爆文</button>
+      <button class="tab" onclick="switchTab('generate', this)">产出文案</button>
+    </div>
+    <div class="panel-body tab-panel active" id="tab-learn">
+      <div class="field">
+        <label>粘贴小红书爆文或你喜欢的文案</label>
+        <textarea id="sampleText" style="min-height:220px" placeholder="粘贴标题 + 正文。系统会提炼：内容类型、钩子、结构、情绪推进、可复用方法。"></textarea>
+      </div>
+      <div class="btn-row">
+        <button class="btn" id="analyzeBtn" onclick="analyzeSample()">分析写法</button>
+        <button class="btn secondary" onclick="saveAnalysisAsMethod()">保存为方法卡</button>
+        <button class="btn ghost" onclick="saveSampleToViral()">保存到爆文库</button>
+      </div>
+      <div style="height:14px"></div>
+      <div class="analysis-box" id="analysisBox">分析结果会出现在这里。</div>
+    </div>
+
+    <div class="panel-body tab-panel" id="tab-generate">
+      <div class="field">
+        <label>选择品牌</label>
+        <select id="brandSelect"><option value="">不使用品牌资料</option></select>
+      </div>
+      <div class="field">
+        <label>文案目标</label>
+        <select id="goalSelect">
+          <option>种草转化</option>
+          <option>品牌认知</option>
+          <option>新品介绍</option>
+          <option>痛点教育</option>
+          <option>干货收藏</option>
+          <option>测评对比</option>
+          <option>复购提醒</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>产品 / 主题</label>
+        <input id="topicInput" placeholder="例如：新西兰麦卢卡蜂蜜，适合换季嗓子不舒服的人群" />
+      </div>
+      <div class="field">
+        <label>目标人群</label>
+        <input id="audienceInput" placeholder="例如：25-40岁，注重天然成分、愿意为品质付费的女性" />
+      </div>
+      <div class="field">
+        <label>必须强调</label>
+        <textarea id="mustInput" placeholder="卖点、证据、禁用词、必须出现的表达"></textarea>
+      </div>
+      <div class="field">
+        <label>选择要调用的写法方法</label>
+        <div class="pick-list" id="methodPickList"></div>
+      </div>
+      <div class="field">
+        <label>参考爆文数量</label>
+        <select id="viralLimit">
+          <option value="3">3 篇</option>
+          <option value="5">5 篇</option>
+          <option value="8">8 篇</option>
+        </select>
+      </div>
+      <div class="btn-row">
+        <button class="btn" id="generateBtn" onclick="generateCopy()">生成小红书文案</button>
+        <button class="btn secondary" onclick="saveOutput()">保存到内容库</button>
+        <button class="btn ghost" onclick="copyOutput()">复制</button>
+      </div>
+      <div style="height:14px"></div>
+      <div class="output-box" id="outputBox">生成结果会出现在这里。</div>
+    </div>
+  </section>
+
+  <aside class="panel">
+    <div class="panel-head">
+      <div>
+        <h2 class="panel-title">学习素材</h2>
+        <p class="panel-sub">自动读取品牌资料和爆文库作为上下文。</p>
+      </div>
+    </div>
+    <div class="panel-body">
+      <div class="field">
+        <label>已选品牌摘要</label>
+        <div class="analysis-box" id="brandSummary" style="min-height:120px">选择品牌后显示。</div>
+      </div>
+      <div class="field">
+        <label>爆文库样本</label>
+        <div id="viralList" class="method-list" style="max-height:420px"></div>
+      </div>
+      <p class="small-note">建议持续把优秀小红书文案放进“爆文库”或在左侧提炼成“写法方法卡”。生成时系统会同时参考品牌资料、写法方法和爆文结构。</p>
+    </div>
+  </aside>
+</main>
+
+<script>
+const TOKEN = localStorage.getItem('brand_auth_token') || '';
+let brands = [];
+let methods = [];
+let viralPosts = [];
+let editingMethodId = null;
+let lastAnalysis = null;
+let lastOutput = '';
+
+document.getElementById('navUserName').textContent = localStorage.getItem('brand_user_name') || '';
+if (localStorage.getItem('brand_user_role') === 'admin') {
+  const link = document.getElementById('adminNavLink');
+  if (link) link.style.display = '';
+}
+
+function logout() {
+  ['brand_auth_token','brand_user_name','brand_user_role'].forEach(k => localStorage.removeItem(k));
+  window.location.replace('/login.html');
+}
+
+function authHeaders(extra = {}) {
+  return { ...extra, Authorization: 'Bearer ' + TOKEN };
+}
+
+async function apiJson(url, options = {}) {
+  const res = await fetch(url, {
+    ...options,
+    headers: authHeaders({ 'Content-Type': 'application/json', ...(options.headers || {}) }),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error?.message || data.error || `请求失败 (${res.status})`);
+  return data;
+}
+
+async function callClaude(messages, maxTokens = 3000) {
+  const data = await apiJson('/api/claude', {
+    method: 'POST',
+    body: JSON.stringify({ model: 'claude-haiku-4-5-20251001', max_tokens: maxTokens, messages }),
+  });
+  return (data.content || []).map(c => c.text || '').join('');
+}
+
+function safeJsonFromText(text) {
+  const first = text.indexOf('{');
+  const last = text.lastIndexOf('}');
+  if (first === -1 || last === -1) throw new Error('AI 返回内容不是 JSON');
+  return JSON.parse(text.slice(first, last + 1));
+}
+
+async function loadAll() {
+  const [brandData, methodData, viralData] = await Promise.all([
+    fetch('/api/brands', { headers: authHeaders() }).then(r => r.json()),
+    fetch('/api/xhs-writing/methods', { headers: authHeaders() }).then(r => r.json()),
+    fetch('/api/viral-posts', { headers: authHeaders() }).then(r => r.json()),
+  ]);
+  brands = Array.isArray(brandData) ? brandData : [];
+  methods = Array.isArray(methodData) ? methodData : [];
+  viralPosts = Array.isArray(viralData) ? viralData.filter(p => (p.platform || '').includes('小红书')) : [];
+  renderStats();
+  renderBrands();
+  renderMethods();
+  renderMethodPicks();
+  renderViralList();
+}
+
+function renderStats() {
+  document.getElementById('methodCount').textContent = methods.length;
+  document.getElementById('viralCount').textContent = viralPosts.length;
+  document.getElementById('brandCount').textContent = brands.length;
+}
+
+function renderBrands() {
+  const select = document.getElementById('brandSelect');
+  select.innerHTML = '<option value="">不使用品牌资料</option>' + brands.map(b => `<option value="${b.id}">${escapeHtml(b.name)}</option>`).join('');
+}
+
+function renderMethods() {
+  const box = document.getElementById('methodList');
+  if (!methods.length) {
+    box.innerHTML = '<div class="empty">还没有写法方法。先手动录入，或粘贴一篇小红书爆文让系统分析后保存。</div>';
+    return;
+  }
+  box.innerHTML = methods.map(m => `
+    <div class="method-card ${editingMethodId === m.id ? 'active' : ''}" onclick="editMethod(${m.id})">
+      <div class="meta">${escapeHtml(m.category || '')} · ${escapeHtml(m.scene || '通用')}</div>
+      <h3>${escapeHtml(m.title)}</h3>
+      <div class="small-note">${escapeHtml((m.structure || '').slice(0, 76))}${(m.structure || '').length > 76 ? '…' : ''}</div>
+      <div class="tags">${(m.tags || []).slice(0, 4).map(t => `<span class="tag">${escapeHtml(t)}</span>`).join('')}</div>
+    </div>
+  `).join('');
+}
+
+function renderMethodPicks() {
+  const box = document.getElementById('methodPickList');
+  if (!methods.length) {
+    box.innerHTML = '<div class="small-note">暂无方法卡。系统仍可参考品牌和爆文样本生成。</div>';
+    return;
+  }
+  box.innerHTML = methods.map(m => `
+    <label class="pick-item">
+      <input type="checkbox" value="${m.id}" />
+      <span><b>${escapeHtml(m.title)}</b><br><span class="meta">${escapeHtml(m.category || '')}</span></span>
+    </label>
+  `).join('');
+}
+
+function renderViralList() {
+  const box = document.getElementById('viralList');
+  if (!viralPosts.length) {
+    box.innerHTML = '<div class="empty">爆文库暂无小红书样本。可以从“学习爆文”里保存。</div>';
+    return;
+  }
+  box.innerHTML = viralPosts.slice(0, 12).map(p => `
+    <div class="method-card">
+      <div class="meta">${escapeHtml(p.platform || '小红书')} · ${p.likes || 0} likes</div>
+      <h3>${escapeHtml(p.title || '未命名爆文')}</h3>
+      <div class="small-note">${escapeHtml((p.content || '').slice(0, 96))}${(p.content || '').length > 96 ? '…' : ''}</div>
+    </div>
+  `).join('');
+}
+
+function editMethod(id) {
+  const m = methods.find(x => x.id === id);
+  if (!m) return;
+  editingMethodId = id;
+  document.getElementById('methodTitle').value = m.title || '';
+  document.getElementById('methodCategory').value = m.category || '种草安利型';
+  document.getElementById('methodScene').value = m.scene || '';
+  document.getElementById('methodStructure').value = m.structure || '';
+  document.getElementById('methodLogic').value = m.logic || '';
+  document.getElementById('methodExample').value = m.example || '';
+  document.getElementById('methodTags').value = (m.tags || []).join(', ');
+  renderMethods();
+}
+
+function clearMethodForm() {
+  editingMethodId = null;
+  ['methodTitle','methodScene','methodStructure','methodLogic','methodExample','methodTags'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('methodCategory').value = '种草安利型';
+  renderMethods();
+}
+
+function methodPayload(source = 'manual') {
+  return {
+    title: document.getElementById('methodTitle').value.trim(),
+    category: document.getElementById('methodCategory').value,
+    scene: document.getElementById('methodScene').value.trim(),
+    structure: document.getElementById('methodStructure').value.trim(),
+    logic: document.getElementById('methodLogic').value.trim(),
+    example: document.getElementById('methodExample').value.trim(),
+    tags: document.getElementById('methodTags').value.trim(),
+    source,
+  };
+}
+
+async function saveMethod() {
+  const payload = methodPayload();
+  if (!payload.title) return alert('请填写方法标题');
+  if (editingMethodId) {
+    await apiJson('/api/xhs-writing/methods/' + editingMethodId, { method: 'PUT', body: JSON.stringify(payload) });
+  } else {
+    const data = await apiJson('/api/xhs-writing/methods', { method: 'POST', body: JSON.stringify(payload) });
+    editingMethodId = data.id;
+  }
+  await loadAll();
+}
+
+async function deleteMethod() {
+  if (!editingMethodId) return alert('请先选择一个方法');
+  if (!confirm('删除这个写法方法？')) return;
+  await apiJson('/api/xhs-writing/methods/' + editingMethodId, { method: 'DELETE', body: '{}' });
+  clearMethodForm();
+  await loadAll();
+}
+
+async function analyzeSample() {
+  const sample = document.getElementById('sampleText').value.trim();
+  if (!sample) return alert('请先粘贴小红书文案');
+  const btn = document.getElementById('analyzeBtn');
+  btn.disabled = true;
+  btn.textContent = '分析中...';
+  try {
+    const prompt = `你是小红书爆文结构分析师。请分析下面这篇小红书文案，提炼成可复用的写法方法。
+
+请只返回 JSON，不要解释。字段：
+{
+  "title": "方法标题",
+  "category": "种草安利型/痛点共鸣型/干货攻略型/故事体验型/测评对比型/清单合集型/反差悬念型/品牌价值型",
+  "scene": "适用场景",
+  "structure": "结构公式，按步骤写",
+  "logic": "为什么有效，情绪和信任如何推进",
+  "example": "可复用句式或注意事项",
+  "tags": ["标签1","标签2","标签3"]
+}
+
+文案：
+${sample.slice(0, 6000)}`;
+    const raw = await callClaude([{ role: 'user', content: prompt }], 1800);
+    lastAnalysis = safeJsonFromText(raw);
+    document.getElementById('analysisBox').textContent = JSON.stringify(lastAnalysis, null, 2);
+  } catch (err) {
+    document.getElementById('analysisBox').textContent = '分析失败：' + err.message;
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '分析写法';
+  }
+}
+
+async function saveAnalysisAsMethod() {
+  if (!lastAnalysis) return alert('请先分析一篇文案');
+  const payload = {
+    title: lastAnalysis.title || '小红书写法方法',
+    category: lastAnalysis.category || '种草安利型',
+    scene: lastAnalysis.scene || '',
+    structure: lastAnalysis.structure || '',
+    logic: lastAnalysis.logic || '',
+    example: lastAnalysis.example || '',
+    tags: lastAnalysis.tags || [],
+    source: 'analysis',
+  };
+  await apiJson('/api/xhs-writing/methods', { method: 'POST', body: JSON.stringify(payload) });
+  await loadAll();
+  alert('已保存为方法卡');
+}
+
+async function saveSampleToViral() {
+  const sample = document.getElementById('sampleText').value.trim();
+  if (!sample) return alert('请先粘贴文案');
+  const title = sample.split('\n').map(s => s.trim()).find(Boolean) || '小红书样本文案';
+  await apiJson('/api/viral-posts', {
+    method: 'POST',
+    body: JSON.stringify({
+      title,
+      content: sample,
+      platform: '小红书',
+      tags: lastAnalysis?.tags || ['小红书样本'],
+      likes: 0,
+      analysis: lastAnalysis,
+    }),
+  });
+  await loadAll();
+  alert('已保存到爆文库');
+}
+
+function selectedBrand() {
+  const id = document.getElementById('brandSelect').value;
+  return brands.find(b => String(b.id) === String(id)) || null;
+}
+
+function selectedMethods() {
+  const ids = [...document.querySelectorAll('#methodPickList input:checked')].map(i => Number(i.value));
+  return methods.filter(m => ids.includes(m.id));
+}
+
+document.getElementById('brandSelect').addEventListener('change', () => {
+  const b = selectedBrand();
+  document.getElementById('brandSummary').textContent = b ? brandText(b) : '选择品牌后显示。';
+});
+
+function brandText(b) {
+  return [
+    `品牌：${b.name || ''}`,
+    `行业：${b.industry || ''}`,
+    `人群：${b.audience || ''}`,
+    `调性：${(b.tones || []).join('、')}`,
+    `关键词：${(b.keywords || []).join('、')}`,
+    `禁忌：${(b.forbidden || []).join('、')}`,
+    `价值：${b.value || ''}`,
+    `故事：${b.story || ''}`,
+    `消费者声音：${b.consumerVoice || ''}`,
+  ].filter(Boolean).join('\n');
+}
+
+async function generateCopy() {
+  const topic = document.getElementById('topicInput').value.trim();
+  if (!topic) return alert('请填写产品或主题');
+  const btn = document.getElementById('generateBtn');
+  btn.disabled = true;
+  btn.textContent = '生成中...';
+  const b = selectedBrand();
+  const picked = selectedMethods();
+  const limit = Number(document.getElementById('viralLimit').value || 3);
+  const references = viralPosts.slice(0, limit);
+  const methodContext = picked.length ? picked : methods.slice(0, 4);
+  try {
+    const prompt = `你是资深小红书品牌文案策划。请基于“品牌资料 + 小红书写法方法 + 爆文样本”，生成适合小红书发布的文案。
+
+要求：
+1. 不要写成广告硬广，要像真实小红书笔记。
+2. 输出 5 个标题，1 篇完整正文，1 个结构拆解，1 组话题标签。
+3. 正文要有小红书感：开头抓人、场景具体、情绪自然、卖点融入、结尾轻转化。
+4. 严格避开品牌禁忌，不夸大功效。
+5. 如果品牌资料不足，请用用户输入和方法库补足，不要编造硬数据。
+
+【文案目标】
+${document.getElementById('goalSelect').value}
+
+【产品/主题】
+${topic}
+
+【目标人群】
+${document.getElementById('audienceInput').value.trim()}
+
+【必须强调】
+${document.getElementById('mustInput').value.trim()}
+
+【品牌资料】
+${b ? brandText(b) : '未选择品牌'}
+
+【写法方法】
+${methodContext.map((m, i) => `${i + 1}. ${m.title}
+类型：${m.category}
+场景：${m.scene}
+结构：${m.structure}
+逻辑：${m.logic}
+示例：${m.example}`).join('\n\n') || '暂无方法卡'}
+
+【爆文样本】
+${references.map((p, i) => `${i + 1}. 标题：${p.title || ''}
+正文：${(p.content || '').slice(0, 1200)}
+分析：${p.analysis ? JSON.stringify(p.analysis).slice(0, 1200) : ''}`).join('\n\n') || '暂无爆文样本'}
+
+请用中文输出，格式：
+## 标题备选
+1.
+2.
+3.
+4.
+5.
+
+## 正文
+
+## 结构拆解
+
+## 话题标签`;
+    lastOutput = await callClaude([{ role: 'user', content: prompt }], 3600);
+    document.getElementById('outputBox').textContent = lastOutput;
+  } catch (err) {
+    document.getElementById('outputBox').textContent = '生成失败：' + err.message;
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '生成小红书文案';
+  }
+}
+
+async function saveOutput() {
+  if (!lastOutput) return alert('暂无可保存内容');
+  const b = selectedBrand();
+  const title = (lastOutput.match(/## 正文([\s\S]*)/) ? document.getElementById('topicInput').value.trim() : '小红书文案') || '小红书文案';
+  await apiJson('/api/content', {
+    method: 'POST',
+    body: JSON.stringify({
+      type: 'xhs-writing',
+      brand_name: b?.name || '',
+      style: '小红书文案',
+      title,
+      body: lastOutput,
+      context: '由小红书文案撰写模块生成',
+    }),
+  });
+  alert('已保存到内容库');
+}
+
+async function copyOutput() {
+  if (!lastOutput) return;
+  await navigator.clipboard.writeText(lastOutput);
+  alert('已复制');
+}
+
+function switchTab(name, btn) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('tab-' + name).classList.add('active');
+}
+
+function escapeHtml(str) {
+  return String(str || '').replace(/[&<>"']/g, s => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[s]));
+}
+
+loadAll().catch(err => alert('加载失败：' + err.message));
+</script>
+</body>
+</html>
