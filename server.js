@@ -1,4 +1,8 @@
-try { require('dotenv').config(); } catch (e) {}
+try {
+  const dotenv = require('dotenv');
+  dotenv.config();
+  dotenv.config({ path: require('path').join(__dirname, 'brand.env'), override: true });
+} catch (e) {}
 const express  = require('express');
 const path      = require('path');
 const fs        = require('fs');
