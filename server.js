@@ -852,14 +852,21 @@ app.post('/api/claude', authenticateToken, async (req, res) => {
     return res.status(500).json({ error: { message: '服务器未配置 ANTHROPIC_API_KEY，请在 VPS 上设置环境变量后重启服务' } });
   }
   // CLAUDE_PROXY_URL 可在环境变量里设置自定义域名，默认用 workers.dev
-  const PROXY_URL = process.env.CLAUDE_PROXY_URL || 'https://anthorpic-proxy.mutoumoody.workers.dev/';
+  const PROXY_URL = process.env.CLAUDE_PROXY_URL
+    || (API_KEY.startsWith('sk-ant') ? 'https://api.anthropic.com/v1/messages' : 'https://anthorpic-proxy.mutoumoody.workers.dev/');
   try {
     const response = await fetch(PROXY_URL, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-worker-secret': CLAUDE_WORKER_SECRET,
-      },
+      headers: PROXY_URL.includes('api.anthropic.com')
+        ? {
+            'Content-Type': 'application/json',
+            'x-api-key': API_KEY,
+            'anthropic-version': '2023-06-01',
+          }
+        : {
+            'Content-Type': 'application/json',
+            'x-worker-secret': CLAUDE_WORKER_SECRET,
+          },
       body: JSON.stringify(req.body),
     });
     const data = await response.json();
@@ -885,10 +892,13 @@ app.post('/api/internal/claude', (req, res) => {
   if (!API_KEY) {
     return res.status(500).json({ error: { message: '服务器未配置 ANTHROPIC_API_KEY' } });
   }
-  const PROXY_URL = process.env.CLAUDE_PROXY_URL || 'https://anthorpic-proxy.mutoumoody.workers.dev/';
+  const PROXY_URL = process.env.CLAUDE_PROXY_URL
+    || (API_KEY.startsWith('sk-ant') ? 'https://api.anthropic.com/v1/messages' : 'https://anthorpic-proxy.mutoumoody.workers.dev/');
   fetch(PROXY_URL, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'x-worker-secret': CLAUDE_WORKER_SECRET },
+    headers: PROXY_URL.includes('api.anthropic.com')
+      ? { 'Content-Type': 'application/json', 'x-api-key': API_KEY, 'anthropic-version': '2023-06-01' }
+      : { 'Content-Type': 'application/json', 'x-worker-secret': CLAUDE_WORKER_SECRET },
     body: JSON.stringify(req.body),
   })
     .then(async (response) => {
