@@ -176,6 +176,10 @@ input:focus,select:focus,textarea:focus { border-color:var(--accent); }
         <label>粘贴小红书爆文或你喜欢的文案</label>
         <textarea id="sampleText" style="min-height:220px" placeholder="粘贴标题 + 正文。系统会提炼：内容类型、钩子、结构、情绪推进、可复用方法。"></textarea>
       </div>
+      <div class="field">
+        <label>写法归类命名</label>
+        <input id="analysisMethodName" placeholder="例如：高颜值杯子长期主义种草法 / 配件升级价值感写法" />
+      </div>
       <div class="btn-row">
         <button class="btn" id="analyzeBtn" onclick="analyzeSample()">分析写法</button>
         <button class="btn secondary" onclick="saveAnalysisAsMethod()">保存为方法卡</button>
@@ -521,17 +525,19 @@ ${sample.slice(0, 6000)}`;
 
 async function saveAnalysisAsMethod() {
   if (!lastAnalysis) return alert('请先分析一篇文案');
+  const manualName = document.getElementById('analysisMethodName').value.trim();
   const payload = {
-    title: lastAnalysis.title || '小红书写法方法',
+    title: manualName || lastAnalysis.title || '小红书写法方法',
     category: lastAnalysis.category || '种草安利型',
     scene: lastAnalysis.scene || '',
     structure: lastAnalysis.structure || '',
     logic: lastAnalysis.logic || '',
     example: lastAnalysis.example || '',
-    tags: lastAnalysis.tags || [],
+    tags: manualName ? [manualName].concat(lastAnalysis.tags || []) : (lastAnalysis.tags || []),
     source: 'analysis',
   };
   await apiJson('/api/xhs-writing/methods', { method: 'POST', body: JSON.stringify(payload) });
+  document.getElementById('analysisMethodName').value = '';
   await loadAll();
   alert('已保存为方法卡');
 }
