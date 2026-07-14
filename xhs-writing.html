@@ -66,6 +66,8 @@ input:focus,select:focus,textarea:focus { border-color:var(--accent); }
 .pick-item:last-child { border-bottom:0; }
 .pick-item input { width:auto; margin-top:3px; }
 .small-note { font-size:12px; line-height:1.7; color:var(--muted); }
+.quick-method-box { border:1px solid var(--line); background:#fffaf3; padding:12px; margin-bottom:14px; }
+.quick-method-box textarea { min-height:76px; }
 @media (max-width:1180px) { .layout { grid-template-columns:1fr; } .hero-inner { align-items:flex-start; flex-direction:column; } .stats { justify-content:flex-start; } }
 </style>
 </head>
@@ -224,6 +226,19 @@ input:focus,select:focus,textarea:focus { border-color:var(--accent); }
           <option value="8">8 篇</option>
         </select>
       </div>
+      <div class="field">
+        <label>一次生成篇数</label>
+        <select id="outputCount">
+          <option value="3">3 篇</option>
+          <option value="4">4 篇</option>
+          <option value="5">5 篇</option>
+          <option value="6">6 篇</option>
+          <option value="7">7 篇</option>
+          <option value="8">8 篇</option>
+          <option value="9">9 篇</option>
+          <option value="10">10 篇</option>
+        </select>
+      </div>
       <div class="btn-row">
         <button class="btn" id="generateBtn" onclick="generateCopy()">生成小红书文案</button>
         <button class="btn secondary" onclick="saveOutput()">保存到内容库</button>
@@ -242,6 +257,23 @@ input:focus,select:focus,textarea:focus { border-color:var(--accent); }
       </div>
     </div>
     <div class="panel-body">
+      <div class="quick-method-box">
+        <div class="field">
+          <label>自定义写法类型</label>
+          <input id="quickMethodTitle" placeholder="例如：通勤场景轻种草 / 配件升级法 / 反差测评型" />
+        </div>
+        <div class="field">
+          <label>写作方法</label>
+          <textarea id="quickMethodStructure" placeholder="写清楚这类文案的结构、开头方式、情绪推进、卖点植入和收尾方式。"></textarea>
+        </div>
+        <div class="field">
+          <label>标签</label>
+          <input id="quickMethodTags" placeholder="种草, 测评, 场景, 高级感" />
+        </div>
+        <div class="btn-row">
+          <button class="btn secondary" onclick="saveQuickMethod()">保存自定义写法</button>
+        </div>
+      </div>
       <div class="field">
         <label>已选品牌摘要</label>
         <div class="analysis-box" id="brandSummary" style="min-height:120px">选择品牌后显示。</div>
@@ -422,6 +454,30 @@ async function saveMethod() {
   await loadAll();
 }
 
+async function saveQuickMethod() {
+  const title = document.getElementById('quickMethodTitle').value.trim();
+  const structure = document.getElementById('quickMethodStructure').value.trim();
+  const tags = document.getElementById('quickMethodTags').value.trim();
+  if (!title) return alert('请填写自定义写法类型');
+  if (!structure) return alert('请填写写作方法');
+  await apiJson('/api/xhs-writing/methods', {
+    method: 'POST',
+    body: JSON.stringify({
+      title,
+      category: '自定义写法',
+      scene: '小红书文案产出',
+      structure,
+      logic: structure,
+      example: '',
+      tags,
+      source: 'manual-quick',
+    }),
+  });
+  ['quickMethodTitle','quickMethodStructure','quickMethodTags'].forEach(id => document.getElementById(id).value = '');
+  await loadAll();
+  alert('已保存为写法方法卡');
+}
+
 async function deleteMethod() {
   if (!editingMethodId) return alert('请先选择一个方法');
   if (!confirm('删除这个写法方法？')) return;
@@ -537,6 +593,7 @@ async function generateCopy() {
   const b = selectedBrand();
   const picked = selectedMethods();
   const limit = Number(document.getElementById('viralLimit').value || 3);
+  const outputCount = Math.min(10, Math.max(3, Number(document.getElementById('outputCount').value || 3)));
   const references = viralPosts.slice(0, limit);
   const methodContext = picked.length ? picked : methods.slice(0, 4);
   try {
@@ -544,10 +601,11 @@ async function generateCopy() {
 
 要求：
 1. 不要写成广告硬广，要像真实小红书笔记。
-2. 输出 5 个标题，1 篇完整正文，1 个结构拆解，1 组话题标签。
+2. 一次输出 ${outputCount} 篇完整文案，每篇都要有 3 个标题备选、1 篇完整正文、1 个结构拆解、1 组话题标签。
 3. 正文要有小红书感：开头抓人、场景具体、情绪自然、卖点融入、结尾轻转化。
 4. 严格避开品牌禁忌，不夸大功效。
 5. 如果品牌资料不足，请用用户输入和方法库补足，不要编造硬数据。
+6. ${outputCount} 篇文案之间要有明显差异：角度、开头钩子、情绪路径、使用场景或人群切口不要重复。
 
 【文案目标】
 ${document.getElementById('goalSelect').value}
@@ -578,19 +636,18 @@ ${references.map((p, i) => `${i + 1}. 标题：${p.title || ''}
 分析：${p.analysis ? JSON.stringify(p.analysis).slice(0, 1200) : ''}`).join('\n\n') || '暂无爆文样本'}
 
 请用中文输出，格式：
-## 标题备选
+## 文案 1
+### 标题备选
 1.
 2.
 3.
-4.
-5.
+### 正文
+### 结构拆解
+### 话题标签
 
-## 正文
-
-## 结构拆解
-
-## 话题标签`;
-    lastOutput = await callClaude([{ role: 'user', content: prompt }], 3600);
+依次输出到：
+## 文案 ${outputCount}`;
+    lastOutput = await callClaude([{ role: 'user', content: prompt }], Math.min(8000, 1800 + outputCount * 900));
     document.getElementById('outputBox').textContent = lastOutput;
   } catch (err) {
     document.getElementById('outputBox').textContent = '生成失败：' + err.message;
