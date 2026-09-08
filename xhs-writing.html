@@ -243,6 +243,14 @@ input:focus,select:focus,textarea:focus { border-color:var(--accent); }
           <option value="10">10 篇</option>
         </select>
       </div>
+      <div class="field">
+        <label>差异化强度</label>
+        <select id="diversityMode">
+          <option value="明显">明显：改变场景、观点、结构和证据</option>
+          <option value="稳定">稳定：保持品牌语气，改变场景和角度</option>
+          <option value="探索">探索：只保留品牌底线，大幅改变叙事方式</option>
+        </select>
+      </div>
       <div class="btn-row">
         <button class="btn" id="generateBtn" onclick="generateCopy()">生成小红书文案</button>
         <button class="btn secondary" onclick="saveOutput()">保存到内容库</button>
@@ -286,7 +294,7 @@ input:focus,select:focus,textarea:focus { border-color:var(--accent); }
         <label>爆文库样本</label>
         <div id="viralList" class="method-list" style="max-height:420px"></div>
       </div>
-      <p class="small-note">建议持续把优秀小红书文案放进“爆文库”或在左侧提炼成“写法方法卡”。生成时系统会同时参考品牌资料、写法方法和爆文结构。</p>
+      <p class="small-note">建议持续把优秀小红书文案放进“爆文库”或在左侧提炼成“写法方法卡”。产出文案时系统只抽象参考爆文规律，真正仿写请使用“爆文仿写”。</p>
     </div>
   </aside>
 </main>
@@ -571,6 +579,148 @@ function selectedMethods() {
   return methods.filter(m => ids.includes(m.id));
 }
 
+function safeJsonPayloadFromText(text) {
+  const arrayStart = text.indexOf('[');
+  const objectStart = text.indexOf('{');
+  let first = -1;
+  let last = -1;
+  if (arrayStart !== -1 && (objectStart === -1 || arrayStart < objectStart)) {
+    first = arrayStart;
+    last = text.lastIndexOf(']');
+  } else {
+    first = objectStart;
+    last = text.lastIndexOf('}');
+  }
+  if (first === -1 || last === -1) throw new Error('AI 返回内容不是 JSON');
+  return JSON.parse(text.slice(first, last + 1));
+}
+
+function textForSimilarity(text) {
+  return String(text || '')
+    .replace(/[#*_`>\-\d.，。！？、；：“”"'（）()[\]\s]/g, '')
+    .toLowerCase();
+}
+
+function ngrams(text, size = 3) {
+  const cleaned = textForSimilarity(text);
+  const list = [];
+  for (let i = 0; i <= cleaned.length - size; i += 1) list.push(cleaned.slice(i, i + size));
+  return new Set(list);
+}
+
+function similarityScore(a, b) {
+  const left = ngrams(a);
+  const right = ngrams(b);
+  if (!left.size || !right.size) return 0;
+  let same = 0;
+  left.forEach(item => { if (right.has(item)) same += 1; });
+  return same / Math.max(left.size, right.size);
+}
+
+function hasLongRepeatedPhrase(a, b, length = 12) {
+  const left = textForSimilarity(a);
+  const right = textForSimilarity(b);
+  if (left.length < length || right.length < length) return false;
+  for (let i = 0; i <= left.length - length; i += 1) {
+    if (right.includes(left.slice(i, i + length))) return true;
+  }
+  return false;
+}
+
+function shortText(value, max = 220) {
+  return String(value || '').replace(/\s+/g, ' ').trim().slice(0, max);
+}
+
+function hashText(text) {
+  return String(text || '').split('').reduce((sum, ch) => ((sum * 31) + ch.charCodeAt(0)) >>> 0, 7);
+}
+
+function pickDiverseReferences(topic, limit) {
+  const scored = viralPosts.map((post, index) => {
+    const text = `${post.title || ''} ${post.content || ''} ${(post.tags || []).join(' ')}`;
+    const topicChars = [...new Set(textForSimilarity(topic).split(''))].filter(Boolean);
+    const score = topicChars.reduce((sum, ch) => sum + (text.includes(ch) ? 1 : 0), 0);
+    return { post, index, score };
+  });
+  scored.sort((a, b) => (b.score - a.score) || (a.index - b.index));
+  if (scored.every(item => item.score === 0)) {
+    const offset = scored.length ? hashText(topic) % scored.length : 0;
+    return scored.slice(offset).concat(scored.slice(0, offset)).slice(0, limit).map(item => item.post);
+  }
+  return scored.slice(0, limit).map(item => item.post);
+}
+
+function normalizeStrategies(raw, count, methodContext) {
+  const payload = Array.isArray(raw) ? raw : (raw.strategies || raw.strategyMatrix || raw.items || []);
+  const strategies = payload.slice(0, count).map((item, index) => ({
+    index: index + 1,
+    audience: item.audience || item.user || item.user_type || `人群切口 ${index + 1}`,
+    scene: item.scene || item.context || `使用场景 ${index + 1}`,
+    tension: item.tension || item.conflict || item.pain || '用户真实矛盾',
+    brandView: item.brandView || item.brand_view || item.viewpoint || '品牌观点',
+    proof: item.proof || item.evidence || '产品事实或体验证据',
+    structure: item.structure || item.content_structure || methodContext[index % Math.max(methodContext.length, 1)]?.structure || '场景进入 -> 痛点共鸣 -> 产品介入 -> 证据支撑 -> 轻转化',
+    action: item.action || item.cta || '收藏或评论交流',
+    forbidden: item.forbidden || item.avoid || '',
+  }));
+  while (strategies.length < count) {
+    const i = strategies.length;
+    strategies.push({
+      index: i + 1,
+      audience: ['谨慎比较型用户','场景刚需用户','老客复购用户','礼物选择用户'][i % 4],
+      scene: ['下单前比较','晚上回家使用','通勤或办公室','送礼前做功课'][i % 4],
+      tension: ['怕买错','想省事但要品质','已经试过但不满意','希望送得体面'][i % 4],
+      brandView: '用真实产品价值解决具体生活问题',
+      proof: '品牌资料、产品细节和用户输入中的可信证据',
+      structure: methodContext[i % Math.max(methodContext.length, 1)]?.structure || '场景进入 -> 痛点共鸣 -> 产品介入 -> 证据支撑 -> 轻转化',
+      action: ['收藏','评论交流','了解产品','下次购买参考'][i % 4],
+      forbidden: '不要重复前一篇的开头、场景和卖点顺序',
+    });
+  }
+  return strategies;
+}
+
+function strategyLabel(s) {
+  return [
+    `人群：${s.audience}`,
+    `场景：${s.scene}`,
+    `矛盾：${s.tension}`,
+    `观点：${s.brandView}`,
+    `证据：${s.proof}`,
+    `结构：${s.structure}`,
+    `行动：${s.action}`,
+  ].join('\n');
+}
+
+function buildForbiddenList(generatedItems) {
+  if (!generatedItems.length) return '暂无。';
+  return generatedItems.map((item, index) => {
+    const s = item.strategy;
+    const body = shortText(item.copy, 180);
+    return `${index + 1}. 已用场景：${s.scene}；已用人群：${s.audience}；已用矛盾：${s.tension}；已用结构：${shortText(s.structure, 80)}；已用正文特征：${body}`;
+  }).join('\n');
+}
+
+function findSimilarityIssue(copy, generatedItems, references) {
+  for (const item of generatedItems) {
+    if (similarityScore(copy, item.copy) > 0.58) return '与本轮其他文案语义和句式过近';
+    if (hasLongRepeatedPhrase(copy, item.copy)) return '与本轮其他文案出现较长重复句段';
+  }
+  for (const ref of references) {
+    const refText = `${ref.title || ''}\n${ref.content || ''}`;
+    if (similarityScore(copy, refText) > 0.45) return '与参考爆文过近';
+    if (hasLongRepeatedPhrase(copy, refText)) return '与参考爆文出现较长重复句段';
+  }
+  return '';
+}
+
+function renderGenerationProgress(stage, strategies = [], generatedItems = [], qualityLog = []) {
+  const strategyText = strategies.length ? strategies.map(s => `### 策略 ${s.index}\n${strategyLabel(s)}`).join('\n\n') : '策略矩阵生成中...';
+  const copyText = generatedItems.map(item => item.copy).join('\n\n---\n\n');
+  const logText = qualityLog.length ? `\n\n## 重复度检查\n${qualityLog.map(line => `- ${line}`).join('\n')}` : '';
+  document.getElementById('outputBox').textContent = `当前进度：${stage}\n\n## 差异化策略矩阵\n${strategyText}${copyText ? `\n\n## 已生成文案\n${copyText}` : ''}${logText}`;
+}
+
 document.getElementById('brandSelect').addEventListener('change', () => {
   const b = selectedBrand();
   document.getElementById('brandSummary').textContent = b ? brandText(b) : '选择品牌后显示。';
@@ -595,37 +745,28 @@ async function generateCopy() {
   if (!topic) return alert('请填写产品或主题');
   const btn = document.getElementById('generateBtn');
   btn.disabled = true;
-  btn.textContent = '生成中...';
+  btn.textContent = '规划中...';
   const b = selectedBrand();
   const picked = selectedMethods();
   const limit = Number(document.getElementById('viralLimit').value || 3);
   const outputCount = Math.min(10, Math.max(3, Number(document.getElementById('outputCount').value || 3)));
-  const references = viralPosts.slice(0, limit);
+  const diversityMode = document.getElementById('diversityMode').value || '明显';
+  const references = pickDiverseReferences(topic, limit);
   const methodContext = picked.length ? picked : methods.slice(0, 4);
-  try {
-    const prompt = `你是资深小红书品牌文案策划。请基于“品牌资料 + 小红书写法方法”进行原创策划，生成适合小红书发布的原创文案。爆文样本只能用于理解平台语感和抽象内容规律，不能作为仿写对象。
-
-要求：
-1. 这是原创文案产出，不是爆文仿写；不要写成广告硬广，要像真实小红书笔记。
-2. 一次输出 ${outputCount} 篇完整文案，每篇都要有创作角度、使用方法、3 个标题备选、1 篇完整正文、1 个适配理由、1 组话题标签。
-3. 正文要有小红书感：开头抓人、场景具体、情绪自然、卖点融入、结尾轻转化。
-4. 严格避开品牌禁忌，不夸大功效。
-5. 如果品牌资料不足，请用用户输入和方法库补足，不要编造硬数据。
-6. ${outputCount} 篇文案之间要有明显差异：角度、开头钩子、情绪路径、使用场景或人群切口不要重复。
-7. 禁止复刻任何单篇爆文的标题结构、开头句式、段落顺序、emoji/标签组合、表达节奏或故事推进方式。
-8. 爆文样本只提取抽象规律，例如用户痛点、场景类型、信任证据、情绪转折、种草逻辑；最终文案要主动换角度、换结构、换语言。
-
-【文案目标】
-${document.getElementById('goalSelect').value}
+  const goal = document.getElementById('goalSelect').value;
+  const audience = document.getElementById('audienceInput').value.trim();
+  const must = document.getElementById('mustInput').value.trim();
+  const baseContext = `【文案目标】
+${goal}
 
 【产品/主题】
 ${topic}
 
 【目标人群】
-${document.getElementById('audienceInput').value.trim()}
+${audience}
 
 【必须强调】
-${document.getElementById('mustInput').value.trim()}
+${must}
 
 【品牌资料】
 ${b ? brandText(b) : '未选择品牌'}
@@ -636,15 +777,69 @@ ${methodContext.map((m, i) => `${i + 1}. ${m.title}
 场景：${m.scene}
 结构：${m.structure}
 逻辑：${m.logic}
-示例：${m.example}`).join('\n\n') || '暂无方法卡'}
+示例：${m.example}`).join('\n\n') || '暂无方法卡'}`;
+  try {
+    renderGenerationProgress('正在生成差异化策略矩阵');
+    const strategyPrompt = `你是小红书内容策略总监。请先为本次批量原创文案生成 ${outputCount} 张差异化策略卡，不要直接写正文。
 
 【爆文样本（仅供抽象规律参考，禁止仿写原文）】
 ${references.map((p, i) => `${i + 1}. 标题：${p.title || ''}
 正文节选：${(p.content || '').slice(0, 500)}
 分析节选：${p.analysis ? JSON.stringify(p.analysis).slice(0, 700) : ''}`).join('\n\n') || '暂无爆文样本'}
 
+${baseContext}
+
+策略要求：
+1. 差异化强度：${diversityMode}。
+2. 每张策略卡的人群、场景、用户矛盾、品牌观点、证明方式、内容结构和行动目标都要尽量不同。
+3. 只能从爆文样本里抽象学习平台规律，禁止继承任何单篇爆文的标题、开头句式、段落顺序、故事、数字、比喻、emoji组合和标签组合。
+4. 不要编造产品事实；证据必须来自品牌资料、用户输入或可表达为待确认信息。
+
+请只返回 JSON，不要解释。格式：
+{
+  "strategies": [
+    {
+      "audience": "人群子类型",
+      "scene": "真实使用或购买场景",
+      "tension": "用户矛盾",
+      "brandView": "品牌观点",
+      "proof": "证明方式",
+      "structure": "内容结构",
+      "action": "行动目标",
+      "forbidden": "本篇需要避开的相似表达"
+    }
+  ]
+}`;
+    const strategyRaw = await callClaude([{ role: 'user', content: strategyPrompt }], Math.min(3200, 900 + outputCount * 260));
+    const strategies = normalizeStrategies(safeJsonPayloadFromText(strategyRaw), outputCount, methodContext);
+    const generatedItems = [];
+    const qualityLog = [];
+    renderGenerationProgress('策略矩阵完成，开始逐篇生成', strategies, generatedItems, qualityLog);
+
+    for (const strategy of strategies) {
+      btn.textContent = `生成 ${strategy.index}/${outputCount}`;
+      const copyPrompt = `你是资深小红书品牌文案策划。请根据下面这一张策略卡，独立生成 1 篇适合小红书发布的原创文案。
+
+这是“小红书文案”原创模块，不是“爆文仿写”模块。你不能复刻爆文或本轮其他文案的标题结构、开头句式、段落顺序、emoji/标签组合、表达节奏、故事推进方式。
+
+${baseContext}
+
+【本篇策略卡】
+${strategyLabel(strategy)}
+需要额外避开：${strategy.forbidden || '无'}
+
+【本轮禁止重复清单】
+${buildForbiddenList(generatedItems)}
+
+写作要求：
+1. 只写这一篇，不要输出其他版本。
+2. 必须严格执行本篇策略卡，不要重复禁止清单里的场景、开头、矛盾、结构和卖点顺序。
+3. 像真实小红书笔记，不要写成广告硬广；开头抓人，场景具体，情绪自然，卖点融入，结尾轻转化。
+4. 严格避开品牌禁忌，不夸大功效；没有证据的信息写成“可确认/可补充”，不要编造硬数据。
+5. 标题和正文要主动换语言，不要贴近任何参考爆文。
+
 请用中文输出，格式：
-## 原创文案 1
+## 原创文案 ${strategy.index}
 ### 创作角度
 ### 使用方法
 ### 标题备选
@@ -653,11 +848,27 @@ ${references.map((p, i) => `${i + 1}. 标题：${p.title || ''}
 3.
 ### 正文
 ### 适配理由
-### 话题标签
+### 话题标签`;
+      let copy = await callClaude([{ role: 'user', content: copyPrompt }], 1800);
+      let issue = findSimilarityIssue(copy, generatedItems, references);
+      if (issue) {
+        qualityLog.push(`原创文案 ${strategy.index}：${issue}，已自动重写一次。`);
+        btn.textContent = `重写 ${strategy.index}/${outputCount}`;
+        const rewritePrompt = `${copyPrompt}
 
-依次输出到：
-## 原创文案 ${outputCount}`;
-    lastOutput = await callClaude([{ role: 'user', content: prompt }], Math.min(8000, 1800 + outputCount * 900));
+上一版因为“${issue}”被拦截。请完全换一个开头、换一个场景细节、换一个内容推进顺序，并避开下面上一版文本中的句式和关键词顺序。
+
+【上一版文本】
+${copy.slice(0, 2200)}`;
+        copy = await callClaude([{ role: 'user', content: rewritePrompt }], 1800);
+        issue = findSimilarityIssue(copy, generatedItems, references);
+      }
+      qualityLog.push(`原创文案 ${strategy.index}：${issue ? `重写后仍需人工复核（${issue}）` : '通过本轮重复度检查'}`);
+      generatedItems.push({ strategy, copy });
+      renderGenerationProgress(`已完成 ${generatedItems.length}/${outputCount}`, strategies, generatedItems, qualityLog);
+    }
+
+    lastOutput = `## 差异化策略矩阵\n${strategies.map(s => `### 策略 ${s.index}\n${strategyLabel(s)}`).join('\n\n')}\n\n## 原创文案\n${generatedItems.map(item => item.copy).join('\n\n---\n\n')}\n\n## 重复度检查\n${qualityLog.map(line => `- ${line}`).join('\n')}`;
     document.getElementById('outputBox').textContent = lastOutput;
   } catch (err) {
     document.getElementById('outputBox').textContent = '生成失败：' + err.message;
