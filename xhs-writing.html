@@ -100,7 +100,7 @@ input:focus,select:focus,textarea:focus { border-color:var(--accent); }
     <div>
       <div class="eyebrow">Xiaohongshu Copy System</div>
       <h1>小红书文案学习与产出</h1>
-      <p>集中学习小红书的内容写法、结构逻辑、爆文样本和品牌资料，再用这些方法生成更像小红书、也更贴近品牌的标题与正文。</p>
+      <p>集中沉淀小红书写法、结构逻辑、品牌资料和平台规律，用方法库生成原创文案；爆文样本只做抽象参考，不做贴身仿写。</p>
     </div>
     <div class="stats">
       <div class="stat"><b id="methodCount">0</b><span>写法方法</span></div>
@@ -386,7 +386,7 @@ function renderMethods() {
 function renderMethodPicks() {
   const box = document.getElementById('methodPickList');
   if (!methods.length) {
-    box.innerHTML = '<div class="small-note">暂无方法卡。系统仍可参考品牌和爆文样本生成。</div>';
+    box.innerHTML = '<div class="small-note">暂无方法卡。系统会优先参考品牌资料和用户输入生成原创文案。</div>';
     return;
   }
   box.innerHTML = methods.map(m => `
@@ -603,15 +603,17 @@ async function generateCopy() {
   const references = viralPosts.slice(0, limit);
   const methodContext = picked.length ? picked : methods.slice(0, 4);
   try {
-    const prompt = `你是资深小红书品牌文案策划。请基于“品牌资料 + 小红书写法方法 + 爆文样本”，生成适合小红书发布的文案。
+    const prompt = `你是资深小红书品牌文案策划。请基于“品牌资料 + 小红书写法方法”进行原创策划，生成适合小红书发布的原创文案。爆文样本只能用于理解平台语感和抽象内容规律，不能作为仿写对象。
 
 要求：
-1. 不要写成广告硬广，要像真实小红书笔记。
-2. 一次输出 ${outputCount} 篇完整文案，每篇都要有 3 个标题备选、1 篇完整正文、1 个结构拆解、1 组话题标签。
+1. 这是原创文案产出，不是爆文仿写；不要写成广告硬广，要像真实小红书笔记。
+2. 一次输出 ${outputCount} 篇完整文案，每篇都要有创作角度、使用方法、3 个标题备选、1 篇完整正文、1 个适配理由、1 组话题标签。
 3. 正文要有小红书感：开头抓人、场景具体、情绪自然、卖点融入、结尾轻转化。
 4. 严格避开品牌禁忌，不夸大功效。
 5. 如果品牌资料不足，请用用户输入和方法库补足，不要编造硬数据。
 6. ${outputCount} 篇文案之间要有明显差异：角度、开头钩子、情绪路径、使用场景或人群切口不要重复。
+7. 禁止复刻任何单篇爆文的标题结构、开头句式、段落顺序、emoji/标签组合、表达节奏或故事推进方式。
+8. 爆文样本只提取抽象规律，例如用户痛点、场景类型、信任证据、情绪转折、种草逻辑；最终文案要主动换角度、换结构、换语言。
 
 【文案目标】
 ${document.getElementById('goalSelect').value}
@@ -636,23 +638,25 @@ ${methodContext.map((m, i) => `${i + 1}. ${m.title}
 逻辑：${m.logic}
 示例：${m.example}`).join('\n\n') || '暂无方法卡'}
 
-【爆文样本】
+【爆文样本（仅供抽象规律参考，禁止仿写原文）】
 ${references.map((p, i) => `${i + 1}. 标题：${p.title || ''}
-正文：${(p.content || '').slice(0, 1200)}
-分析：${p.analysis ? JSON.stringify(p.analysis).slice(0, 1200) : ''}`).join('\n\n') || '暂无爆文样本'}
+正文节选：${(p.content || '').slice(0, 500)}
+分析节选：${p.analysis ? JSON.stringify(p.analysis).slice(0, 700) : ''}`).join('\n\n') || '暂无爆文样本'}
 
 请用中文输出，格式：
-## 文案 1
+## 原创文案 1
+### 创作角度
+### 使用方法
 ### 标题备选
 1.
 2.
 3.
 ### 正文
-### 结构拆解
+### 适配理由
 ### 话题标签
 
 依次输出到：
-## 文案 ${outputCount}`;
+## 原创文案 ${outputCount}`;
     lastOutput = await callClaude([{ role: 'user', content: prompt }], Math.min(8000, 1800 + outputCount * 900));
     document.getElementById('outputBox').textContent = lastOutput;
   } catch (err) {
