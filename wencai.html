@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8" />
@@ -143,6 +143,11 @@ footer em { color: var(--accent); font-style: normal; }
   .form-grid { grid-template-columns: 1fr; }
   .levels-grid { grid-template-columns: repeat(3, 1fr); }
 }
+.similarity-rail { position:fixed; left:0; top:210px; z-index:70; display:flex; flex-direction:column; align-items:center; gap:4px; padding:12px 8px; border:1px solid rgba(38,33,29,.18); border-left:0; background:#fffaf3; color:#26211d; cursor:pointer; box-shadow:0 10px 28px rgba(38,33,29,.12); font-family:"Noto Serif SC",serif; writing-mode:vertical-rl; letter-spacing:.08em; }
+.similarity-rail span { font-size:13px; }
+.similarity-rail strong { font-family:"DM Mono",monospace; font-size:10px; color:#b85c38; font-weight:400; }
+.similarity-rail:hover { background:#fff3e4; }
+@media (max-width:760px) { .similarity-rail { top:auto; bottom:14px; left:12px; writing-mode:horizontal-tb; flex-direction:row; border-left:1px solid rgba(38,33,29,.18); padding:8px 10px; } }
 </style>
 </head>
 <body>
@@ -167,6 +172,7 @@ footer em { color: var(--accent); font-style: normal; }
     </div>
   </div>
 </nav>
+<button class="similarity-rail" type="button" onclick="showSimilarityNotice()" title="查看文案相似度检查状态"><span>相似度检查</span><strong>已开启</strong></button>
 
 <div class="brand-bar" id="brandBar">
   <div class="brand-bar-inner">
@@ -645,6 +651,9 @@ ${levelList}
 
 // 初始化品牌选择器
 initBrandBar();
+function showSimilarityNotice() {
+  alert('文案相似度检查已开启：系统会尽量让多版本文案避开相同场景、开头句式、卖点顺序、标题公式和结尾CTA。小红书文案、爆文仿写、爆文库仿写等入口还会进行本轮相似度拦截，过于相似时自动重写一次。');
+}
 </script>
 </body>
 </html>
