@@ -467,7 +467,6 @@ async function generate() {
   const platform = document.getElementById('g-platform').value;
   const levels   = [...document.querySelectorAll('#panel-generate .level-btn.active')].map(el => el.dataset.level);
 
-  if (!product) { alert('请输入产品名称'); return; }
   if (levels.length === 0) { alert('请至少选择一个段位'); return; }
 
   const btn = document.getElementById('genBtn');
@@ -483,12 +482,17 @@ async function generate() {
 
 ${brandContext ? `【品牌档案（请严格遵守品牌调性、关键词和禁忌词）】\n${brandContext}\n` : ''}
 产品信息：
-- 产品名称：${product}
+- 产品名称：${product || '未提供，可根据品牌档案、品牌理念或发布平台生成通用文案'}
 - 价格区间：${price || '未提供'}
 - 目标人群：${audience || (activeBrand?.audience) || '未提供'}
 - 核心卖点：${feature || '未提供'}
 - 品牌理念：${brand || (activeBrand?.slogan) || '未提供'}
 - 发布平台：${platform}
+
+信息完整度说明：
+1. 产品名称、价格区间、目标人群、核心卖点都不是必填项。
+2. 如果某项未提供，请不要中断生成，也不要编造具体事实；优先根据已选品牌档案、品牌理念、发布平台和段位方法生成可用文案。
+3. 如果产品事实不足，请使用可替换表达，例如“这款产品”“这个系列”“适合日常使用的选择”，避免虚构功效、价格、成分、产地和数据。
 
 请根据以下选定的段位，分别写出对应文案：
 ${selectedLevelText}
