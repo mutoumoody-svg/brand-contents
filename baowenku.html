@@ -766,6 +766,68 @@ function toggleGenerateBody() {
   toggle.classList.toggle('open');
 }
 
+function textForSimilarity(text) {
+  return String(text || '').replace(/[#*_`>\-\d.，。！？、；：“”"'（）()[\]\s]/g, '').toLowerCase();
+}
+
+function ngrams(text, size = 3) {
+  const cleaned = textForSimilarity(text);
+  const set = new Set();
+  for (let i = 0; i <= cleaned.length - size; i += 1) set.add(cleaned.slice(i, i + size));
+  return set;
+}
+
+function similarityScore(a, b) {
+  const left = ngrams(a);
+  const right = ngrams(b);
+  if (!left.size || !right.size) return 0;
+  let same = 0;
+  left.forEach(item => { if (right.has(item)) same += 1; });
+  return same / Math.max(left.size, right.size);
+}
+
+function findGenSimilarityIssue(versions, referenceText = '') {
+  for (let i = 0; i < versions.length; i += 1) {
+    const current = `${versions[i].title}\n${versions[i].body}`;
+    for (let j = i + 1; j < versions.length; j += 1) {
+      const other = `${versions[j].title}\n${versions[j].body}`;
+      if (similarityScore(current, other) > 0.58) return `版本 ${i + 1} 和版本 ${j + 1} 太像`;
+    }
+    if (referenceText && similarityScore(current, referenceText) > 0.5) return `版本 ${i + 1} 和参考爆文太像`;
+  }
+  return '';
+}
+
+async function callClaudeText(prompt, maxTokens = 3000) {
+  const res = await fetch('/api/claude', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + TOKEN },
+    body: JSON.stringify({ model: 'claude-haiku-4-5-20251001', max_tokens: maxTokens, messages: [{ role: 'user', content: prompt }] }),
+  });
+  if (!res.ok) throw new Error('生成请求失败');
+  const data = await res.json();
+  return (data.content || []).map(c => c.text || '').join('');
+}
+
+async function ensureDiverseGenVersions(versions, basePrompt, referenceText = '') {
+  const issue = findGenSimilarityIssue(versions, referenceText);
+  if (!issue) return versions;
+  const rewritePrompt = `${basePrompt}
+
+上一轮输出因为“${issue}”被拦截。请重新生成 3 个版本。
+
+重写要求：
+1. 先在内部为三个版本分配完全不同的差异方向，但不要把策略过程输出出来。
+2. 三个版本必须分别使用不同的人群切口、使用场景、开头钩子、矛盾推进、证据方式和结尾 CTA。
+3. 不要沿用参考爆文里的标志性句式、比喻、数字、emoji组合、标签组合和段落顺序。
+4. 允许借用参考内容的传播机制，但每个版本都必须像独立创作，不要像同一篇文案换词。
+
+仍然严格按原来的输出格式返回。`;
+  const text = await callClaudeText(rewritePrompt, 3000);
+  const fresh = parseGenText(text);
+  return fresh.length ? fresh : versions;
+}
+
 async function generateFromPost() {
   const post = allPosts.find(p => p.id === currentPostId);
   if (!post) return;
@@ -786,7 +848,7 @@ async function generateFromPost() {
 
   const prompt = `你是顶级小红书文案专家。请严格按照以下爆文结构规律，为我的产品仿写3个不同版本的完整小红书帖子。
 
-【爆文结构规律（严格学习并复刻）】
+【爆文结构规律（仅用于提炼传播机制，禁止照搬表达）】
 - 开头钩子：${a.hook || '未分析'}
 - 内容结构：${a.structure || '未分析'}
 - 风格类型：${a.style_label || '未分析'}
@@ -803,12 +865,13 @@ ${brandCtx ? `【品牌档案（严格遵守调性和禁忌词）】\n${brandCtx
 - 文案正文字数：每个版本约 ${length} 字
 
 要求：
-1. 严格复刻爆文的钩子类型、结构节奏、情绪触发方式，内容完全换成我的产品
+1. 借用爆文的钩子机制、结构节奏和情绪触发方式，内容必须用我的产品、品牌观点和新场景重新组织，不能复刻原文具体表达
 2. ${brandCtx ? '严格遵守品牌档案中的调性、关键词，避免禁忌词' : '保持品牌一致性'}
-3. 三个版本风格各有侧重
+3. 三个版本必须先在内部分配差异方向：不同人群切口、不同使用场景、不同开头钩子、不同矛盾推进、不同证据方式、不同结尾CTA
 4. 每个版本包含：标题 + 完整正文（有换行、有节奏感、有emoji）
 5. 结尾必须有互动引导
 6. 每个版本正文字数控制在 ${length} 字左右
+7. 三个版本不能像同一篇文案换词，禁止重复相同场景、相同卖点顺序、相同标题公式和相同结尾CTA
 
 【输出格式】纯文本，三个版本用 ===== 分隔：
 
@@ -828,15 +891,8 @@ ${brandCtx ? `【品牌档案（严格遵守调性和禁忌词）】\n${brandCtx
 完整正文内容`;
 
   try {
-    const res = await fetch('/api/claude', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + TOKEN },
-      body: JSON.stringify({ model: 'claude-haiku-4-5-20251001', max_tokens: 3000, messages: [{ role: 'user', content: prompt }] }),
-    });
-    if (!res.ok) throw new Error('生成请求失败');
-    const data = await res.json();
-    const text = (data.content || []).map(c => c.text || '').join('');
-    const versions = parseGenText(text);
+    const text = await callClaudeText(prompt, 3000);
+    const versions = await ensureDiverseGenVersions(parseGenText(text), prompt, `${post.title || ''}\n${post.content || ''}`);
     if (versions.length === 0) throw new Error('未能解析出仿写内容，请重试');
     renderGenResults(versions, `爆文仿写·${post.title || post.content.slice(0,20)}`);
   } catch(e) {

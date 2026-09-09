@@ -1002,9 +1002,9 @@ async function quickCopy() {
 
   const promptText = `你是一位顶级品牌文案专家。
 
-这是“爆文仿写”模块，请仔细研读以下参考内容，完整学习其语气风格、用词习惯、句式节奏、情绪表达方式，然后用高度接近参考内容的风格，为我的产品写3个不同版本的文案。
+这是“爆文仿写”模块，请仔细研读以下参考内容，提炼它的语气机制、节奏机制、情绪推进方式和种草逻辑，然后为我的产品写3个不同版本的文案。
 
-${refText ? `【参考内容（请深度学习这种风格）】\n${refText}` : '【参考内容】请深度学习图片中文案的语气风格、用词习惯、句式节奏，完整还原这种写作风格。'}
+${refText ? `【参考内容（仅用于提炼风格机制，禁止照搬表达）】\n${refText}` : '【参考内容】请从图片文案中提炼语气机制、节奏机制和情绪推进方式，禁止照搬图片中的具体表达。'}
 
 ${brandContext ? `【品牌档案（写作时严格遵守）】\n${brandContext}\n` : ''}
 【我的产品信息】
@@ -1015,12 +1015,13 @@ ${brandContext ? `【品牌档案（写作时严格遵守）】\n${brandContext}
 - 文案正文字数：每个版本约 ${length} 字
 
 【写作要求】
-1. 高度复刻参考内容的语气、节奏、用词风格；如果需要原创策划，应使用“小红书文案”模块
+1. 借用参考内容的传播机制和节奏感，但不要复刻原文的具体场景、句式、关键词组合和标志性表达
 2. 内容完全换成我的产品，不能照抄参考内容的任何句子
 3. ${brandContext ? '严格遵守品牌档案的调性和关键词，避免禁忌词' : '保持品牌一致性'}
-4. 三个版本各有侧重（情感故事版 / 产品种草版 / 场景代入版）
+4. 三个版本必须先在内部分配差异方向：不同人群切口、不同使用场景、不同开头钩子、不同矛盾推进、不同证据方式、不同结尾CTA
 5. 每个版本正文字数控制在 ${length} 字左右
 6. 每个版本有标题和完整正文，有换行，emoji 参考原文风格自然融入标题和段落中
+7. 三个版本不能像同一篇文案换词，禁止重复相同场景、相同卖点顺序、相同开头句式和相同标题公式
 
 【输出格式】纯文本，三个版本用 ===== 分隔：
 
@@ -1048,7 +1049,7 @@ ${brandContext ? `【品牌档案（写作时严格遵守）】\n${brandContext}
 
   try {
     const text = await callClaude(messages);
-    const versions = parseRewriteText(text);
+    const versions = await ensureDiverseRewriteVersions(parseRewriteText(text), promptText, refText);
     if (versions.length === 0) throw new Error('未能解析出仿写内容，请重试');
 
     document.getElementById('q-loading').style.display = 'none';
@@ -1108,6 +1109,57 @@ async function callClaude(messages) {
   }
   const data = await res.json();
   return data.content.map(i => i.text || '').join('');
+}
+
+function textForSimilarity(text) {
+  return String(text || '').replace(/[#*_`>\-\d.，。！？、；：“”"'（）()[\]\s]/g, '').toLowerCase();
+}
+
+function ngrams(text, size = 3) {
+  const cleaned = textForSimilarity(text);
+  const set = new Set();
+  for (let i = 0; i <= cleaned.length - size; i += 1) set.add(cleaned.slice(i, i + size));
+  return set;
+}
+
+function similarityScore(a, b) {
+  const left = ngrams(a);
+  const right = ngrams(b);
+  if (!left.size || !right.size) return 0;
+  let same = 0;
+  left.forEach(item => { if (right.has(item)) same += 1; });
+  return same / Math.max(left.size, right.size);
+}
+
+function findVersionSimilarityIssue(versions, referenceText = '') {
+  for (let i = 0; i < versions.length; i += 1) {
+    const current = `${versions[i].title}\n${versions[i].body}`;
+    for (let j = i + 1; j < versions.length; j += 1) {
+      const other = `${versions[j].title}\n${versions[j].body}`;
+      if (similarityScore(current, other) > 0.58) return `版本 ${i + 1} 和版本 ${j + 1} 太像`;
+    }
+    if (referenceText && similarityScore(current, referenceText) > 0.5) return `版本 ${i + 1} 和参考文案太像`;
+  }
+  return '';
+}
+
+async function ensureDiverseRewriteVersions(versions, basePrompt, referenceText = '') {
+  const issue = findVersionSimilarityIssue(versions, referenceText);
+  if (!issue) return versions;
+  const rewritePrompt = `${basePrompt}
+
+上一轮输出因为“${issue}”被拦截。请重新生成 3 个版本。
+
+重写要求：
+1. 先在内部为三个版本分配完全不同的差异方向，但不要把策略过程输出出来。
+2. 三个版本必须分别使用不同的人群切口、使用场景、开头钩子、矛盾推进、证据方式和结尾 CTA。
+3. 不要沿用上一轮和参考文案里的标志性句式、比喻、数字、emoji组合、标签组合和段落顺序。
+4. 允许借用参考内容的传播机制，但每个版本都必须像独立创作，不要像同一篇文案换词。
+
+仍然严格按原来的输出格式返回。`;
+  const text = await callClaude([{ role: 'user', content: rewritePrompt }]);
+  const fresh = parseRewriteText(text);
+  return fresh.length ? fresh : versions;
 }
 
 // ── 多级 JSON 修复解析 ──
@@ -1413,13 +1465,14 @@ ${brandContext ? `【品牌档案（请严格遵守品牌调性、关键词和�
 - 文案正文字数：每个版本约 ${length} 字
 
 要求：
-1. 严格复刻爆文的结构套路，内容完全换成我的产品；如果需要原创策划，应使用“小红书文案”模块
+1. 借用爆文的结构机制，内容必须用我的产品、品牌观点和新场景重新组织；如果需要原创策划，应使用“小红书文案”模块
 2. ${brandContext ? '严格遵守品牌档案中的调性、关键词风格，避免使用禁忌词' : '保持品牌一致性'}
-3. 三个版本风格略有差异（情感故事版 / 干货种草版 / 闺蜜推荐版）
+3. 三个版本必须先在内部分配差异方向：情感故事版 / 干货种草版 / 闺蜜推荐版只是参考，实际还要做到不同人群、不同场景、不同证据方式、不同开头钩子
 4. 每个版本包含：标题 + 完整正文（有换行、有节奏感）
 5. emoji：参考原文的 emoji 使用风格，在标题和正文段落中加入适量 emoji，自然融入文案
 6. 结尾必须有互动引导
 7. 每个版本正文字数控制在 ${length} 字左右
+8. 三个版本不能像同一篇文案换词，禁止重复相同场景、相同卖点顺序、相同标题公式和相同结尾CTA
 
 【输出格式】严格按下面的纯文本格式输出，不要用JSON，不要用代码块。三个版本之间用一行 ===== 分隔：
 
@@ -1440,7 +1493,14 @@ ${brandContext ? `【品牌档案（请严格遵守品牌调性、关键词和�
 
   try {
     const text = await callClaude([{ role: 'user', content: prompt }]);
-    const versions = parseRewriteText(text);
+    const referenceText = [
+      r.overall_formula,
+      r.tone_style,
+      r.title_hook?.formula,
+      r.opening?.first_sentence_formula,
+      r.body?.content_structure,
+    ].filter(Boolean).join('\n');
+    const versions = await ensureDiverseRewriteVersions(parseRewriteText(text), prompt, referenceText);
     if (versions.length === 0) throw new Error('未能解析出仿写内容，请重试');
 
     document.getElementById('r-loading').classList.remove('show');
@@ -1928,7 +1988,7 @@ async function continueStyle(sourceVersion, context, afterCard) {
 ${brandContext ? `【品牌档案】\n${brandContext}\n` : ''}
 ${context ? `【产品信息】\n${context}\n` : ''}
 
-请完整延续这篇文案的风格、语气、节奏，为同一产品再写3篇全新的文案。不能重复上面的内容，但要保持完全一致的写作风格。
+请提炼这篇文案让用户喜欢的风格机制，为同一产品再写3篇全新的文案。不要完整复刻原文；三个版本必须使用不同的人群切口、使用场景、开头钩子、矛盾推进、证据方式和结尾CTA。不能重复上面的内容，也不能像同一篇文案换词。
 
 【输出格式】纯文本，三个版本用 ===== 分隔：
 
@@ -1949,7 +2009,7 @@ ${context ? `【产品信息】\n${context}\n` : ''}
 
   try {
     const text = await callClaude([{ role: 'user', content: prompt }]);
-    const versions = parseRewriteText(text);
+    const versions = await ensureDiverseRewriteVersions(parseRewriteText(text), prompt, `${sourceVersion.title}\n${sourceVersion.body}`);
     loading.classList.remove('show');
     btn.style.opacity = '1';
     btn.disabled = false;
