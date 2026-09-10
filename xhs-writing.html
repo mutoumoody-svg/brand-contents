@@ -598,7 +598,47 @@ function safeJsonPayloadFromText(text) {
     last = text.lastIndexOf('}');
   }
   if (first === -1 || last === -1) throw new Error('AI 返回内容不是 JSON');
-  return JSON.parse(text.slice(first, last + 1));
+  const jsonText = text.slice(first, last + 1);
+  return parseLooseJson(jsonText);
+}
+
+function parseLooseJson(jsonText) {
+  const candidates = [
+    jsonText,
+    jsonText.replace(/```json|```/g, '').trim(),
+    jsonText.replace(/,(\s*[}\]])/g, '$1'),
+    jsonText.replace(/[\u0000-\u001f]+/g, ' ').replace(/,(\s*[}\]])/g, '$1'),
+  ];
+  for (const candidate of candidates) {
+    try { return JSON.parse(candidate); } catch (_) {}
+  }
+  throw new Error('策略矩阵 JSON 需要修复');
+}
+
+async function parseStrategyJson(raw, strategyPrompt, outputCount, methodContext) {
+  try {
+    return normalizeStrategies(safeJsonPayloadFromText(raw), outputCount, methodContext);
+  } catch (err) {
+    const fixPrompt = `下面是一段不合法的 JSON，请把它修复为合法 JSON。
+
+要求：
+1. 只返回 JSON，不要解释，不要代码块。
+2. 必须保留 strategies 数组。
+3. 每个 strategy 包含 audience、scene、tension、brandView、proof、structure、action、forbidden。
+4. 如果字段缺失，请根据原始内容补齐，不要新增正文文案。
+
+【原始要求】
+${strategyPrompt.slice(0, 2200)}
+
+【需要修复的 JSON】
+${raw.slice(0, 6000)}`;
+    const fixed = await callClaude([{ role: 'user', content: fixPrompt }], Math.min(2400, 700 + outputCount * 220));
+    try {
+      return normalizeStrategies(safeJsonPayloadFromText(fixed), outputCount, methodContext);
+    } catch (_) {
+      return normalizeStrategies([], outputCount, methodContext);
+    }
+  }
 }
 
 function textForSimilarity(text) {
@@ -817,7 +857,7 @@ ${baseContext}
   ]
 }`;
     const strategyRaw = await callClaude([{ role: 'user', content: strategyPrompt }], Math.min(3200, 900 + outputCount * 260));
-    const strategies = normalizeStrategies(safeJsonPayloadFromText(strategyRaw), outputCount, methodContext);
+    const strategies = await parseStrategyJson(strategyRaw, strategyPrompt, outputCount, methodContext);
     const generatedItems = [];
     const qualityLog = [];
     renderGenerationProgress('策略矩阵完成，开始逐篇生成', strategies, generatedItems, qualityLog);
