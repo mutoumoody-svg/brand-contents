@@ -99,7 +99,7 @@ function requireAdmin(req, res, next) {
 // 注册
 app.post('/api/auth/register', async (req, res) => {
   const { email, password, name } = req.body || {};
-  if (!email || !password || !name) {
+  if (typeof email !== 'string' || typeof password !== 'string' || typeof name !== 'string' || !email.trim() || !password || !name.trim()) {
     return res.status(400).json({ error: '请填写所有字段' });
   }
   if (password.length < 6) {
@@ -129,6 +129,9 @@ app.post('/api/auth/register', async (req, res) => {
 // 登录
 app.post('/api/auth/login', async (req, res) => {
   const { email, password } = req.body || {};
+  if (typeof email !== 'string' || typeof password !== 'string' || !email || !password) {
+    return res.status(400).json({ error: '请填写邮箱和密码' });
+  }
   const user = db.prepare('SELECT * FROM users WHERE email = ?').get(email);
   if (!user) return res.status(401).json({ error: '邮箱或密码错误' });
 

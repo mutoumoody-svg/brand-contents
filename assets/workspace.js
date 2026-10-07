@@ -23,7 +23,7 @@ async function refresh() {
   $('jobList').innerHTML = jobs.map(j => `<button class="job-link ${j.id === selectedId ? 'active' : ''}" data-job="${j.id}">${esc(j.input.topic)}<br><small>${esc(j.brand_name)} · ${labels[j.status]} · ${j.drafts.filter(d => d.body).length}/${j.drafts.length}</small></button>`).join('') || '<p class="muted">暂无任务</p>';
   if (!editing) renderJob();
   clearTimeout(polling);
-  if (jobs.some(j => ['running','queued'].includes(j.status))) polling = setTimeout(() => refresh().catch(e => notice(e.message,true)), 4000);
+  if (jobs.some(j => ['running','queued'].includes(j.status) || j.drafts.some(d => d.status === 'running'))) polling = setTimeout(() => refresh().catch(e => notice(e.message,true)), 4000);
 }
 function renderJob() {
   const job = jobs.find(j => j.id === selectedId); if (!job) return;
@@ -33,6 +33,8 @@ function renderJob() {
     const button = document.createElement('button'); button.dataset.action = 'retry'; button.textContent = '重试此篇';
     $('jobDetail').querySelector(`[data-draft="${d.id}"]`).append(button);
   }
+  if (job.status === 'completed') $('jobDetail').querySelector('[data-action=resume]')?.remove();
+  if (!job.drafts.some(d => d.body)) $('jobDetail').querySelector('[data-action=export]').disabled = true;
 }
 async function saveDraft(article) {
   const id = Number(article.dataset.draft), job = jobs.find(j => j.id === selectedId), draft = job.drafts.find(d => d.id === id);
