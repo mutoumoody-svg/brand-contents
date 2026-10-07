@@ -25,6 +25,10 @@ test('服务器启动、静态白名单和登录保护', async t => {
   const login=await post('/api/auth/login',{email:'upload-test@example.test',password:'test-only-password'});
   assert.equal(login.status,200);
   const {token}=await login.json();
+  const testDb=new(require('better-sqlite3'))(path.join(data,'users.db'));
+  testDb.prepare('UPDATE users SET auth_version=auth_version+1 WHERE email=?').run('upload-test@example.test');
+  assert.equal((await fetch(base+'/api/auth/verify',{headers:{Authorization:'Bearer '+token}})).status,401);
+  testDb.prepare('UPDATE users SET auth_version=auth_version-1 WHERE email=?').run('upload-test@example.test');testDb.close();
   const upload=async(name,buffer,type) => {
     const form=new FormData();form.append('file',new Blob([buffer],{type}),name);
     const res=await fetch(base+'/api/brands/parse-file',{method:'POST',headers:{Authorization:'Bearer '+token},body:form});

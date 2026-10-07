@@ -7,6 +7,9 @@ const { chromium } = require(process.env.PLAYWRIGHT_PATH || 'playwright');
   const app = express(); app.use(express.json());
   const job = { id:1,brand_name:'测试品牌',status:'completed',input:{topic:'办公室咖啡杯'},drafts:[{id:1,ordinal:1,status:'ready',body:'标题：午后的一杯咖啡\n杯子的实际体验需要结合资料。',strategy:{angle:'通勤场景',structure:'场景→问题→建议',voice:'口语'},quality:{highest:0},revision:1,likes:0,comments:0,collects:0}] };
   app.get('/api/health',(q,r)=>r.json({release:'2026.10.07',revision:'preview'}));
+  app.get('/api/auth/password-reset/status',(q,r)=>r.json({enabled:true}));
+  app.post('/api/auth/password-reset/request',(q,r)=>r.json({message:'请检查收件箱',retryAfter:60}));
+  app.post('/api/auth/password-reset/confirm',(q,r)=>r.json({message:'密码已重置，请使用新密码登录'}));
   app.get('/api/auth/verify',(q,r)=>r.json({user:{role:'admin'}}));
   app.get('/api/brands',(q,r)=>r.json([{id:1,name:'测试品牌'}]));
   app.get('/api/xhs-writing/methods',(q,r)=>r.json([{id:1,title:'场景种草方法'}]));
@@ -57,5 +60,21 @@ const { chromium } = require(process.env.PLAYWRIGHT_PATH || 'playwright');
       await page.close();
     }
     assert.deepEqual(errors,[]); console.log('Desktop/mobile layout, editing, quality checks and feedback passed.');
+    for (const [name,width,height] of [['desktop',1440,960],['mobile',390,844]]) {
+      const page=await browser.newPage({viewport:{width,height}});
+      await page.goto(`http://127.0.0.1:${server.address().port}/forgot-password.html`);
+      await page.getByLabel('注册邮箱').fill('person@example.test');
+      await page.getByRole('button',{name:'获取验证码'}).click();
+      await page.getByRole('status').filter({hasText:'请检查收件箱'}).waitFor();
+      await page.getByLabel('邮箱验证码').fill('123456');
+      await page.getByLabel('新密码',{exact:true}).fill('new-password');
+      await page.getByLabel('确认新密码').fill('new-password');
+      assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
+      await page.screenshot({path:path.resolve(__dirname,`../work/password-reset-${name}.png`),fullPage:true});
+      await page.getByRole('button',{name:'重置密码'}).click();
+      await page.getByRole('status').filter({hasText:'密码已重置'}).waitFor();
+      await page.close();
+    }
+    console.log('Password recovery desktop/mobile flow passed.');
   } finally {if(browser)await browser.close(); await new Promise(r=>server.close(r));}
 })().catch(err=>{console.error(err);process.exitCode=1;});

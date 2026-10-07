@@ -46,6 +46,9 @@ db.exec(`
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
   )
 `);
+if (!db.prepare('PRAGMA table_info(users)').all().some(c => c.name === 'auth_version')) {
+  db.exec('ALTER TABLE users ADD COLUMN auth_version INTEGER NOT NULL DEFAULT 0');
+}
 
 app.use(express.json({ limit: '10mb' }));
 
@@ -71,8 +74,9 @@ function authenticateToken(req, res, next) {
   if (!token) return res.status(401).json({ error: { message: '请先登录' } });
   try {
     const user = jwt.verify(token, JWT_SECRET);
-    const current = db.prepare('SELECT id,role,name FROM users WHERE id=?').get(user.id);
+    const current = db.prepare('SELECT id,role,name,auth_version FROM users WHERE id=?').get(user.id);
     if (!current) return res.status(401).json({ error: { message: '账号不存在，请重新登录' } });
+    if ((user.auth_version || 0) !== current.auth_version) return res.status(401).json({ error: { message: '密码已更改，请重新登录' } });
     user.role = current.role;
     user.name = current.name;
     if (user.role === 'pending') {
@@ -142,7 +146,7 @@ app.post('/api/auth/login', async (req, res) => {
   }
 
   const token = jwt.sign(
-    { id: user.id, email: user.email, name: user.name, role: user.role },
+    { id: user.id, email: user.email, name: user.name, role: user.role, auth_version: user.auth_version },
     JWT_SECRET,
     { expiresIn: '7d' }
   );
@@ -150,6 +154,7 @@ app.post('/api/auth/login', async (req, res) => {
 });
 
 // 验证 Token
+require('./lib/password-reset').setupReset(app, db, JWT_SECRET);
 app.get('/api/auth/verify', authenticateToken, (req, res) => {
   res.json({ valid: true, user: req.user });
 });
@@ -923,7 +928,7 @@ require('./lib/workspace')(app, db, authenticateToken, requireAdmin, complete);
 app.use('/assets', express.static(path.join(__dirname, 'assets'), { dotfiles: 'deny' }));
 const publicPages = new Set(['index.html','login.html','register.html','admin.html','brand.html',
   'wencai.html','fangxie.html','fenxi.html','baowenku.html','xhs-writing.html','xhs-insights.html',
-  'xiaohongshu-poster.html','workspace.html']);
+  'xiaohongshu-poster.html','workspace.html','forgot-password.html']);
 app.get(['/', '/:page'], (req, res, next) => {
   const page = req.params.page || 'index.html';
   if (!publicPages.has(page)) return next();
