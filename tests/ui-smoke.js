@@ -16,6 +16,9 @@ const { chromium } = require(process.env.PLAYWRIGHT_PATH || 'playwright');
   app.get('/api/content',(q,r)=>r.json([]));
   app.get('/api/viral-posts',(q,r)=>r.json([]));
   app.get('/api/writing/jobs',(q,r)=>r.json([job]));
+  app.get('/api/collection/status',(q,r)=>r.json({api:true,coze:false}));
+  app.get('/api/collection/jobs',(q,r)=>r.json([{id:1,kind:'keyword',target:'咖啡杯',status:'completed',provider:'api',limit_count:20,notes:[{id:'abcdef1234567890abcdef12',url:'https://www.xiaohongshu.com/explore/abcdef1234567890abcdef12',title:'杯子笔记',author:'达人',body:'真实笔记内容',likes:12000,comments:3,collects:null,source:'test-fixture',status:'ready',comment_status:'ready'}]}]));
+  app.get('/api/collection/jobs/1/notes/:id/comments',(q,r)=>r.json([{author:'读者',body:'真实评论内容',likes:2}]));
   app.put('/api/writing/drafts/1',(q,r)=>{Object.assign(job.drafts[0],q.body);job.drafts[0].revision++;r.json({revision:job.drafts[0].revision,quality:{highest:10}});});
   app.post('/api/quality/check',(q,r)=>r.json({highest:10,compared:3,limitation:'文字重合不代表风格相同'}));
   app.get('/api/writing/method-feedback',(q,r)=>r.json([{title:'场景写法',category:'种草',generated:3,adopted:1,published:1,likes:10,comments:2,collects:3,feedback:['少用广告语']} ]));
@@ -76,5 +79,18 @@ const { chromium } = require(process.env.PLAYWRIGHT_PATH || 'playwright');
       await page.close();
     }
     console.log('Password recovery desktop/mobile flow passed.');
+    for(const [name,width,height] of [['desktop',1440,960],['mobile',390,844]]){
+      const page=await browser.newPage({viewport:{width,height}});
+      page.on('pageerror',e=>errors.push(e.message));
+      await page.addInitScript(()=>localStorage.setItem('brand_auth_token','test-token'));
+      await page.goto(`http://127.0.0.1:${server.address().port}/collection.html`);
+      await page.getByRole('heading',{name:'杯子笔记'}).waitFor();
+      await page.getByRole('button',{name:'评论正文 · 已获取'}).click();
+      await page.getByText('真实评论内容',{exact:false}).waitFor();
+      assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
+      await page.screenshot({path:path.resolve(__dirname,`../work/collection-${name}.png`),fullPage:true});
+      await page.close();
+    }
+    assert.deepEqual(errors,[]);console.log('Collection desktop/mobile views passed.');
   } finally {if(browser)await browser.close(); await new Promise(r=>server.close(r));}
 })().catch(err=>{console.error(err);process.exitCode=1;});

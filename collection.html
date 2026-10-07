@@ -1,0 +1,13 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>小红书采集中心 · Brand Center</title><link rel="stylesheet" href="/assets/workspace.css"><script src="/assets/collection.js" defer></script><style>.collect-form{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin:24px 0}.note-body{white-space:pre-wrap;overflow-wrap:anywhere}.note-meta{display:flex;gap:16px;flex-wrap:wrap;font-size:13px;color:#63706e}.comments{border-top:1px solid #d9e0df;padding-top:12px;margin-top:12px}.filter{max-width:600px;margin:16px 0}@media(max-width:560px){.collect-form{grid-template-columns:1fr}}</style></head><body>
+<header><a href="/index.html">Brand Center</a><nav><a href="/workspace.html">内容工作台</a><a href="/xhs-insights.html">热点与飞书</a><a href="/collection.html" aria-current="page">采集中心</a></nav></header>
+<main><h1>小红书采集中心</h1><p id="sourceStatus" class="muted"></p><div id="notice" role="status" aria-live="polite"></div>
+<form id="collectForm" class="collect-form">
+<label>采集方式<select id="kind"><option value="keyword">关键词搜索</option><option value="creator">指定达人账号</option></select></label>
+<label>数据来源<select id="provider"><option value="api">笔记与评论数据服务</option><option value="coze">现有Coze与飞书</option></select></label>
+<label class="wide" id="targetLabel">关键词<input id="target" required maxlength="1000"></label>
+<label>目标笔记数量<input id="limit" type="number" min="1" max="100" value="20"></label>
+<label>每篇评论采集上限<select id="comments"><option value="0">不采集评论正文</option><option value="20">20条</option><option value="50">50条</option><option value="100">100条</option></select></label>
+<div class="actions wide"><button class="primary" id="submit">创建采集任务</button><button id="refresh" type="button">刷新</button></div>
+</form>
+<div class="job-layout"><aside><h2>采集任务</h2><div id="jobList"></div></aside><section><label class="filter">筛选标题、作者或正文<input id="filter" type="search"></label><div id="detail"></div></section></div>
+</main></body></html>

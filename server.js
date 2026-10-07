@@ -923,12 +923,18 @@ app.post('/api/internal/claude', (req, res) => {
 });
 
 require('./lib/workspace')(app, db, authenticateToken, requireAdmin, complete);
+require('./lib/collection').setup(app,db,authenticateToken,{
+  coze:async keyword=>{
+    await runCozeScrapeWorkflow(keyword);await syncFeishuNotes();
+    return {notes:db.prepare('SELECT * FROM xhs_notes WHERE keyword=? ORDER BY likes DESC LIMIT 100').all(keyword).map(n=>({...n,id:n.note_id || n.note_url.match(/\/(?:explore|discovery\/item)\/([a-f0-9]{24})/i)?.[1],url:n.note_url,comment_count:n.comments}))};
+  },
+});
 
 // ── 静态文件 ──
 app.use('/assets', express.static(path.join(__dirname, 'assets'), { dotfiles: 'deny' }));
 const publicPages = new Set(['index.html','login.html','register.html','admin.html','brand.html',
   'wencai.html','fangxie.html','fenxi.html','baowenku.html','xhs-writing.html','xhs-insights.html',
-  'xiaohongshu-poster.html','workspace.html','forgot-password.html']);
+  'xiaohongshu-poster.html','workspace.html','forgot-password.html','collection.html']);
 app.get(['/', '/:page'], (req, res, next) => {
   const page = req.params.page || 'index.html';
   if (!publicPages.has(page)) return next();

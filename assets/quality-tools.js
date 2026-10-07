@@ -34,6 +34,7 @@
   const link = document.createElement('a'); link.href = '/workspace.html'; link.textContent = '内容工作台';
   link.style.cssText = 'font-size:14px;white-space:nowrap';
   const nav = document.querySelector('nav'); if (nav) nav.append(link);
+  if(nav){const collectionLink=document.createElement('a');collectionLink.href='/collection.html';collectionLink.textContent='采集中心';collectionLink.style.cssText='font-size:14px;white-space:nowrap';nav.append(collectionLink);}
   window.fetch = async function (url, options) {
     if (url !== '/api/claude' || !options?.body) return originalFetch(url, options);
     let body;
