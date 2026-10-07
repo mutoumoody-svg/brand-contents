@@ -932,6 +932,9 @@ app.get(['/', '/:page'], (req, res, next) => {
 });
 app.use((err, req, res, next) => {
   console.error('Request failed:', err.message);
+  if (err.name === 'MulterError') {
+    return res.status(err.code === 'LIMIT_FILE_SIZE' ? 413 : 400).json({ error: { message: err.code === 'LIMIT_FILE_SIZE' ? '文件不能超过20MB' : '上传格式错误，请只上传一个文件' } });
+  }
   res.status(err.status || 500).json({ error: { message: err.status === 400 ? '请求格式错误' : '请求处理失败，请重试' } });
 });
 
