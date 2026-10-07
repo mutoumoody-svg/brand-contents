@@ -178,9 +178,8 @@ footer em { color: var(--gold); font-style: normal; }
     </div>
 
     <div class="scrape-panel">
-      <input type="text" class="scrape-input" id="scrapeKeyword" placeholder="输入关键词，通过 Coze 工作流采集并写入飞书多维表格" />
-      <button class="scrape-btn" id="scrapeBtn" onclick="triggerScrape()">⌕ 采集关键词</button>
-      <div class="scrape-hint">采集来源：小红书关键词搜索（需登录态），经 Coze 工作流写入飞书多维表格后自动同步进本地数据库</div>
+      <input type="text" class="scrape-input" id="scrapeKeyword" placeholder="搜索关键词" />
+      <button class="scrape-btn" id="scrapeBtn" onclick="location.href='/collection.html?keyword='+encodeURIComponent(document.getElementById('scrapeKeyword').value)">打开采集中心</button>
     </div>
 
     <div id="sync-error"></div>
@@ -267,47 +266,6 @@ async function triggerSync() {
 }
 
 // ── 关键词直接采集（提交即返回，前端轮询状态，避免长请求被反向代理超时打断）──
-async function triggerScrape() {
-  const keyword = document.getElementById('scrapeKeyword').value.trim();
-  if (!keyword) { alert('请输入关键词'); return; }
-
-  const btn = document.getElementById('scrapeBtn');
-  btn.disabled = true;
-  document.getElementById('scrape-error').innerHTML = '';
-  try {
-    const startRes = await fetch('/api/xhs/scrape', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
-      body: JSON.stringify({ keyword }),
-    });
-    const startData = await startRes.json();
-    if (!startRes.ok) throw new Error((startData.error && startData.error.message) || startData.error || '提交失败');
-
-    btn.textContent = '采集中（可能需要30-60秒）...';
-    document.getElementById('scrape-error').innerHTML = `<div class="error-card" style="border-color:#cdd7e8;background:#eef2f8;"><div class="error-title" style="color:#3a5a8c;">已提交</div><div class="error-msg">关键词「${keyword}」正在后台采集，请稍候...</div></div>`;
-
-    const deadline = Date.now() + 90000;
-    let final = null;
-    while (Date.now() < deadline) {
-      await new Promise(r => setTimeout(r, 3000));
-      const statusRes = await fetch('/api/xhs/scrape/status?keyword=' + encodeURIComponent(keyword), { headers: getAuthHeader() });
-      const statusData = await statusRes.json();
-      if (statusData.status === 'success' || statusData.status === 'failed') { final = statusData; break; }
-    }
-    if (!final) throw new Error('采集超时，可能仍在后台运行，请稍后点"立即同步"查看结果');
-    if (final.status === 'failed') throw new Error(final.error || '采集失败');
-
-    document.getElementById('scrape-error').innerHTML = `<div class="error-card" style="border-color:#b8dfc6;background:var(--green-bg);"><div class="error-title" style="color:var(--green);">采集完成</div><div class="error-msg">关键词「${keyword}」库中现有 ${final.keywordCount} 条，本次同步新增 ${final.result.inserted} 条，更新 ${final.result.updated} 条</div></div>`;
-    document.getElementById('scrapeKeyword').value = '';
-    await loadKeywords();
-    await loadNotes();
-  } catch (err) {
-    document.getElementById('scrape-error').innerHTML = `<div class="error-card"><div class="error-title">采集失败</div><div class="error-msg">${err.message}</div></div>`;
-  } finally {
-    btn.disabled = false;
-    btn.textContent = '⌕ 采集关键词';
-  }
-}
 
 // ── 关键词 ──
 async function loadKeywords() {

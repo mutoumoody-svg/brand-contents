@@ -676,105 +676,13 @@ app.post('/api/xhs/sync', authenticateToken, async (req, res) => {
   }
 });
 
-// 关键词采集：调用 Coze 工作流（小红书搜索+详情 → 写入飞书多维表格），再把飞书最新数据同步进本地库
-async function runCozeScrapeWorkflow(keyword) {
-  if (!process.env.COZE_PAT || !process.env.COZE_WORKFLOW_ID) {
-    throw new Error('服务器未配置 COZE_PAT / COZE_WORKFLOW_ID 环境变量');
-  }
-  if (!process.env.XHS_COOKIE) {
-    throw new Error('服务器未配置 XHS_COOKIE 环境变量（小红书登录态，过期需手动更新）');
-  }
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 120000);
-  let res;
-  try {
-    res = await fetch('https://api.coze.cn/v1/workflow/run', {
-      method: 'POST',
-      headers: {
-        'Authorization': 'Bearer ' + process.env.COZE_PAT,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        workflow_id: process.env.COZE_WORKFLOW_ID,
-        parameters: { keyword, cookie: process.env.XHS_COOKIE },
-      }),
-      signal: controller.signal,
-    });
-  } finally {
-    clearTimeout(timer);
-  }
-  const data = await res.json();
-  if (data.code !== 0) throw new Error('Coze 工作流调用失败：' + data.msg);
-  return data;
-}
-
-// 单条笔记链接提取标题+文案：调用 ExtractNote 工作流（无需 cookie，公开笔记直接解析）
-async function runCozeExtractWorkflow(noteUrl) {
-  if (!process.env.COZE_PAT || !process.env.COZE_EXTRACT_WORKFLOW_ID) {
-    throw new Error('服务器未配置 COZE_PAT / COZE_EXTRACT_WORKFLOW_ID 环境变量');
-  }
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 60000);
-  let res;
-  try {
-    res = await fetch('https://api.coze.cn/v1/workflow/run', {
-      method: 'POST',
-      headers: {
-        'Authorization': 'Bearer ' + process.env.COZE_PAT,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        workflow_id: process.env.COZE_EXTRACT_WORKFLOW_ID,
-        parameters: { noteUrl, cookie: process.env.XHS_COOKIE || '' },
-      }),
-      signal: controller.signal,
-    });
-  } finally {
-    clearTimeout(timer);
-  }
-  const data = await res.json();
-  if (data.code !== 0) throw new Error('Coze 工作流调用失败：' + data.msg);
-  return JSON.parse(data.data);
-}
-
-app.post('/api/xhs/extract', authenticateToken, async (req, res) => {
-  const noteUrl = String(req.body?.noteUrl || '').trim();
-  if (!noteUrl) return res.status(400).json({ error: '请输入小红书笔记链接' });
-  try {
-    const result = await runCozeExtractWorkflow(noteUrl);
-    res.json({ title: result.title || '', desc: result.desc || '' });
-  } catch (err) {
-    res.status(500).json({ error: '提取失败：' + err.message });
-  }
+app.post('/api/xhs/extract',authenticateToken,async(req,res)=>{
+  const url=require('./lib/collection').xhsUrl(String(req.body?.noteUrl||''));
+  if(!url)return res.status(400).json({error:'请输入有效小红书笔记链接'});
+  try{const n=await require('./lib/collection-source').detail({url});res.json({title:n.title||'',desc:n.body||''});}
+  catch(err){res.status(502).json({error:err.message});}
 });
-
-// Coze 工作流单次运行要 30-50 秒，容易被反向代理超时打断，导致请求"看起来失败"但后台其实跑完了。
-// 改成提交即返回 + 前端轮询状态，避免长时间挂住一个 HTTP 请求。
-const scrapeJobs = {}; // keyword -> { status: 'running'|'success'|'failed', startedAt, finishedAt, error, result, keywordCount }
-
-app.post('/api/xhs/scrape', authenticateToken, (req, res) => {
-  const keyword = String(req.body?.keyword || '').trim();
-  if (!keyword) return res.status(400).json({ error: '请输入关键词' });
-
-  scrapeJobs[keyword] = { status: 'running', startedAt: Date.now() };
-  res.json({ status: 'started', keyword });
-
-  (async () => {
-    try {
-      await runCozeScrapeWorkflow(keyword);
-      const result = await syncFeishuNotes();
-      const keywordCount = db.prepare('SELECT COUNT(*) as c FROM xhs_notes WHERE keyword = ?').get(keyword).c;
-      scrapeJobs[keyword] = { status: 'success', finishedAt: Date.now(), result, keywordCount };
-    } catch (err) {
-      scrapeJobs[keyword] = { status: 'failed', finishedAt: Date.now(), error: err.message };
-    }
-  })();
-});
-
-app.get('/api/xhs/scrape/status', authenticateToken, (req, res) => {
-  const keyword = String(req.query.keyword || '').trim();
-  res.json(scrapeJobs[keyword] || { status: 'unknown' });
-});
+app.post('/api/xhs/scrape',authenticateToken,(req,res)=>res.status(410).json({error:'关键词采集已迁移至采集中心，请打开collection.html'}));
 
 // 笔记列表（支持 ?keyword= 过滤，按点赞数排序）
 app.get('/api/xhs/notes', authenticateToken, (req, res) => {
@@ -923,12 +831,7 @@ app.post('/api/internal/claude', (req, res) => {
 });
 
 require('./lib/workspace')(app, db, authenticateToken, requireAdmin, complete);
-require('./lib/collection').setup(app,db,authenticateToken,{
-  coze:async keyword=>{
-    await runCozeScrapeWorkflow(keyword);await syncFeishuNotes();
-    return {notes:db.prepare('SELECT * FROM xhs_notes WHERE keyword=? ORDER BY likes DESC LIMIT 100').all(keyword).map(n=>({...n,id:n.note_id || n.note_url.match(/\/(?:explore|discovery\/item)\/([a-f0-9]{24})/i)?.[1],url:n.note_url,comment_count:n.comments}))};
-  },
-});
+require('./lib/collection').setup(app,db,authenticateToken);
 
 // ── 静态文件 ──
 app.use('/assets', express.static(path.join(__dirname, 'assets'), { dotfiles: 'deny' }));

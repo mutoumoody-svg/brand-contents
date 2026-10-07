@@ -24,6 +24,7 @@
     else if(b.dataset.action==='export'){const r=await fetch(`/api/collection/jobs/${selected}/export`,{headers:{Authorization:'Bearer '+token}});if(!r.ok)throw new Error('导出失败');const url=URL.createObjectURL(await r.blob());const a=document.createElement('a');a.href=url;a.download=`collection-${selected}.json`;a.click();URL.revokeObjectURL(url);}
     else if(b.dataset.action){await api(`/api/collection/jobs/${selected}/${b.dataset.action}`,{});await refresh();}
   }catch(err){notice(err.message,true);}finally{b.disabled=false;}};
-  api('/api/collection/status').then(s=>{$('sourceStatus').textContent=`笔记/达人/评论服务：${s.api?'已配置（待实际采集验证）':'未配置'} · Coze关键词来源：${s.coze?'已配置':'未配置'}`;if(!s.api&&s.coze)$('provider').value='coze';}).catch(e=>notice(e.message,true));
+  api('/api/collection/status').then(s=>{$('sourceStatus').textContent=`${s.source||'直接数据服务'}：${s.api?'已配置（待实际采集验证）':'未配置，请管理员填写数据服务API Key'}`;}).catch(e=>notice(e.message,true));
   refresh().catch(e=>notice(e.message,true));
+  $('target').value=new URLSearchParams(location.search).get('keyword')||'';
 })();

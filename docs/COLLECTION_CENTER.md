@@ -1,5 +1,34 @@
 # 关键词与达人采集中心
 
+## 当前直接采集版本
+
+已移除Coze执行依赖；原有Coze任务仅作为历史记录保留，不能恢复执行。
+现有飞书读取与历史热点笔记仍保留，关键词按钮转到新采集中心。
+旧仿写页面的链接提取已改为直接数据服务，不再调用Coze。
+
+默认适配TikHub的App V2接口，属于第三方数据源，不是小红书官方API。未配置凭据时不能真实搜索或采集。
+只实现可替换的数据服务适配，不自带站内搜索权限，不保证供应商长期稳定。
+
+服务器brand.env增加：
+
+```env
+XHS_DATA_PROVIDER=tikhub
+TIKHUB_API_KEY=由你在服务商控制台取得的Key
+```
+
+Key仅填服务器文件；不要发送到聊天或提交Git。费用和可用额度以服务商账户为准。本轮没有购买服务或发送付费采集请求。
+首次验收建议关键词“咖啡杯”取3篇、每篇最多20条评论；核对正文、作者ID、原帖与互动数，再测试达人链接。
+搜索列表仅作发现，之后逐篇读取详情；不将列表摘要冒充完整正文。
+图文和视频按来源类型分别读取；目前评论采集为一级评论，未自动分页抓取二级回复。
+没有评论结果不代表原帖无评论；响应结构变化会明确失败，需更新适配器。
+
+核验来源：
+- https://github.com/TikHub/TikHub-API-Python-SDK/blob/main/docs/reference.md
+- https://github.com/TikHub/TikHub-API-Python-SDK/blob/main/src/tikhub/resources/xiaohongshu_app_v2.py
+
+如使用自定义适配服务，设置XHS_DATA_PROVIDER=custom，并配置下方契约中的URL和TOKEN。
+以下是初版框架说明；其中Coze支持描述仅适用于旧版本，当前已经停用。
+
 入口：`/collection.html`。两种任务：关键词搜索、指定达人账号。
 达人入口接受完整`https://www.xiaohongshu.com/user/profile/账号ID`；也支持该达人的笔记链接，先由数据服务读取作者ID。
 短分享链接需先打开为完整笔记/主页链接；昵称不是唯一标识。

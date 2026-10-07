@@ -23,6 +23,7 @@ const requiredFiles = [
   'collection.html',
   'lib/collection.js',
   'lib/collection-source.js',
+  'lib/tikhub-source.js',
   'assets/collection.js',
   'forgot-password.html',
   'assets/password-reset.js',
