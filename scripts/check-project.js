@@ -19,6 +19,10 @@ const requiredFiles = [
   'login.html',
   'register.html',
   'admin.html',
+  'workspace.html',
+  'assets/workspace.js',
+  'assets/quality-tools.js',
+  'lib/workspace.js',
   'scripts/xhs_scrape.py',
 ];
 
@@ -54,6 +58,11 @@ function walkHtml(dir, out = []) {
 
 const failures = [];
 const warnings = [];
+const vm = require('vm');
+for (const name of ['server.js', 'lib/workspace.js', 'lib/quality.js', 'lib/claude-client.js', 'assets/workspace.js', 'assets/quality-tools.js']) {
+  if (!exists(name)) continue;
+  try { new vm.Script(read(name), { filename: name }); } catch (err) { failures.push(`${name} 语法错误：${err.message}`); }
+}
 
 for (const file of requiredFiles) {
   if (!exists(file)) failures.push(`缺少文件：${file}`);
@@ -78,7 +87,7 @@ if (!exists('node_modules')) {
   warnings.push('尚未安装 node_modules，请运行 npm.cmd install。');
 }
 
-if (!exists('.env')) {
+if (!exists('.env') && !exists('brand.env')) {
   warnings.push('尚未创建 .env；本地启动可先复制 .env.example，再填写真实密钥。');
 }
 
@@ -89,6 +98,12 @@ if (exists('.git') && !exists('.git/HEAD')) {
 for (const htmlFile of walkHtml(root)) {
   const html = fs.readFileSync(htmlFile, 'utf8');
   const rel = path.relative(root, htmlFile).replace(/\\/g, '/');
+  if (!rel.includes('/')) {
+    for (const script of html.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/gi)) {
+      if (!script[1].trim()) continue;
+      try { new vm.Script(script[1], { filename: rel }); } catch (err) { failures.push(`${rel} 脚本语法错误：${err.message}`); }
+    }
+  }
   if (html.includes('anthorpic-proxy.mutoumoody.workers.dev')) {
     failures.push(`${rel} 仍直接暴露 Claude Worker 地址。`);
   }

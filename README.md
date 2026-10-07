@@ -32,6 +32,9 @@ http://127.0.0.1:3000/api/health
 
 ## 主要入口
 
+2026-10-07升级：新增[内容工作台](workspace.html)，后台生成任务、历史重复检查、逐篇编辑、方法反馈和发布效果回填。
+部署和使用详情见[升级说明](docs/UPGRADE_2026-10-07.md)。生产服务的`/api/health`包含版本与提交号。
+
 - `server.js`：Express 服务、登录注册、SQLite 数据库、品牌库、内容库、小红书接口、飞书同步、Claude 中转。
 - `package.json`：Node 依赖和启动脚本。
 - `index.html`：文案生成。
@@ -42,6 +45,7 @@ http://127.0.0.1:3000/api/health
 - `xhs-insights.html`：小红书热点洞察。
 - `xiaohongshu-poster.html`：图片海报。
 - `admin.html`：用户审核和管理。
+- `workspace.html`：创作任务、相似度检查、方法反馈与运行诊断。
 - `scripts/xhs_scrape.py`：小红书关键词采集脚本。
 - `api/claude.js`：Vercel 风格 Claude serverless 中转函数。
 - `social-cards/`：小红书社媒卡片生成子项目。
@@ -54,6 +58,7 @@ http://127.0.0.1:3000/api/health
 ```powershell
 npm.cmd run check
 npm.cmd run doctor
+npm.cmd test
 npm.cmd run dev
 npm.cmd start
 scripts\start-server-background.cmd

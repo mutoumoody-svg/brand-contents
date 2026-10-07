@@ -9,6 +9,7 @@ const fs        = require('fs');
 const bcrypt    = require('bcryptjs');
 const jwt       = require('jsonwebtoken');
 const Database  = require('better-sqlite3');
+const { requestClaude, complete } = require('./lib/claude-client');
 // 文件解析包（懒加载，缺包时不影响主服务启动）
 let multer, pdfParse, mammoth, JSZip;
 try { multer   = require('multer');    } catch(e) {}
@@ -19,12 +20,20 @@ try { JSZip    = require('jszip');     } catch(e) {}
 const app        = express();
 const PORT       = process.env.PORT       || 3000;
 const API_KEY    = process.env.ANTHROPIC_API_KEY;
-const JWT_SECRET = process.env.JWT_SECRET || 'brand-center-change-this-in-env';
-const CLAUDE_WORKER_SECRET = process.env.CLAUDE_WORKER_SECRET || 'brand-worker-nz-2024';
+let JWT_SECRET = process.env.JWT_SECRET;
+const CLAUDE_WORKER_SECRET = process.env.CLAUDE_WORKER_SECRET;
 
 // ── 数据库初始化 ──
-const DATA_DIR = path.join(__dirname, 'data');
+const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, 'data');
 if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
+if (!JWT_SECRET || JWT_SECRET.startsWith('change-this') || JWT_SECRET === 'brand-center-change-this-in-env') {
+  const secretPath = path.join(DATA_DIR, '.jwt-secret');
+  if (!fs.existsSync(secretPath)) fs.writeFileSync(secretPath, require('crypto').randomBytes(48).toString('hex'), { mode: 0o600 });
+  JWT_SECRET = fs.readFileSync(secretPath, 'utf8').trim();
+}
+const RELEASE = '2026.10.07';
+let REVISION = 'unknown';
+try { REVISION = require('child_process').execFileSync('git', ['rev-parse', '--short', 'HEAD'], { cwd: __dirname, encoding: 'utf8' }).trim(); } catch {}
 
 const db = new Database(path.join(DATA_DIR, 'users.db'));
 db.exec(`
@@ -44,6 +53,8 @@ app.get('/api/health', (req, res) => {
   res.json({
     ok: true,
     service: 'brand-contents',
+    release: RELEASE,
+    revision: REVISION,
     time: new Date().toISOString(),
   });
 });
@@ -60,6 +71,10 @@ function authenticateToken(req, res, next) {
   if (!token) return res.status(401).json({ error: { message: '请先登录' } });
   try {
     const user = jwt.verify(token, JWT_SECRET);
+    const current = db.prepare('SELECT id,role,name FROM users WHERE id=?').get(user.id);
+    if (!current) return res.status(401).json({ error: { message: '账号不存在，请重新登录' } });
+    user.role = current.role;
+    user.name = current.name;
     if (user.role === 'pending') {
       return res.status(403).json({ error: { message: '账号待管理员审核，请耐心等待' } });
     }
@@ -852,30 +867,33 @@ app.post('/api/brands/parse-file', authenticateToken, (req, res, next) => {
 //  Claude API 中转（需登录）
 // ══════════════════════════════════════════
 app.post('/api/claude', authenticateToken, async (req, res) => {
-  if (!API_KEY) {
-    return res.status(500).json({ error: { message: '服务器未配置 ANTHROPIC_API_KEY，请在 VPS 上设置环境变量后重启服务' } });
-  }
-  // CLAUDE_PROXY_URL 可在环境变量里设置自定义域名，默认用 workers.dev
-  const PROXY_URL = process.env.CLAUDE_PROXY_URL || 'https://anthorpic-proxy.mutoumoody.workers.dev/';
   try {
-    const response = await fetch(PROXY_URL, {
-      method: 'POST',
-      headers: PROXY_URL.includes('api.anthropic.com')
-        ? {
-            'Content-Type': 'application/json',
-            'x-api-key': API_KEY,
-            'anthropic-version': '2023-06-01',
-          }
-        : {
-            'Content-Type': 'application/json',
-            'x-worker-secret': CLAUDE_WORKER_SECRET,
-          },
-      body: JSON.stringify(req.body),
-    });
-    const data = await response.json();
-    res.status(response.status).json(data);
+    const { quality_context, ...payload } = req.body || {};
+    let candidates = [];
+    if (quality_context?.enabled) {
+      const { inspect } = require('./lib/quality');
+      candidates = db.prepare('SELECT id,title,body FROM content WHERE brand_name=? ORDER BY id DESC LIMIT 150').all(String(quality_context.brand_name || ''));
+      const drafts = db.prepare(`SELECT d.id,d.body FROM writing_drafts d JOIN writing_jobs j ON j.id=d.job_id WHERE j.brand_name=? AND d.body<>'' ORDER BY d.id DESC LIMIT 100`).all(String(quality_context.brand_name || ''));
+      candidates = [...candidates.map(c => ({ ...c, source: 'content' })), ...drafts.map(c => ({ ...c, source: 'draft' }))];
+      const generated = db.prepare('SELECT id,body FROM generation_history WHERE brand_name=? ORDER BY id DESC LIMIT 100').all(String(quality_context.brand_name || ''));
+      candidates.push(...generated.map(c => ({ ...c, source: 'generation' })));
+      const instruction = '\n差异化检查：保留要求的输出格式，避开历史文案的开头、场景、叙事次序、比喻和收尾。不要编造事实。历史摘要：\n' + candidates.slice(0, 8).map(c => c.body.slice(0, 350)).join('\n---\n');
+      payload.system = Array.isArray(payload.system) ? [...payload.system, { type: 'text', text: instruction }] : (payload.system || '') + instruction;
+      let data = await requestClaude(payload);
+      const text = (data.content || []).map(c => c.text || '').join('\n');
+      let quality = inspect(text, candidates);
+      if (quality.review) {
+        const rewritten = await requestClaude({ ...payload, messages: [...payload.messages, {role:'assistant',content:text}, {role:'user',content:'这版和历史内容太接近。请保持原输出格式，换场景细节、开头、结构和结尾，重新输出完整结果。'}] });
+        data = rewritten;
+        quality = { ...inspect((data.content || []).map(c => c.text || '').join('\n'), candidates), rewritten: true };
+      }
+      data.quality = { ...quality, compared: candidates.length };
+      db.prepare('INSERT INTO generation_history(user_id,brand_name,body) VALUES(?,?,?)').run(req.user.id, String(quality_context.brand_name || ''), (data.content || []).map(c => c.text || '').join('\n'));
+      return res.json(data);
+    }
+    res.json(await requestClaude(payload));
   } catch (err) {
-    res.status(500).json({ error: { message: 'API 请求失败：' + err.message } });
+    res.status(err.status || 502).json({ error: { message: err.message } });
   }
 });
 
@@ -889,32 +907,33 @@ app.post('/api/internal/claude', (req, res) => {
   if (ip !== '127.0.0.1' && ip !== '::1') {
     return res.status(403).json({ error: { message: '仅限本机调用' } });
   }
-  if (req.headers['x-worker-secret'] !== CLAUDE_WORKER_SECRET) {
+  if (!CLAUDE_WORKER_SECRET || req.headers['x-worker-secret'] !== CLAUDE_WORKER_SECRET) {
     return res.status(403).json({ error: { message: '密钥错误' } });
   }
-  if (!API_KEY) {
-    return res.status(500).json({ error: { message: '服务器未配置 ANTHROPIC_API_KEY' } });
-  }
-  const PROXY_URL = process.env.CLAUDE_PROXY_URL || 'https://anthorpic-proxy.mutoumoody.workers.dev/';
-  fetch(PROXY_URL, {
-    method: 'POST',
-    headers: PROXY_URL.includes('api.anthropic.com')
-      ? { 'Content-Type': 'application/json', 'x-api-key': API_KEY, 'anthropic-version': '2023-06-01' }
-      : { 'Content-Type': 'application/json', 'x-worker-secret': CLAUDE_WORKER_SECRET },
-    body: JSON.stringify(req.body),
-  })
-    .then(async (response) => {
-      const data = await response.json();
-      res.status(response.status).json(data);
-    })
-    .catch((err) => res.status(500).json({ error: { message: 'API 请求失败：' + err.message } }));
+  requestClaude(req.body).then(data => res.json(data))
+    .catch(err => res.status(err.status || 502).json({ error: { message: err.message } }));
 });
 
+require('./lib/workspace')(app, db, authenticateToken, requireAdmin, complete);
+
 // ── 静态文件 ──
-app.use(express.static(path.join(__dirname)));
+app.use('/assets', express.static(path.join(__dirname, 'assets'), { dotfiles: 'deny' }));
+const publicPages = new Set(['index.html','login.html','register.html','admin.html','brand.html',
+  'wencai.html','fangxie.html','fenxi.html','baowenku.html','xhs-writing.html','xhs-insights.html',
+  'xiaohongshu-poster.html','workspace.html']);
+app.get(['/', '/:page'], (req, res, next) => {
+  const page = req.params.page || 'index.html';
+  if (!publicPages.has(page)) return next();
+  res.set('Cache-Control', 'no-cache');
+  res.sendFile(path.join(__dirname, page));
+});
+app.use((err, req, res, next) => {
+  console.error('Request failed:', err.message);
+  res.status(err.status || 500).json({ error: { message: err.status === 400 ? '请求格式错误' : '请求处理失败，请重试' } });
+});
 
 app.use((req, res) => res.status(404).send('Not found'));
 
-app.listen(PORT, () => {
-  console.log(`Brand Contents 运行中：http://localhost:${PORT}`);
+const server = app.listen(PORT, () => {
+  console.log(`Brand Contents 运行中：http://localhost:${server.address().port}`);
 });

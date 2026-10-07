@@ -1,0 +1,61 @@
+const express = require('express');
+const fs = require('fs');
+const path = require('path');
+const assert = require('assert/strict');
+const { chromium } = require(process.env.PLAYWRIGHT_PATH || 'playwright');
+(async () => {
+  const app = express(); app.use(express.json());
+  const job = { id:1,brand_name:'测试品牌',status:'completed',input:{topic:'办公室咖啡杯'},drafts:[{id:1,ordinal:1,status:'ready',body:'标题：午后的一杯咖啡\n杯子的实际体验需要结合资料。',strategy:{angle:'通勤场景',structure:'场景→问题→建议',voice:'口语'},quality:{highest:0},revision:1,likes:0,comments:0,collects:0}] };
+  app.get('/api/health',(q,r)=>r.json({release:'2026.10.07',revision:'preview'}));
+  app.get('/api/auth/verify',(q,r)=>r.json({user:{role:'admin'}}));
+  app.get('/api/brands',(q,r)=>r.json([{id:1,name:'测试品牌'}]));
+  app.get('/api/xhs-writing/methods',(q,r)=>r.json([{id:1,title:'场景种草方法'}]));
+  app.get('/api/content',(q,r)=>r.json([]));
+  app.get('/api/viral-posts',(q,r)=>r.json([]));
+  app.get('/api/writing/jobs',(q,r)=>r.json([job]));
+  app.put('/api/writing/drafts/1',(q,r)=>{Object.assign(job.drafts[0],q.body);job.drafts[0].revision++;r.json({revision:job.drafts[0].revision,quality:{highest:10}});});
+  app.post('/api/quality/check',(q,r)=>r.json({highest:10,compared:3,limitation:'文字重合不代表风格相同'}));
+  app.get('/api/writing/method-feedback',(q,r)=>r.json([{title:'场景写法',category:'种草',generated:3,adopted:1,published:1,likes:10,comments:2,collects:3,feedback:['少用广告语']} ]));
+  app.use(express.static(path.resolve(__dirname,'..')));
+  const server=app.listen(0,'127.0.0.1'); await new Promise(r=>server.once('listening',r));
+  let browser;
+  const errors=[];
+  fs.mkdirSync(path.resolve(__dirname,'../work'),{recursive:true});
+  try {
+    browser=await chromium.launch({headless:true,channel:process.env.BROWSER_CHANNEL || 'msedge'});
+    for (const [name,width,height] of [['desktop',1440,960],['mobile',390,844]]) {
+      const page=await browser.newPage({viewport:{width,height}});
+      page.on('pageerror',e=>errors.push(e.message));
+      await page.addInitScript(()=>localStorage.setItem('brand_auth_token','test-token'));
+      await page.goto(`http://127.0.0.1:${server.address().port}/workspace.html`);
+      await page.getByRole('heading',{name:'第1篇 · 通勤场景'}).waitFor();
+      assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth),true, name+' overflow');
+      await page.locator('[data-field=body]').fill('人工修改后的文案');
+      await page.getByRole('button',{name:'保存修改与反馈'}).click();
+      await page.getByRole('status').filter({hasText:'已保存'}).waitFor();
+      await page.screenshot({path:path.resolve(__dirname,`../work/workspace-${name}.png`),fullPage:true});
+      await page.getByRole('button',{name:'相似度检查',exact:true}).click();
+      await page.locator('#qualityText').fill('一篇文案');
+      await page.getByRole('button',{name:'检查',exact:true}).click();
+      await page.locator('#qualityResult').filter({hasText:'已比较3份内容'}).waitFor();
+      await page.getByRole('button',{name:'方法反馈',exact:true}).click();
+      await page.getByRole('cell',{name:'场景写法',exact:true}).waitFor();
+      await page.close();
+    }
+    for (const name of ['index.html','fangxie.html','xhs-writing.html','baowenku.html','wencai.html','xiaohongshu-poster.html','brand.html','fenxi.html','xhs-insights.html']) {
+      console.log('Checking',name);
+      const page = await browser.newPage();
+      page.on('pageerror',e=>errors.push(name+': '+e.message));
+      page.on('dialog',d=>d.dismiss());
+      await page.addInitScript(()=>localStorage.setItem('brand_auth_token','test-token'));
+      await page.goto(`http://127.0.0.1:${server.address().port}/${name}`);
+      await page.locator('.similarity-rail').click();
+      await page.locator('dialog[open]').waitFor();
+      await page.locator('#quality-manual').fill('待检查文案');
+      await page.locator('#quality-run').click();
+      await page.locator('#quality-result').filter({hasText:'已比较 3份'}).waitFor();
+      await page.close();
+    }
+    assert.deepEqual(errors,[]); console.log('Desktop/mobile layout, editing, quality checks and feedback passed.');
+  } finally {if(browser)await browser.close(); await new Promise(r=>server.close(r));}
+})().catch(err=>{console.error(err);process.exitCode=1;});

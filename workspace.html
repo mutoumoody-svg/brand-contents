@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>内容工作台 · Brand Center</title>
+<link rel="stylesheet" href="/assets/workspace.css">
+<script src="/assets/workspace.js" defer></script>
+</head>
+<body>
+<header><a href="/index.html">Brand Center</a><nav><a href="/brand.html">品牌</a><a href="/xhs-writing.html">方法学习</a><a href="/fangxie.html">爆文仿写</a><a href="/workspace.html" aria-current="page">内容工作台</a></nav><button id="logout">退出</button></header>
+<main>
+<div class="heading"><h1>内容工作台</h1><span id="version"></span></div>
+<div class="tabs" role="tablist"><button data-view="jobs" aria-selected="true">创作任务</button><button data-view="quality">相似度检查</button><button data-view="feedback">方法反馈</button><button data-view="system" id="systemTab" hidden>运行状态</button></div>
+<div id="notice" role="status" aria-live="polite"></div>
+<section id="view-jobs" class="view">
+<form id="jobForm" class="form-grid">
+<label>品牌<select id="brand"><option value="">未指定品牌</option></select></label>
+<label>主题<input id="topic" required maxlength="2000"></label>
+<label>内容目标<select id="goal"><option>种草转化</option><option>品牌认知</option><option>干货收藏</option><option>测评对比</option><option>复购提醒</option></select></label>
+<label>人群<input id="audience" maxlength="1000"></label>
+<label>生成篇数<select id="count"><option>3</option><option>4</option><option>5</option><option>6</option><option>7</option><option>8</option><option>9</option><option>10</option></select></label>
+<label>差异化强度<select id="diversity"><option>明显</option><option>稳定</option><option>探索</option></select></label>
+<label class="wide">事实、卖点及禁用表达<textarea id="must" rows="3" maxlength="4000"></textarea></label>
+<fieldset class="wide"><legend>写作方法</legend><div id="methods" class="methods"></div></fieldset>
+<div class="wide actions"><button class="primary" type="submit">创建生成任务</button><button type="button" id="refresh">刷新任务</button></div>
+</form>
+<div class="job-layout"><aside><h2>任务记录</h2><div id="jobList"></div></aside><section id="jobDetail"><p class="muted">暂无任务</p></section></div>
+</section>
+<section id="view-quality" class="view" hidden>
+<form id="qualityForm" class="quality-form"><label>品牌<select id="qualityBrand"></select></label><label>待检查文案<textarea id="qualityText" rows="12" required></textarea></label><label>参考文案<textarea id="reference" rows="5"></textarea></label><button class="primary">检查</button></form><div id="qualityResult"></div>
+</section>
+<section id="view-feedback" class="view" hidden><div class="table-scroll"><table><thead><tr><th>写作方法</th><th>类型</th><th>产出</th><th>采用</th><th>已发布</th><th>点赞</th><th>评论</th><th>收藏</th><th>反馈</th></tr></thead><tbody id="feedbackRows"></tbody></table></div></section>
+<section id="view-system" class="view" hidden><dl id="systemStatus"></dl><a href="https://creator.xiaohongshu.com/" target="_blank" rel="noopener">小红书创作服务平台</a></section>
+</main>
+</body></html>
