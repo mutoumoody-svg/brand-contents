@@ -23,7 +23,9 @@
   async function api(path,body,method){
     if(path==='/api/writing/jobs' && body)Object.assign(body,window.studioSkills?.requestFields()||{});
     if(path==='/api/writing/jobs' && body && tab==='batch') body.directionPreset=$('directionPreset').value;
-    const r=await fetch(path,{method:method||(body?'POST':'GET'),headers:{'Content-Type':'application/json',Authorization:'Bearer '+token},body:body?JSON.stringify(body):undefined});const d=await r.json();if(!r.ok){if(r.status===401)location.replace('/login.html');throw Error(d.error?.message||d.error||'请求失败');}return d;
+    const r=await fetch(path,{method:method||(body?'POST':'GET'),headers:{'Content-Type':'application/json',Authorization:'Bearer '+token},body:body?JSON.stringify(body):undefined});
+    if(r.status===401){['brand_auth_token','brand_user_name','brand_user_role'].forEach(k=>localStorage.removeItem(k));token=null;dirty=false;location.replace('/login.html');throw Error('登录已失效，请重新登录');}
+    const d=await r.json();if(!r.ok){throw Error(d.error?.message||d.error||'请求失败');}return d;
   }
   function switchTab(next){tab=next;document.querySelectorAll('[data-tab]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.tab===tab)));$('screenTitle').textContent={batch:'批量创作',imitate:'爆文仿写',research:'爆文研究'}[tab];$('creation').hidden=tab==='research';$('research').hidden=tab!=='research';$('directionLabel').hidden=tab==='imitate';$('referenceLabel').hidden=tab!=='imitate';$('source').required=tab==='imitate';$('createButton').textContent=tab==='imitate'?'开始仿写':'开始批量创作';if(tab==='research')loadResearch().catch(e=>notice(e.message,true));}
   document.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>switchTab(b.dataset.tab));

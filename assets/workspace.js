@@ -47,8 +47,9 @@ function esc(s) { return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;',
 function notice(text, error = false) { $('notice').textContent = text; $('notice').className = error ? 'error' : ''; }
 async function api(url, options = {}) {
   const r = await fetch(url, { ...options, headers: { 'Content-Type':'application/json', Authorization:`Bearer ${token}` } });
+  if(r.status===401){['brand_auth_token','brand_user_name','brand_user_role'].forEach(k=>localStorage.removeItem(k));editing=false;location.replace('/login.html');throw new Error('登录已失效，请重新登录');}
   const data = await r.json();
-  if (!r.ok) { if (r.status === 401) location.replace('/login.html'); throw new Error(data.error?.message || data.error || '请求失败'); }
+  if (!r.ok) { throw new Error(data.error?.message || data.error || '请求失败'); }
   return data;
 }
 function qualityHtml(q) {

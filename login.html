@@ -150,8 +150,19 @@ h1 {
 </div>
 
 <script>
-// 已登录则直接跳转
-if (localStorage.getItem('brand_auth_token')) window.location.replace('/studio.html');
+// A stored token may be expired or belong to a previous server signing key.
+(async function verifyStoredSession() {
+  const token = localStorage.getItem('brand_auth_token');
+  if (!token) return;
+  try {
+    const response = await fetch('/api/auth/verify', {headers:{Authorization:'Bearer '+token},cache:'no-store'});
+    if (localStorage.getItem('brand_auth_token') !== token) return;
+    if (response.ok) { window.location.replace('/studio.html'); return; }
+    if ([401,403].includes(response.status)) {
+      ['brand_auth_token','brand_user_name','brand_user_role'].forEach(k=>localStorage.removeItem(k));
+    }
+  } catch { /* Keep the login form available during network failures. */ }
+})();
 
 document.getElementById('password').addEventListener('keydown', e => {
   if (e.key === 'Enter') login();
