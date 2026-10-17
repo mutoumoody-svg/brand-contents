@@ -8,6 +8,8 @@ test('Worker模式无需服务器API Key，异常响应正确报错', async t =>
   process.env.CLAUDE_PROXY_URL='https://example.test/';process.env.CLAUDE_WORKER_SECRET='test-only-secret';delete process.env.ANTHROPIC_API_KEY;
   global.fetch=async(url,options)=>{assert.equal(options.headers['x-worker-secret'],'test-only-secret');assert.equal(options.headers['x-api-key'],undefined);return new Response(JSON.stringify({content:[{type:'text',text:'成功'}]}));};
   assert.equal((await requestClaude({messages:[]})).content[0].text,'成功');
+  global.fetch=async(url,options)=>{assert.equal(JSON.parse(options.body).system,'只输出一篇');return new Response(JSON.stringify({content:[{type:'text',text:'成功'}]}));};
+  assert.equal(await require('../lib/claude-client').complete('测试',32,'只输出一篇'),'成功');
   global.fetch=async()=>new Response('upstream unavailable',{status:502});
   await assert.rejects(()=>requestClaude({}),/非 JSON/);
   global.fetch=async()=>new Response(JSON.stringify({error:{message:'请求不允许'}}),{status:403});
