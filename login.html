@@ -151,7 +151,7 @@ h1 {
 
 <script>
 // 已登录则直接跳转
-if (localStorage.getItem('brand_auth_token')) window.location.replace('/xhs-writing.html');
+if (localStorage.getItem('brand_auth_token')) window.location.replace('/studio.html');
 
 document.getElementById('password').addEventListener('keydown', e => {
   if (e.key === 'Enter') login();
@@ -190,7 +190,7 @@ async function login() {
     localStorage.setItem('brand_auth_token', data.token);
     localStorage.setItem('brand_user_name',  data.name);
     localStorage.setItem('brand_user_role',  data.role);
-    window.location.replace('/xhs-writing.html');
+    window.location.replace('/studio.html');
   } catch {
     errEl.textContent   = '网络错误，请重试';
     errEl.style.display = 'block';

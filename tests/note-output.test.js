@@ -1,0 +1,2 @@
+const {test}=require('node:test'),assert=require('node:assert/strict'),{generate}=require('../lib/note-output');
+test('单篇输出验证字数与结构，最多纠正一次',async()=>{let calls=0;const body=await generate('提示',async()=>{calls++;return JSON.stringify({title:'标题',body:calls===1?'长'.repeat(300):'短正文',tags:['通勤']});},100);assert.equal(calls,2);assert.match(body,/短正文/);await assert.rejects(()=>generate('提示',async()=>'不是JSON',100),/未通过/);});

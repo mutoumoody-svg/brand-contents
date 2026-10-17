@@ -31,7 +31,7 @@ if (!JWT_SECRET || JWT_SECRET.startsWith('change-this') || JWT_SECRET === 'brand
   if (!fs.existsSync(secretPath)) fs.writeFileSync(secretPath, require('crypto').randomBytes(48).toString('hex'), { mode: 0o600 });
   JWT_SECRET = fs.readFileSync(secretPath, 'utf8').trim();
 }
-const RELEASE = '2026.10.07';
+const RELEASE = '2026.10.17';
 let REVISION = 'unknown';
 try { REVISION = require('child_process').execFileSync('git', ['rev-parse', '--short', 'HEAD'], { cwd: __dirname, encoding: 'utf8' }).trim(); } catch {}
 
@@ -51,6 +51,22 @@ if (!db.prepare('PRAGMA table_info(users)').all().some(c => c.name === 'auth_ver
 }
 
 app.use(express.json({ limit: '10mb' }));
+
+app.post('/api/local-preview/session', (req, res) => {
+  const local = ['127.0.0.1','::1','::ffff:127.0.0.1'].includes(req.socket.remoteAddress);
+  const host = req.headers.host || '';
+  const localHost = /^(127\.0\.0\.1|localhost|\[::1\])(?::\d+)?$/.test(host);
+  if (process.env.LOCAL_PREVIEW_AUTH_BYPASS !== '1' || process.env.NODE_ENV === 'production' || !local || !localHost) return res.sendStatus(404);
+  if (req.headers['x-local-preview'] !== '1' || req.headers.origin !== `http://${host}`) return res.sendStatus(403);
+  const email = 'local-preview@localhost.invalid';
+  let user = db.prepare('SELECT * FROM users WHERE email=?').get(email);
+  if (!user) {
+    db.prepare('INSERT INTO users(email,password,name,role) VALUES(?,?,?,?)').run(email, bcrypt.hashSync(require('crypto').randomBytes(32).toString('hex'), 10), '本地测试', 'admin');
+    user = db.prepare('SELECT * FROM users WHERE email=?').get(email);
+  }
+  const token = jwt.sign({ id:user.id, name:user.name, role:user.role, auth_version:user.auth_version }, JWT_SECRET, { expiresIn:'8h' });
+  res.set('Cache-Control','no-store').json({ token });
+});
 
 app.get('/api/health', (req, res) => {
   res.json({
@@ -831,15 +847,16 @@ app.post('/api/internal/claude', (req, res) => {
 });
 
 require('./lib/workspace')(app, db, authenticateToken, requireAdmin, complete);
+require('./lib/research')(app, db, authenticateToken, complete);
 require('./lib/collection').setup(app,db,authenticateToken);
 
 // ── 静态文件 ──
 app.use('/assets', express.static(path.join(__dirname, 'assets'), { dotfiles: 'deny' }));
 const publicPages = new Set(['index.html','login.html','register.html','admin.html','brand.html',
   'wencai.html','fangxie.html','fenxi.html','baowenku.html','xhs-writing.html','xhs-insights.html',
-  'xiaohongshu-poster.html','workspace.html','forgot-password.html','collection.html']);
+  'xiaohongshu-poster.html','workspace.html','studio.html','forgot-password.html','collection.html']);
 app.get(['/', '/:page'], (req, res, next) => {
-  const page = req.params.page || 'index.html';
+  const page = req.params.page || 'studio.html';
   if (!publicPages.has(page)) return next();
   res.set('Cache-Control', 'no-cache');
   res.sendFile(path.join(__dirname, page));

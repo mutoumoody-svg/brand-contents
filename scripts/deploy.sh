@@ -18,6 +18,7 @@ git merge --ff-only origin/main
 npm ci
 npm run check
 npm test
-pm2 restart brand-contents --update-env
+NODE_ENV=production LOCAL_PREVIEW_AUTH_BYPASS=0 pm2 restart brand-contents --update-env
 curl --fail http://127.0.0.1:3000/api/health
+node scripts/verify-ai.js
 printf '\nBackup: %s\n' "$backup"

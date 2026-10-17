@@ -3,6 +3,45 @@ const $ = id => document.getElementById(id);
 const token = localStorage.getItem('brand_auth_token');
 if (!token) location.replace('/login.html');
 let jobs = [], selectedId = Number(new URLSearchParams(location.search).get('job')) || null, polling = null, editing = false;
+let samples = [];
+const modeNames = {external:'他牌爆文借鉴',aspiration:'用户向往式创作',brand:'品牌优质内容复创'};
+const creationMode = () => document.querySelector('[name=creationMode]:checked').value;
+window.workbenchCanLeave = () => !editing || confirm('创作文案有尚未保存的修改，仍要切换？');
+function updateMode() {
+  const mode = creationMode();
+  $('aspirationFields').hidden = mode !== 'aspiration';
+  $('sampleFields').hidden = mode === 'aspiration';
+  $('savedSampleLabel').hidden = mode !== 'brand';
+  $('creationReference').required = mode !== 'aspiration';
+  $('brand').required = mode === 'brand';
+}
+let previousMode = 'external';
+const sampleBuffers = {};
+$('creationModes').addEventListener('change', () => {
+  sampleBuffers[previousMode] = [$('creationReference').value, $('sampleTitle').value, $('sampleContext').value];
+  const values = sampleBuffers[creationMode()] || ['', '', ''];
+  ['creationReference','sampleTitle','sampleContext'].forEach((id,i) => { $(id).value = values[i]; });
+  $('savedSample').value = '';
+  previousMode = creationMode(); updateMode();
+});
+$('brand').addEventListener('change', async () => {
+  if (creationMode() === 'brand') { $('creationReference').value = ''; $('sampleTitle').value = ''; }
+  samples = []; $('savedSample').innerHTML = '<option value="">选择已有内容</option>';
+  const brand = $('brand').selectedOptions[0]?.textContent;
+  if (!$('brand').value) return;
+  try {
+    const brandId = $('brand').value;
+    const rows = await api('/api/content?brand_name=' + encodeURIComponent(brand));
+    if ($('brand').value !== brandId) return;
+    samples = rows;
+    $('savedSample').innerHTML += samples.map(s => `<option value="${s.id}">${esc(s.title || '未命名内容')}</option>`).join('');
+  } catch(err) { notice(err.message, true); }
+});
+$('savedSample').addEventListener('change', () => {
+  const sample = samples.find(s => s.id === Number($('savedSample').value));
+  if (sample) { $('creationReference').value = sample.body.slice(0,6000); $('sampleTitle').value = sample.title || ''; }
+});
+updateMode();
 const labels = { queued:'等待生成',running:'生成中',paused:'已暂停',partial:'部分失败',completed:'已完成',pending:'待生成',ready:'已保存',failed:'失败' };
 function esc(s) { return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 function notice(text, error = false) { $('notice').textContent = text; $('notice').className = error ? 'error' : ''; }
@@ -34,6 +73,9 @@ function renderJob() {
     $('jobDetail').querySelector(`[data-draft="${d.id}"]`).append(button);
   }
   if (job.status === 'completed') $('jobDetail').querySelector('[data-action=resume]')?.remove();
+  const modeLabel = document.createElement('p'); modeLabel.className = 'muted';
+  modeLabel.textContent = modeNames[job.input.mode] || '历史创作任务';
+  $('jobDetail').prepend(modeLabel);
   if (!job.drafts.some(d => d.body)) $('jobDetail').querySelector('[data-action=export]').disabled = true;
 }
 async function saveDraft(article) {
@@ -77,6 +119,7 @@ $('jobForm').addEventListener('submit', async e => {
   try {
     if (editing && !confirm('尚有未保存修改，继续创建新任务？')) return;
     const body = { brandId: $('brand').value, topic:$('topic').value, goal:$('goal').value, audience:$('audience').value, count:$('count').value, diversity:$('diversity').value, must:$('must').value, methodIds: [...$('methods').querySelectorAll(':checked')].map(el => Number(el.value)) };
+    Object.assign(body, { mode:creationMode(), currentState:$('currentState').value, desiredState:$('desiredState').value, perspectives:$('perspectives').value, sampleContext:$('sampleContext').value, references:creationMode() === 'aspiration' ? [] : [{title:$('sampleTitle').value,content:$('creationReference').value}] });
     const job = await api('/api/writing/jobs',{method:'POST',body:JSON.stringify(body)});
     selectedId = job.id; editing = false; notice('任务已保存'); await refresh();
   } catch (err) { notice(err.message,true); } finally { btn.disabled = false; }
@@ -111,6 +154,7 @@ window.addEventListener('beforeunload', e => { if(editing){e.preventDefault();e.
   $('methods').innerHTML = methods.map(m => `<label><input type="checkbox" value="${m.id}">${esc(m.title)}</label>`).join('') || '<a href="/xhs-writing.html">新建写作方法</a>';
   $('version').textContent = `${health.release} · ${health.revision}`;
   $('systemTab').hidden = user.user.role !== 'admin';
+  $('usersNav').hidden = user.user.role !== 'admin';
   if (sessionStorage.getItem('quality-text')) { $('qualityText').value = sessionStorage.getItem('quality-text'); sessionStorage.removeItem('quality-text'); }
   if (location.hash === '#quality') document.querySelector('[data-view=quality]').click();
   await refresh();

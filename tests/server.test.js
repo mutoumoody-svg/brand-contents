@@ -6,7 +6,7 @@ const os = require('node:os');
 const path = require('node:path');
 test('服务器启动、静态白名单和登录保护', async t => {
   const data = fs.mkdtempSync(path.join(os.tmpdir(),'brand-test-'));
-  const child = spawn(process.execPath,['server.js'], {cwd:path.join(__dirname,'..'),env:{...process.env,PORT:'0',DATA_DIR:data,JWT_SECRET:'',CLAUDE_WORKER_SECRET:''},stdio:['ignore','pipe','pipe']});
+  const child = spawn(process.execPath,['server.js'], {cwd:path.join(__dirname,'..'),env:{...process.env,PORT:'0',DATA_DIR:data,JWT_SECRET:'',CLAUDE_WORKER_SECRET:'',NODE_ENV:'production',LOCAL_PREVIEW_AUTH_BYPASS:'1'},stdio:['ignore','pipe','pipe']});
   let stderr='';child.stderr.on('data',d=>{stderr+=d;});
   t.after(async()=>{if(child.exitCode===null){child.kill();await new Promise(r=>child.once('exit',r));}fs.rmSync(data,{recursive:true,force:true});});
   const port=await new Promise((resolve,reject)=>{
@@ -16,6 +16,8 @@ test('服务器启动、静态白名单和登录保护', async t => {
   });
   const base=`http://127.0.0.1:${port}`;
   assert.equal((await fetch(base+'/api/health')).status,200);
+  assert.equal((await fetch(base+'/api/local-preview/session',{method:'POST',headers:{Origin:base,'X-Local-Preview':'1'}})).status,404);
+  assert.match(await(await fetch(base+'/')).text(),/文案工坊/);
   for(const p of ['/server.js','/data/users.db','/brand.env','.env','/package.json','/scripts/deploy.sh'])assert.equal((await fetch(base+(p.startsWith('/')?p:'/'+p))).status,404,p);
   assert.equal((await fetch(base+'/workspace.html')).status,200);
   assert.equal((await fetch(base+'/assets/workspace.js')).status,200);

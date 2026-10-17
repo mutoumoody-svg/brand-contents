@@ -20,6 +20,13 @@ const requiredFiles = [
   'register.html',
   'admin.html',
   'workspace.html',
+  'studio.html',
+  'assets/studio.js',
+  'assets/studio-skills.js',
+  'lib/writing-skills.js',
+  'assets/studio.css',
+  'lib/research.js',
+  'lib/creative-review.js',
   'collection.html',
   'lib/collection.js',
   'lib/collection-source.js',
@@ -29,6 +36,10 @@ const requiredFiles = [
   'assets/password-reset.js',
   'lib/password-reset.js',
   'assets/workspace.js',
+  'assets/workbench.js',
+  'assets/module-bridge.js',
+  'assets/module-theme.css',
+  'assets/creation-shell.css',
   'assets/quality-tools.js',
   'lib/workspace.js',
   'scripts/xhs_scrape.py',
@@ -67,7 +78,7 @@ function walkHtml(dir, out = []) {
 const failures = [];
 const warnings = [];
 const vm = require('vm');
-for (const name of ['server.js', 'lib/workspace.js', 'lib/quality.js', 'lib/claude-client.js', 'assets/workspace.js', 'assets/quality-tools.js']) {
+for (const name of ['server.js', 'lib/workspace.js', 'lib/quality.js', 'lib/claude-client.js', 'assets/workspace.js', 'assets/quality-tools.js', 'assets/workbench.js', 'assets/module-bridge.js', 'assets/studio.js', 'lib/research.js', 'lib/creative-review.js']) {
   if (!exists(name)) continue;
   try { new vm.Script(read(name), { filename: name }); } catch (err) { failures.push(`${name} 语法错误：${err.message}`); }
 }
